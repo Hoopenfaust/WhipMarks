@@ -17,7 +17,8 @@ export async function addCriterion(data: Omit<RubricCriterion, 'id'>): Promise<R
 }
 
 export async function updateCriterion(id: string, data: Partial<Omit<RubricCriterion, 'id'>>) {
-  await db.criteria.update(id, data)
+  const count = await db.criteria.update(id, data)
+  if (count === 0) throw new Error(`updateCriterion: criterion ${id} not found in DB`)
 }
 
 export async function deleteCriterion(id: string) {
@@ -42,7 +43,8 @@ export async function bulkAddCriteria(projectId: string, items: Omit<RubricCrite
 export async function reorderCriteria(orderedIds: string[]) {
   await db.transaction('rw', db.criteria, async () => {
     for (let i = 0; i < orderedIds.length; i++) {
-      await db.criteria.update(orderedIds[i], { sortIndex: i })
+      const count = await db.criteria.update(orderedIds[i], { sortIndex: i })
+      if (count === 0) throw new Error(`reorderCriteria: criterion ${orderedIds[i]} not found in DB`)
     }
   })
 }

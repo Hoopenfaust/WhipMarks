@@ -21,7 +21,8 @@ export async function createProject(data: Omit<Project, 'id' | 'createdAt'>): Pr
 }
 
 export async function updateProject(id: string, data: Partial<Omit<Project, 'id'>>) {
-  await db.projects.update(id, data)
+  const count = await db.projects.update(id, data)
+  if (count === 0) throw new Error(`updateProject: project ${id} not found in DB`)
 }
 
 export async function deleteProject(id: string) {

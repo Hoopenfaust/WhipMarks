@@ -26,7 +26,8 @@ export async function setDescriptor(
   const patch: Partial<RubricDescriptor> = { text }
   if (score !== undefined) patch.score = score
   if (match) {
-    await db.descriptors.update(match.id, patch)
+    const count = await db.descriptors.update(match.id, patch)
+    if (count === 0) throw new Error(`setDescriptor: descriptor ${match.id} not found in DB`)
   } else {
     const d: RubricDescriptor = { id: newId(), criterionId, level, text, ...(score !== undefined ? { score } : {}) }
     await db.descriptors.add(d)

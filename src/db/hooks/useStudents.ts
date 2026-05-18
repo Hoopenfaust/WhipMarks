@@ -44,15 +44,18 @@ export async function deleteStudent(id: string) {
 }
 
 export async function updateStudentName(id: string, name: string) {
-  await db.students.update(id, { name })
+  const count = await db.students.update(id, { name })
+  if (count === 0) throw new Error(`updateStudentName: student ${id} not found in DB`)
 }
 
 export async function updateStudentNames(id: string, firstName: string, name: string) {
-  await db.students.update(id, { firstName: firstName || undefined, name })
+  const count = await db.students.update(id, { firstName: firstName || undefined, name })
+  if (count === 0) throw new Error(`updateStudentNames: student ${id} not found in DB`)
 }
 
 export async function updateStudentPhoto(id: string, photo: string | undefined) {
-  await db.students.update(id, { photo })
+  const count = await db.students.update(id, { photo })
+  if (count === 0) throw new Error(`updateStudentPhoto: student ${id} not found in DB`)
 }
 
 export async function updateStudentNotes(id: string, notes: string) {

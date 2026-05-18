@@ -1,9 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { RubricTemplate, TemplateCriterion } from '../../types'
+import type { RubricCriterion, RubricTemplate, TemplateCriterion } from '../../types'
 import { newId } from '../../utils/id'
-import { bulkAddCriteria } from './useCriteria'
-import { updateProject } from './useProjects'
 
 export function useTemplates() {
   return useLiveQuery(
@@ -36,22 +34,30 @@ export async function applyTemplate(
 
   const items: TemplateCriterion[] = JSON.parse(template.criteriaJson)
 
-  if (mode === 'replace') {
-    const existing = await db.criteria.where('projectId').equals(projectId).toArray()
-    await db.transaction('rw', db.criteria, db.marks, db.descriptors, async () => {
+  // Fetch existing state before entering the transaction
+  const existing = await db.criteria.where('projectId').equals(projectId).toArray()
+  const startIndex = mode === 'append' ? existing.length : 0
+
+  // Build the new criteria rows before the transaction (no DB access needed)
+  const newCriteria: RubricCriterion[] = items.map((item, i) => ({
+    ...item,
+    id: newId(),
+    projectId,
+    sortIndex: startIndex + i,
+  }))
+  const totalMarks = newCriteria.reduce((sum, c) => sum + c.maxMarks, 0)
+
+  // Single atomic transaction: delete (replace mode) + insert + update project
+  await db.transaction('rw', [db.criteria, db.marks, db.descriptors, db.projects], async () => {
+    if (mode === 'replace') {
       for (const c of existing) {
         await db.marks.filter(m => m.criterionId === c.id).delete()
         await db.descriptors.where('criterionId').equals(c.id).delete()
       }
       await db.criteria.where('projectId').equals(projectId).delete()
-    })
-  }
-
-  const existingCount = mode === 'append'
-    ? await db.criteria.where('projectId').equals(projectId).count()
-    : 0
-
-  const added = await bulkAddCriteria(projectId, items, existingCount)
-  const totalMarks = added.reduce((sum, c) => sum + c.maxMarks, 0)
-  await updateProject(projectId, { totalMarks })
+    }
+    await db.criteria.bulkAdd(newCriteria)
+    const projectCount = await db.projects.update(projectId, { totalMarks })
+    if (projectCount === 0) throw new Error(`applyTemplate: project ${projectId} not found in DB`)
+  })
 }
