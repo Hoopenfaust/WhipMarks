@@ -414,7 +414,7 @@ export function RubricBuilder({ projectId, criteria, projectName: _projectName }
         {step === 1 && (
           <>
             <div className="flex-1" style={{ overflow: 'hidden' }}>
-              <div className="overflow-y-auto p-4 flex flex-col gap-2" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+              <div data-tutorial="rubric-criteria" className="overflow-y-auto p-4 flex flex-col gap-2" style={{ maxHeight: 'calc(100vh - 280px)' }}>
                 {criteria.map((c, i) => (
                   <CriterionRow
                     key={c.id}

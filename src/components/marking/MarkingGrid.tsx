@@ -265,6 +265,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
     <div className="flex items-center justify-end px-4 py-2 border-b border-gray-800 shrink-0">
       <button
         onClick={() => setQuickMarkIdx(0)}
+        data-tutorial="quick-mark-btn"
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-400 text-white text-xs font-semibold transition-colors"
       >
         <Zap size={13} />

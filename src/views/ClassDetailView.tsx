@@ -894,7 +894,9 @@ export function ClassDetailView() {
         </div>
       </div>
 
-      <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      <div data-tutorial="projects-tab">
+        <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      </div>
 
       <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
 
@@ -964,7 +966,7 @@ export function ClassDetailView() {
         {tab === 'projects' && (
           <div>
             <div className="flex justify-end mb-4">
-              <Button variant="primary" size="sm" onClick={() => setAddProjectOpen(true)}>
+              <Button variant="primary" size="sm" onClick={() => setAddProjectOpen(true)} data-tutorial="new-project-btn">
                 <Plus size={15} /> New Project
               </Button>
             </div>

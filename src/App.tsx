@@ -4,10 +4,12 @@ import { ClassesView } from './views/ClassesView'
 import { ClassDetailView } from './views/ClassDetailView'
 import { ProjectView } from './views/ProjectView'
 import { SemesterSummaryView } from './views/SemesterSummaryView'
+import { TutorialOverlay } from './components/tutorial/TutorialOverlay'
 
 export default function App() {
   return (
     <BrowserRouter>
+      <TutorialOverlay />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/classes" replace />} />

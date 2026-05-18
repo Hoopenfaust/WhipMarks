@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Plus, BookOpen, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
+import { Plus, BookOpen, ChevronLeft, ChevronRight, Trash2, HelpCircle } from 'lucide-react'
 import { useClasses, createClass, deleteClass } from '../../db/hooks/useClasses'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
@@ -87,6 +87,20 @@ export function Sidebar() {
           >
             <Plus size={15} />
             {!collapsed && 'New Class'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              localStorage.removeItem('gradedesk-tutorial-done')
+              localStorage.removeItem('gradedesk-tutorial-step')
+              window.location.reload()
+            }}
+            className={`w-full ${collapsed ? 'justify-center px-0' : ''}`}
+            title="Restart tutorial"
+          >
+            <HelpCircle size={15} />
+            {!collapsed && 'Help'}
           </Button>
           <Button
             variant="ghost"

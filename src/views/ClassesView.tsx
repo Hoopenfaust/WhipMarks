@@ -12,13 +12,14 @@ import { Input } from '../components/ui/Input'
 import { db } from '../db/db'
 import { downloadBackup, restoreFromFile, restoreFromLocalStorage } from '../utils/backup'
 
-function ClassCard({ c }: { c: { id: string; name: string; createdAt: number } }) {
+function ClassCard({ c, isFirst }: { c: { id: string; name: string; createdAt: number }; isFirst?: boolean }) {
   const students = useStudents(c.id)
   const projects = useProjects(c.id)
   const navigate = useNavigate()
   return (
     <button
       onClick={() => navigate(`/classes/${c.id}`)}
+      {...(isFirst ? { 'data-tutorial': 'class-card' } : {})}
       className="relative bg-gray-800/80 border border-gray-700/80 rounded-2xl p-7 text-left hover:border-orange-500/40 hover:bg-gray-750 transition-all duration-200 group overflow-hidden shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30"
     >
       {/* Subtle top reflection */}
@@ -155,7 +156,7 @@ export function ClassesView() {
               <Download size={15} /> Save Backup
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => fileRef.current?.click()}>
+          <Button variant="ghost" size="sm" onClick={() => fileRef.current?.click()} data-tutorial="import-btn">
             <Upload size={15} /> Import
           </Button>
         </div>
@@ -233,7 +234,7 @@ export function ClassesView() {
           </div>
 
           <div className={`grid gap-4 ${classes.length === 1 ? 'grid-cols-1 max-w-sm' : classes.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
-            {classes.map(c => <ClassCard key={c.id} c={c} />)}
+            {classes.map((c, i) => <ClassCard key={c.id} c={c} isFirst={i === 0} />)}
           </div>
         </>
       )}

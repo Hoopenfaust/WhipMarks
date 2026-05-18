@@ -94,7 +94,9 @@ export function ProjectView() {
         </div>
       </div>
 
-      <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      <div data-tutorial="marking-grid-tab">
+        <TabBar tabs={TABS} active={tab} onChange={setTab} />
+      </div>
 
       {/* BUILD RUBRIC TAB */}
       {tab === 'builder' && (
