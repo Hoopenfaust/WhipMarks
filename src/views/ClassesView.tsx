@@ -9,7 +9,6 @@ import { parseSpreadsheetFile, detectNameColumn } from '../utils/csv'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Badge } from '../components/ui/Badge'
 import { db } from '../db/db'
 import { downloadBackup, restoreFromFile, restoreFromLocalStorage } from '../utils/backup'
 
@@ -20,21 +19,28 @@ function ClassCard({ c }: { c: { id: string; name: string; createdAt: number } }
   return (
     <button
       onClick={() => navigate(`/classes/${c.id}`)}
-      className="bg-gray-800 border border-gray-700 rounded-xl p-5 text-left hover:border-gray-600 hover:bg-gray-750 transition-colors group"
+      className="relative bg-gray-800/80 border border-gray-700/80 rounded-2xl p-7 text-left hover:border-orange-500/40 hover:bg-gray-750 transition-all duration-200 group overflow-hidden shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30"
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="p-2 bg-orange-950 rounded-lg">
-          <BookOpen size={18} className="text-orange-400" />
+      {/* Subtle top reflection */}
+      <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-2xl bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
+      {/* Orange left accent bar */}
+      <div className="absolute left-0 top-6 bottom-6 w-0.5 bg-orange-500/50 rounded-r group-hover:bg-orange-500 transition-colors" />
+
+      <div className="flex items-start justify-between mb-5">
+        <div className="p-2.5 bg-orange-950/80 rounded-xl border border-orange-900/40">
+          <BookOpen size={20} className="text-orange-400" />
         </div>
-        <Badge variant="default">{new Date(c.createdAt).toLocaleDateString()}</Badge>
+        <span className="text-xs text-gray-600">{new Date(c.createdAt).toLocaleDateString()}</span>
       </div>
-      <h3 className="font-semibold text-gray-100 mb-2 group-hover:text-white">{c.name}</h3>
-      <div className="flex gap-3">
-        <span className="flex items-center gap-1 text-xs text-gray-500">
-          <Users size={12} /> {students.length} students
+
+      <h3 className="text-xl font-bold text-gray-100 mb-1 group-hover:text-white transition-colors leading-snug">{c.name}</h3>
+
+      <div className="flex gap-4 mt-4 pt-4 border-t border-gray-700/60">
+        <span className="flex items-center gap-1.5 text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
+          <Users size={13} /> {students.length} <span className="text-gray-700">students</span>
         </span>
-        <span className="flex items-center gap-1 text-xs text-gray-500">
-          <FolderOpen size={12} /> {projects.length} projects
+        <span className="flex items-center gap-1.5 text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
+          <FolderOpen size={13} /> {projects.length} <span className="text-gray-700">projects</span>
         </span>
       </div>
     </button>
@@ -226,7 +232,7 @@ export function ClassesView() {
             <p className="text-xs text-gray-600">Drop CSV or Excel file to import a class</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={`grid gap-4 ${classes.length === 1 ? 'grid-cols-1 max-w-sm' : classes.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
             {classes.map(c => <ClassCard key={c.id} c={c} />)}
           </div>
         </>

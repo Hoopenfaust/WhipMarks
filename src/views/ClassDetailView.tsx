@@ -973,30 +973,59 @@ export function ClassDetailView() {
               <p className="text-sm text-gray-600">No projects yet.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map(p => (
-                  <div
-                    key={p.id}
-                    className="bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-4 group relative cursor-pointer select-none shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 hover:border-gray-600/60 transition-all duration-200 overflow-hidden"
-                    onDoubleClick={() => navigate(`/classes/${classId}/projects/${p.id}`)}
-                  >
-                    {/* Reflection gradient */}
-                    <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
-                    <div className="flex items-start justify-between mb-4">
-                      <span className="text-2xl font-bold text-orange-400">{Math.round(p.semesterWeight * 100)}%</span>
-                      <button
-                        onClick={e => { e.stopPropagation(); setDeleteProjectId(p.id) }}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-all relative z-10"
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                {projects.map(p => {
+                  const pCriteria = allCriteria.filter(c => c.projectId === p.id)
+                  const pMarks = allMarks.filter(m => m.projectId === p.id)
+                  const markedStudents = students.filter(s =>
+                    pCriteria.some(c => pMarks.some(m => m.studentId === s.id && m.criterionId === c.id))
+                  ).length
+                  const totalStudents = students.length
+                  const progressPct = totalStudents > 0 ? (markedStudents / totalStudents) * 100 : 0
+                  const allDone = markedStudents === totalStudents && totalStudents > 0
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-5 group relative cursor-pointer select-none shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 hover:border-orange-500/30 transition-all duration-200 overflow-hidden"
+                      onClick={() => navigate(`/classes/${classId}/projects/${p.id}`)}
+                    >
+                      {/* Reflection gradient */}
+                      <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-base font-bold text-orange-400">{Math.round(p.semesterWeight * 100)}% of semester</span>
+                        <button
+                          onClick={e => { e.stopPropagation(); setDeleteProjectId(p.id) }}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-all relative z-10"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                      <h3 className="text-3xl font-bold text-gray-100 mb-1 leading-tight">{p.name}</h3>
+                      {p.dueDate && (
+                        <p className="text-sm text-gray-500">Due {new Date(p.dueDate).toLocaleDateString()}</p>
+                      )}
+                      {/* Marking progress */}
+                      <div className="mt-4 pt-3 border-t border-gray-700/60">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-gray-600">
+                            {markedStudents === 0 ? 'Not started' : allDone ? 'All marked ✓' : `${markedStudents} / ${totalStudents} marked`}
+                          </span>
+                          {markedStudents > 0 && (
+                            <span className={`text-xs font-medium ${allDone ? 'text-emerald-500' : 'text-gray-500'}`}>
+                              {Math.round(progressPct)}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-emerald-500' : 'bg-orange-500'}`}
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="text-5xl font-bold text-gray-100 mb-2 leading-tight">{p.name}</h3>
-                    {p.dueDate && (
-                      <p className="text-base text-gray-500 mb-3">Due {new Date(p.dueDate).toLocaleDateString()}</p>
-                    )}
-                    <p className="text-sm text-gray-600 mt-3">Double-click to open</p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

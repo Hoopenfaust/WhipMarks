@@ -295,15 +295,18 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
             const studentMarks = marks.filter(m => m.studentId === s.id)
             const pct = calcProjectPercentage(studentMarks, criteria)
             const isComplete = criteria.every(c => studentMarks.some(m => m.criterionId === c.id))
+            const markedCount = criteria.filter(c => studentMarks.some(m => m.criterionId === c.id)).length
+            const hasAnyMark = markedCount > 0
+            const rowBg = si % 2 === 0 ? '' : 'bg-white/[0.018]'
 
             return (
-              <tr key={s.id} className="group hover:bg-gray-900/50">
-                <td className="bg-gray-950 border-b border-r border-gray-800 px-4 py-2.5 text-sm font-medium whitespace-nowrap">
+              <tr key={s.id} className={cn('group hover:bg-orange-950/10 transition-colors', rowBg)}>
+                <td className={cn('border-b border-r border-gray-800 px-4 py-2.5 text-sm font-medium whitespace-nowrap', rowBg)}>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setQuickMarkIdx(si)}
-                      title="Open Quick Mark for this student"
-                      className="text-gray-300 hover:text-orange-400 transition-colors text-left"
+                      title="Quick Mark this student"
+                      className="text-gray-300 hover:text-orange-400 hover:underline underline-offset-2 transition-colors text-left font-medium"
                     >
                       {s.firstName ? `${s.firstName} ${s.name}` : s.name}
                     </button>
@@ -362,8 +365,14 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                     </td>
                   )
                 })}
-                <td className={cn('border-b border-gray-800 px-4 py-2.5 font-semibold whitespace-nowrap', isComplete ? gradeColor(pct) : 'text-amber-600')}>
-                  {isComplete ? `${pct.toFixed(1)}%` : <span className="text-xs text-amber-600">Incomplete</span>}
+                <td className="border-b border-gray-800 px-4 py-2.5 whitespace-nowrap">
+                  {isComplete ? (
+                    <span className={cn('font-bold', gradeColor(pct))}>{pct.toFixed(1)}%</span>
+                  ) : hasAnyMark ? (
+                    <span className="text-xs text-gray-500 tabular-nums">{markedCount}/{criteria.length}</span>
+                  ) : (
+                    <span className="text-gray-800">—</span>
+                  )}
                 </td>
               </tr>
             )
