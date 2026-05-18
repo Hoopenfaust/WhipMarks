@@ -1,0 +1,50 @@
+name: Build macOS
+
+on:
+  # Run manually from the GitHub Actions tab
+  workflow_dispatch:
+  # Also run on every push to main
+  push:
+    branches: [main, master]
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Build for both Apple Silicon and Intel so the .dmg runs on any Mac
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust build artefacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build Tauri (universal macOS)
+        run: npm run tauri build -- --target universal-apple-darwin --bundles dmg
+        env:
+          # Skip Apple code-signing — the .dmg will work but macOS will
+          # show a Gatekeeper warning on first launch (right-click → Open)
+          APPLE_SIGNING_IDENTITY: '-'
+
+      - name: Upload .dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: GradeDesk-macOS
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          retention-days: 90
