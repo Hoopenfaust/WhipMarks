@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3a48;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a58;
+}
+
+/* Sticky table headers */
+.marking-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.marking-table td:first-child,
+.marking-table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+}
+.marking-table th:first-child {
+  z-index: 30;
+}
+
+/* ── Architex architectural font (local, user-owned) ─────────── */
+@font-face {
+  font-family: 'Architex';
+  src: url('/fonts/Architex-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* ── Print / PDF export ───────────────────────────────────────── */
+@media print {
+  @page { size: letter; margin: 0.5in; }
+
+  body { visibility: hidden; background: white !important; margin: 0; padding: 0; }
+
+  /* Show ONLY the report — must not use display:none anywhere in ancestor chain */
+  .print-report { visibility: visible !important; }
+  .print-report * { visibility: visible !important; }
+
+  .print-report {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important; right: 0 !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+}

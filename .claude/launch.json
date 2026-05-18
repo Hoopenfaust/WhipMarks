@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "student-marker",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "D:\\Claude Code\\student-marker\\start-dev.cmd"],
+      "port": 5173
+    }
+  ]
+}
