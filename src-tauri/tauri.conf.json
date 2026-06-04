@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "GradeDesk",
+  "productName": "WhipMarks",
   "version": "0.1.0",
   "identifier": "com.gradedesk.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "GradeDesk",
+        "title": "WhipMarks",
         "width": 1280,
         "height": 800,
         "minWidth": 900,

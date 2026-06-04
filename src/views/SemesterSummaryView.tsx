@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+﻿import { useParams, Link } from 'react-router-dom'
 import { Download, ChevronRight } from 'lucide-react'
 import { useClass } from '../db/hooks/useClasses'
 import { useStudents } from '../db/hooks/useStudents'
@@ -7,7 +7,6 @@ import { useAllMarksForClass } from '../db/hooks/useMarks'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { calcProjectPercentage, calcSemesterMark, gradeBg, weightTotal } from '../utils/marks'
-import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 
 export function SemesterSummaryView() {
@@ -42,12 +41,23 @@ export function SemesterSummaryView() {
     )
   }
 
+  function fullName(s: { name: string; firstName?: string }) {
+    return s.firstName ? `${s.firstName} ${s.name}` : s.name
+  }
+
+  function hasAnyMark(studentId: string) {
+    return activeProjects.some(p => {
+      const projectCriteria = allCriteria.filter(c => c.projectId === p.id)
+      return projectCriteria.some(c => marks.some(m => m.studentId === studentId && m.criterionId === c.id))
+    })
+  }
+
   function exportCsv() {
     const headers = ['Student', ...activeProjects.map(p => `${p.name} (${Math.round(p.semesterWeight * 100)}%)`), 'Semester Mark']
     const rows = students.map(s => [
-      s.name,
+      fullName(s),
       ...activeProjects.map(p => getProjectPct(s.id, p.id).toFixed(1)),
-      getSemesterMark(s.id).toFixed(1),
+      hasAnyMark(s.id) ? getSemesterMark(s.id).toFixed(1) : '',
     ])
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -59,50 +69,54 @@ export function SemesterSummaryView() {
     URL.revokeObjectURL(url)
   }
 
-  if (!classObj) return <div className="p-8 text-gray-500 text-sm">Class not found.</div>
+  if (!classObj) return <div className="p-8 text-gray-400 text-sm">Class not found.</div>
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b border-gray-800 px-8 py-6 flex items-center justify-between">
+      <div className="border-b border-gray-700 px-8 py-6 flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-2.5">
-            <Link to="/classes" className="hover:text-gray-300">Classes</Link>
+          <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-2.5">
+            <Link to="/classes" className="hover:text-gray-100">Classes</Link>
             <ChevronRight size={14} />
-            <Link to={`/classes/${classId}`} className="hover:text-gray-300">{classObj.name}</Link>
+            <Link to={`/classes/${classId}`} className="hover:text-gray-100">{classObj.name}</Link>
             <ChevronRight size={14} />
-            <span className="text-gray-300">Semester Summary</span>
+            <span className="text-gray-100">Semester Summary</span>
           </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-100">Semester Summary</h1>
+            <h1 className="text-2xl font-normal text-gray-100">Semester Summary</h1>
             <Badge variant={Math.abs(totalWeight - 1) < 0.01 ? 'success' : 'warning'}>
               Total weight: {Math.round(totalWeight * 100)}%
             </Badge>
           </div>
         </div>
-        <Button variant="secondary" size="sm" onClick={exportCsv}>
+        <button
+          onClick={exportCsv}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all hover:brightness-110"
+          style={{ background: '#5D3F3A', color: '#FFDBD5' }}
+        >
           <Download size={15} /> Export CSV
-        </Button>
+        </button>
       </div>
 
       <div className="flex-1 overflow-auto">
         {activeProjects.length === 0 ? (
-          <p className="p-8 text-sm text-gray-600">No weighted projects yet. Add projects with a semester weight &gt; 0.</p>
+          <p className="p-8 text-sm text-gray-400/70">No weighted projects yet. Add projects with a semester weight &gt; 0.</p>
         ) : (
           <table className="min-w-full text-sm border-collapse">
             <thead>
               <tr>
-                <th className="sticky top-0 left-0 z-30 bg-gray-900 border-b border-r border-gray-800 px-5 py-3 text-left text-xs font-semibold text-gray-500 min-w-40 whitespace-nowrap">
+                <th className="sticky top-0 left-0 z-30 bg-gray-850 border-b border-r border-gray-700 px-5 py-3 text-left text-xs font-semibold text-gray-400 min-w-40 whitespace-nowrap">
                   Student
                 </th>
                 {activeProjects.map(p => (
-                  <th key={p.id} className="sticky top-0 z-10 bg-gray-900 border-b border-r border-gray-800 px-4 py-3 text-left whitespace-nowrap">
-                    <Link to={`/classes/${classId}/projects/${p.id}`} className="hover:text-orange-400 transition-colors">
-                      <div className="text-xs font-semibold text-gray-300">{p.name}</div>
-                      <div className="text-xs text-gray-600">{Math.round(p.semesterWeight * 100)}% of semester</div>
+                  <th key={p.id} className="sticky top-0 z-10 bg-gray-850 border-b border-r border-gray-700 px-4 py-3 text-left whitespace-nowrap">
+                    <Link to={`/classes/${classId}/projects/${p.id}`} className="hover:text-gray-100 transition-colors">
+                      <div className="text-xs font-semibold text-gray-100">{p.name}</div>
+                      <div className="text-xs text-gray-400/70">{Math.round(p.semesterWeight * 100)}% of semester</div>
                     </Link>
                   </th>
                 ))}
-                <th className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800 px-5 py-3 text-left text-xs font-semibold text-orange-400 whitespace-nowrap">
+                <th className="sticky top-0 z-10 bg-gray-850 border-b border-gray-700 px-5 py-3 text-left text-xs font-semibold text-gray-100 whitespace-nowrap">
                   Semester Mark
                 </th>
               </tr>
@@ -112,30 +126,34 @@ export function SemesterSummaryView() {
                 const semester = getSemesterMark(s.id)
                 return (
                   <tr key={s.id} className="hover:bg-gray-900/50">
-                    <td className="sticky left-0 bg-gray-950 border-b border-r border-gray-800 px-5 py-3 text-gray-300 font-medium whitespace-nowrap">
-                      {s.name}
+                    <td className="sticky left-0 bg-gray-950 border-b border-r border-gray-700 px-5 py-3 text-gray-100 font-medium whitespace-nowrap">
+                      {fullName(s)}
                     </td>
                     {activeProjects.map(p => {
                       const pct = getProjectPct(s.id, p.id)
                       const projectCriteria = allCriteria.filter(c => c.projectId === p.id)
                       const studentMarks = marks.filter(m => m.studentId === s.id && m.projectId === p.id)
-                      const complete = projectCriteria.every(c => studentMarks.some(m => m.criterionId === c.id))
+                      const complete = projectCriteria.length > 0 && projectCriteria.every(c => studentMarks.some(m => m.criterionId === c.id))
                       return (
-                        <td key={p.id} className="border-b border-r border-gray-800 px-4 py-3">
+                        <td key={p.id} className="border-b border-r border-gray-700 px-4 py-3">
                           {complete ? (
                             <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${gradeBg(pct)}`}>
                               {pct.toFixed(1)}%
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-600">—</span>
+                            <span className="text-xs text-gray-400/70" title="Not yet marked">—</span>
                           )}
                         </td>
                       )
                     })}
-                    <td className="border-b border-gray-800 px-5 py-3">
-                      <span className={`inline-flex px-2.5 py-1 rounded-lg text-sm font-bold ${gradeBg(semester)}`}>
-                        {semester.toFixed(1)}%
-                      </span>
+                    <td className="border-b border-gray-700 px-5 py-3">
+                      {hasAnyMark(s.id) ? (
+                        <span className={`inline-flex px-2.5 py-1 rounded-lg text-sm font-bold ${gradeBg(semester)}`}>
+                          {semester.toFixed(1)}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400/70" title="No marks recorded yet">—</span>
+                      )}
                     </td>
                   </tr>
                 )
@@ -143,24 +161,24 @@ export function SemesterSummaryView() {
             </tbody>
             {/* Class averages footer */}
             <tfoot>
-              <tr className="bg-gray-900">
-                <td className="sticky left-0 bg-gray-900 border-t border-gray-700 px-5 py-2.5 text-xs font-semibold text-gray-500">Class average</td>
+              <tr className="bg-gray-850">
+                <td className="sticky left-0 bg-gray-850 border-t border-gray-700 px-5 py-2.5 text-xs font-semibold text-gray-400">Class average</td>
                 {activeProjects.map(p => {
                   const pcts = students.map(s => {
                     const projectCriteria = allCriteria.filter(c => c.projectId === p.id)
                     const sm = marks.filter(m => m.studentId === s.id && m.projectId === p.id)
-                    return { pct: calcProjectPercentage(sm, projectCriteria), complete: projectCriteria.every(c => sm.some(m => m.criterionId === c.id)) }
+                    return { pct: calcProjectPercentage(sm, projectCriteria), complete: projectCriteria.length > 0 && projectCriteria.every(c => sm.some(m => m.criterionId === c.id)) }
                   }).filter(x => x.complete)
                   const avg = pcts.length > 0 ? pcts.reduce((s, x) => s + x.pct, 0) / pcts.length : null
                   return (
-                    <td key={p.id} className="border-t border-r border-gray-700 px-4 py-2.5 text-xs text-gray-500">
+                    <td key={p.id} className="border-t border-r border-gray-700 px-4 py-2.5 text-xs text-gray-400">
                       {avg !== null ? avg.toFixed(1) + '%' : '—'}
                     </td>
                   )
                 })}
-                <td className="border-t border-gray-700 px-5 py-2.5 text-xs text-gray-500">
+                <td className="border-t border-gray-700 px-5 py-2.5 text-xs text-gray-400">
                   {(() => {
-                    const avgs = students.map(s => getSemesterMark(s.id))
+                    const avgs = students.filter(s => hasAnyMark(s.id)).map(s => getSemesterMark(s.id))
                     return avgs.length > 0 ? (avgs.reduce((a, b) => a + b, 0) / avgs.length).toFixed(1) + '%' : '—'
                   })()}
                 </td>

@@ -24,13 +24,13 @@ The preview_start MCP tool can't find node directly. Use the wrapper script:
 
 ### Desktop app (Tauri)
 
-This is a **Tauri v2 desktop app**, not a browser app. Data lives in the OS WebView storage (`AppData\Roaming\com.gradedesk.app`), completely isolated from Chrome — clearing the browser has no effect.
+This is a **Tauri v2 desktop app**, not a browser app. Data lives in the OS WebView storage (`AppData\Local\com.gradedesk.app`), completely isolated from Chrome — clearing the browser has no effect.
 
 - Rust backend: `src-tauri/` — minimal, no custom commands needed currently
-- Config: `src-tauri/tauri.conf.json` — identifier `com.gradedesk.app`, window 1280×800
+- Config: `src-tauri/tauri.conf.json` — identifier `com.gradedesk.app` (kept stable intentionally — changing it loses all user data), window 1280×800
 - Rust toolchain installed at `%USERPROFILE%\.cargo\bin\`
-- Desktop shortcut at `C:\Users\brett\Desktop\GradeDesk.lnk` → runs `gradedesk-launch.cmd`
-- `gradedesk-launch.cmd` starts Vite silently then opens `src-tauri\target\debug\app.exe`
+- Desktop shortcut at `C:\Users\brett\Desktop\WhipMarks.lnk` → runs `whipmarks-launch.cmd`
+- `whipmarks-launch.cmd` starts Vite silently then opens `src-tauri\target\debug\app.exe`
 
 When distributing: `npm run tauri:build` → installer at `src-tauri\target\release\bundle\`
 
@@ -38,7 +38,7 @@ When distributing: `npm run tauri:build` → installer at `src-tauri\target\rele
 
 ### Data layer — Dexie + IndexedDB
 
-All persistence is via a single Dexie database instance (`src/db/db.ts`, named `GradeDesk`). There is no backend. The six tables are:
+All persistence is via a single Dexie database instance (`src/db/db.ts`, named `GradeDesk` — this is the internal IndexedDB name, kept stable to avoid data migration; the user-facing app name is WhipMarks). There is no backend. The six tables are:
 
 | Table | Key relationships |
 |---|---|

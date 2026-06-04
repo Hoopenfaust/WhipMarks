@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+﻿import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { Button } from './Button'
 
@@ -28,7 +28,7 @@ export function Modal({ open, onClose, title, children, maxWidth, size }: Props)
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className={`relative bg-gray-850 border border-gray-700 rounded-xl shadow-2xl w-full ${width} z-10 flex flex-col max-h-[90vh]`}
+        className={`relative bg-gray-850 border border-gray-700 rounded-xl shadow-2xl shadow-black/60 w-full ${width} z-10 flex flex-col max-h-[90vh]`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">

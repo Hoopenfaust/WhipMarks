@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+﻿import { useState, useEffect, useCallback, useRef } from 'react'
 import { cn } from '../../utils/cn'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ interface SpotlightRect {
 const STEPS: TutorialStep[] = [
   {
     icon: '🎓',
-    title: 'Welcome to GradeDesk',
+    title: 'Welcome to WhipMarks',
     body: "Let's take a quick tour so you can start marking in minutes. We'll cover adding your class, creating a project, building a rubric, and marking students.",
     target: null,
     placement: 'center',
@@ -34,7 +34,7 @@ const STEPS: TutorialStep[] = [
   {
     icon: '📂',
     title: 'Import your class list',
-    body: "Click the Import button highlighted above to load a CSV or Excel file with your students' names — or drag the file directly onto the page. GradeDesk detects the name columns automatically.",
+    body: "Click the Import button highlighted above to load a CSV or Excel file with your students' names — or drag the file directly onto the page. WhipMarks detects the name columns automatically.",
     target: 'import-btn',
     placement: 'below',
     navHint: 'the Classes page',
@@ -408,10 +408,10 @@ export function TutorialOverlay() {
           <div className="p-8">
             {/* Icon + step counter */}
             <div className="flex items-start justify-between mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-orange-950/60 border border-orange-900/40 flex items-center justify-center text-4xl shadow-inner">
+              <div className="w-16 h-16 rounded-2xl bg-gray-800/60 border border-gray-700/40 flex items-center justify-center text-4xl shadow-inner">
                 {step.icon}
               </div>
-              <span className="text-xs text-gray-500 tabular-nums bg-gray-800/80 border border-gray-700/60 px-3 py-1.5 rounded-full mt-1">
+              <span className="text-xs text-gray-400 tabular-nums bg-gray-800/80 border border-gray-700/60 px-3 py-1.5 rounded-full mt-1">
                 {stepIdx + 1} / {TOTAL}
               </span>
             </div>
@@ -449,10 +449,10 @@ export function TutorialOverlay() {
                   className={cn(
                     'rounded-full transition-all duration-300 hover:scale-125',
                     i === stepIdx
-                      ? 'w-8 h-2.5 bg-orange-500'
+                      ? 'w-8 h-2.5 bg-gray-100'
                       : i < stepIdx
-                      ? 'w-2.5 h-2.5 bg-orange-800 hover:bg-orange-600'
-                      : 'w-2.5 h-2.5 bg-gray-700 hover:bg-gray-500'
+                      ? 'w-2.5 h-2.5 bg-gray-800 hover:bg-gray-100/80'
+                      : 'w-2.5 h-2.5 bg-gray-700 hover:bg-gray-700'
                   )}
                 />
               ))}
@@ -466,7 +466,7 @@ export function TutorialOverlay() {
                 className={cn(
                   'px-5 py-2.5 rounded-xl text-sm font-medium transition-all',
                   stepIdx === 0
-                    ? 'text-gray-700 cursor-not-allowed'
+                    ? 'text-gray-400/50 cursor-not-allowed'
                     : 'text-gray-400 hover:text-gray-100 bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-gray-600'
                 )}
               >
@@ -477,14 +477,14 @@ export function TutorialOverlay() {
 
               <button
                 onClick={finish}
-                className="text-sm text-gray-600 hover:text-gray-400 transition-colors px-2"
+                className="text-sm text-gray-400/70 hover:text-gray-400 transition-colors px-2"
               >
                 Skip tour
               </button>
 
               <button
                 onClick={next}
-                className="t-btn-next px-8 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold transition-colors"
+                className="t-btn-next px-8 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-100/90 text-gray-900 text-sm font-bold transition-colors"
               >
                 {stepIdx === TOTAL - 1 ? '🎉  Finish' : 'Next  →'}
               </button>

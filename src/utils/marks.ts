@@ -18,10 +18,9 @@ export function calcProjectPercentage(
 export function calcSemesterMark(
   projectSummaries: { weight: number; percentage: number }[]
 ): number {
-  return projectSummaries.reduce(
-    (sum, p) => sum + p.weight * p.percentage,
-    0
-  )
+  return projectSummaries
+    .filter(p => p.weight > 0)
+    .reduce((sum, p) => sum + p.weight * p.percentage, 0)
 }
 
 export function isMarkingComplete(marks: Mark[], criteria: RubricCriterion[]): boolean {

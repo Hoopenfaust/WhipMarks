@@ -35,6 +35,7 @@ export interface Project {
   id: string
   classId: string
   name: string
+  startDate?: string   // ISO date string — project start (optional)
   dueDate: string
   semesterWeight: number
   totalMarks: number
@@ -77,6 +78,101 @@ export interface RubricDescriptor {
   level: DescriptorLevel
   text: string
   score?: number  // fraction of maxMarks (0–1); defaults to level's defaultScore if absent
+}
+
+export interface TaMark {
+  id: string
+  studentId: string
+  projectId: string
+  criterionId: string
+  score: number
+  feedback: string
+  taName: string
+  updatedAt: number
+}
+
+// Persisted on the TA's machine while they work
+export interface TaAssignment {
+  projectId: string          // primary key
+  projectName: string
+  className: string
+  taName: string
+  students: { id: string; name: string; firstName?: string }[]
+  criteria: RubricCriterion[]
+  descriptors: RubricDescriptor[]
+  importedAt: number
+}
+
+// The file the teacher exports → TA opens
+export interface TaAssignmentFile {
+  version: 1
+  projectId: string
+  projectName: string
+  className: string
+  taName: string
+  students: { id: string; name: string; firstName?: string }[]
+  criteria: RubricCriterion[]
+  descriptors: RubricDescriptor[]
+  exportedAt: number
+}
+
+// The file the TA exports → teacher imports
+export interface TaResultsFile {
+  version: 1
+  projectId: string
+  projectName: string
+  taName: string
+  exportedAt: number
+  marks: { studentId: string; criterionId: string; score: number; feedback: string }[]
+}
+
+export interface Competency {
+  id: string
+  projectId: string
+  name: string
+  description: string
+  sortIndex: number
+}
+
+export interface CriterionCompetency {
+  id: string
+  criterionId: string
+  competencyId: string
+}
+
+export interface Snippet {
+  id: string
+  projectId: string
+  label: string
+  text: string
+  usageCount: number
+  createdAt: number
+}
+
+export interface ImprovementNote {
+  id: string
+  studentId: string
+  projectId: string
+  text: string
+  updatedAt: number
+}
+
+export interface LibraryProject {
+  id: string
+  name: string
+  description?: string
+  totalMarks: number
+  createdAt: number
+}
+
+export interface LibraryProjectCriterion {
+  id: string
+  libraryProjectId: string
+  name: string
+  description: string
+  maxMarks: number
+  weight: number
+  sortIndex: number
 }
 
 export interface RubricTemplate {

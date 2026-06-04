@@ -1,18 +1,24 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { Plus, BookOpen, ChevronLeft, ChevronRight, Trash2, HelpCircle } from 'lucide-react'
-import { useClasses, createClass, deleteClass } from '../../db/hooks/useClasses'
-import { Button } from '../ui/Button'
+import { NavLink, useNavigate, useMatch } from 'react-router-dom'
+import { Plus, GraduationCap, BarChart2, HelpCircle, Briefcase, Layers } from 'lucide-react'
+import { createClass } from '../../db/hooks/useClasses'
+import { useActiveTaAssignment, saveTaAssignment } from '../../db/hooks/useTaMarks'
+import { openFilePicker, parseTaAssignmentFile } from '../../utils/taExport'
+import { cn } from '../../utils/cn'
 import { Modal } from '../ui/Modal'
+import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
+import { TaMarkingView } from '../marking/TaMarkingView'
 
 export function Sidebar() {
-  const classes = useClasses()
   const navigate = useNavigate()
-  const [collapsed, setCollapsed] = useState(false)
-  const [addOpen, setAddOpen] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const classMatch = useMatch('/classes/:classId/*')
+  const classId = classMatch?.params.classId
+  const [addOpen, setAddOpen]   = useState(false)
+  const [newName, setNewName]   = useState('')
+  const [taOpen, setTaOpen]     = useState(false)
+  const [taError, setTaError]   = useState<string | null>(null)
+  const activeAssignment        = useActiveTaAssignment()
 
   async function handleAdd() {
     if (!newName.trim()) return
@@ -22,98 +28,139 @@ export function Sidebar() {
     navigate(`/classes/${c.id}`)
   }
 
-  async function handleDelete() {
-    if (!deleteId) return
-    await deleteClass(deleteId)
-    setDeleteId(null)
-    navigate('/classes')
+  async function importTaAssignment() {
+    setTaError(null)
+    try {
+      const json = await openFilePicker('.whipmarks-ta')
+      const assignment = parseTaAssignmentFile(json)
+      await saveTaAssignment(assignment)
+      setTaOpen(true)
+    } catch (err) {
+      setTaError(err instanceof Error ? err.message : 'Import failed')
+    }
   }
 
   return (
     <>
-      <aside
-        className={`flex flex-col bg-gray-900 border-r border-gray-800 transition-all duration-200 ${
-          collapsed ? 'w-14' : 'w-56'
-        } shrink-0`}
-      >
-        {/* Logo */}
-        <div className={`flex items-center gap-2.5 px-4 py-4 border-b border-gray-800 ${collapsed ? 'justify-center' : ''}`}>
-          <BookOpen size={20} className="text-orange-400 shrink-0" />
-          {!collapsed && <span className="text-sm font-semibold text-gray-100">GradeDesk</span>}
+      <aside className="w-[88px] flex flex-col bg-gray-900 border-r border-gray-700 shrink-0 shadow-[4px_0_16px_rgba(0,0,0,0.4)]" style={{ zIndex: 10, position: 'relative' }}>
+        {/* Brand — aligned with top app bar */}
+        <div className="h-16 flex items-center justify-center border-b border-gray-700">
+          <GraduationCap size={24} className="text-orange-400" />
         </div>
 
-        {/* Classes */}
-        <div className="flex-1 overflow-y-auto py-2">
-          {!collapsed && (
-            <div className="px-3 mb-1">
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Classes</span>
-            </div>
-          )}
-          {classes.map(c => (
-            <div key={c.id} className="group relative flex items-center">
-              <NavLink
-                to={`/classes/${c.id}`}
-                className={({ isActive }) =>
-                  `flex-1 flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg mx-1 transition-colors ${
-                    isActive
-                      ? 'bg-gray-800 text-gray-100 border-l-2 border-orange-500 pl-2.5'
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
-                  }`
-                }
-                title={c.name}
-              >
-                <BookOpen size={15} className="shrink-0" />
-                {!collapsed && <span className="truncate">{c.name}</span>}
-              </NavLink>
-              {!collapsed && (
-                <button
-                  onClick={() => setDeleteId(c.id)}
-                  className="absolute right-2 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-all"
-                >
-                  <Trash2 size={13} />
-                </button>
+        {/* Nav items */}
+        <nav className="flex-1 flex flex-col items-center py-4 gap-1">
+          <NavLink
+            to="/classes"
+            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
+          >
+            {({ isActive }) => (
+              <>
+                <div className={cn(
+                  'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
+                  isActive ? '' : 'group-hover:bg-gray-800'
+                )} style={isActive ? { background: '#5D3F3A' } : {}}>
+                  <GraduationCap size={18} className={isActive ? '' : 'text-gray-400 group-hover:text-gray-100'} style={isActive ? { color: '#FFDBD5' } : {}} />
+                </div>
+                <span className={cn(
+                  'text-[10px] font-medium transition-colors',
+                  isActive ? 'text-gray-100' : 'text-gray-400 group-hover:text-gray-200'
+                )}>Classes</span>
+              </>
+            )}
+          </NavLink>
+
+          <NavLink
+            to="/library"
+            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
+          >
+            {({ isActive }) => (
+              <>
+                <div className={cn(
+                  'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
+                  isActive ? '' : 'group-hover:bg-gray-800'
+                )} style={isActive ? { background: '#5D3F3A' } : {}}>
+                  <Layers size={18} className={isActive ? '' : 'text-gray-400 group-hover:text-gray-100'} style={isActive ? { color: '#FFDBD5' } : {}} />
+                </div>
+                <span className={cn(
+                  'text-[10px] font-medium transition-colors text-center leading-tight',
+                  isActive ? 'text-gray-100' : 'text-gray-400 group-hover:text-gray-200'
+                )}>Project Library</span>
+              </>
+            )}
+          </NavLink>
+
+          <NavLink
+            to={classId ? `/classes/${classId}/semester` : '/classes'}
+            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
+          >
+            {({ isActive }) => (
+              <>
+                <div className={cn(
+                  'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
+                  isActive ? '' : 'group-hover:bg-gray-800'
+                )} style={isActive ? { background: '#5D3F3A' } : {}}>
+                  <BarChart2 size={18} className={cn(
+                    isActive ? '' : 'group-hover:text-gray-100 transition-colors',
+                    !classId ? 'text-gray-400/40' : isActive ? '' : 'text-gray-400'
+                  )} style={isActive ? { color: '#FFDBD5' } : {}} />
+                </div>
+                <span className={cn(
+                  'text-[10px] font-medium transition-colors',
+                  isActive ? 'text-gray-100' : !classId ? 'text-gray-400/40' : 'text-gray-400 group-hover:text-gray-200'
+                )}>Summary</span>
+              </>
+            )}
+          </NavLink>
+
+          {/* TA Mode button */}
+          <button
+            onClick={() => activeAssignment ? setTaOpen(true) : importTaAssignment()}
+            className="flex flex-col items-center gap-1 w-full px-4 py-2 group relative"
+            title={activeAssignment ? `Resume TA marking — ${activeAssignment.projectName}` : 'Open TA assignment'}
+          >
+            <div className={cn(
+              'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
+              activeAssignment ? '' : 'group-hover:bg-gray-800'
+            )} style={activeAssignment ? { background: '#5D3F3A' } : {}}>
+              <Briefcase size={18} className={activeAssignment ? '' : 'text-gray-400 group-hover:text-gray-100 transition-colors'}
+                style={activeAssignment ? { color: '#FFDBD5' } : {}} />
+              {activeAssignment && (
+                <span className="absolute top-1 right-3 w-2 h-2 rounded-full bg-orange-400" />
               )}
             </div>
-          ))}
-        </div>
+            <span className={cn('text-[10px] font-medium transition-colors',
+              activeAssignment ? 'text-gray-100' : 'text-gray-400 group-hover:text-gray-200')}>TA Mode</span>
+          </button>
 
-        {/* Add class + collapse */}
-        <div className="border-t border-gray-800 p-2 flex flex-col gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setAddOpen(true)}
-            className={`w-full ${collapsed ? 'justify-center px-0' : ''}`}
-          >
-            <Plus size={15} />
-            {!collapsed && 'New Class'}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={() => {
               localStorage.removeItem('gradedesk-tutorial-done')
               localStorage.removeItem('gradedesk-tutorial-step')
               window.location.reload()
             }}
-            className={`w-full ${collapsed ? 'justify-center px-0' : ''}`}
-            title="Restart tutorial"
+            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
           >
-            <HelpCircle size={15} />
-            {!collapsed && 'Help'}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCollapsed(c => !c)}
-            className={`w-full ${collapsed ? 'justify-center px-0' : ''}`}
+            <div className="w-14 h-8 rounded-full flex items-center justify-center group-hover:bg-gray-800 transition-colors">
+              <HelpCircle size={18} className="text-gray-400 group-hover:text-gray-100 transition-colors" />
+            </div>
+            <span className="text-[10px] font-medium text-gray-400 group-hover:text-gray-200 transition-colors">Help</span>
+          </button>
+        </nav>
+
+        {/* FAB — New Class */}
+        <div className="pb-6 flex justify-center">
+          <button
+            onClick={() => setAddOpen(true)}
+            title="New Class"
+            className="w-14 h-14 rounded-2xl bg-orange-950/80 border border-orange-900/40 flex items-center justify-center hover:bg-orange-900/60 transition-colors shadow-xl shadow-black/50"
           >
-            {collapsed ? <ChevronRight size={15} /> : <><ChevronLeft size={15} /><span>Collapse</span></>}
-          </Button>
+            <Plus size={22} className="text-orange-300" />
+          </button>
         </div>
       </aside>
 
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="New Class">
+      <Modal open={addOpen} onClose={() => { setAddOpen(false); setNewName('') }} title="New Class">
         <div className="flex flex-col gap-4">
           <Input
             label="Class name"
@@ -124,23 +171,30 @@ export function Sidebar() {
             autoFocus
           />
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setAddOpen(false); setNewName('') }}>Cancel</Button>
             <Button variant="primary" onClick={handleAdd} disabled={!newName.trim()}>Create Class</Button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Class">
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-gray-400">
-            This will permanently delete the class, all students, projects, and marks. This cannot be undone.
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete</Button>
-          </div>
+      {/* TA import error */}
+      <Modal open={!!taError} onClose={() => setTaError(null)} title="Import failed">
+        <p className="text-sm text-gray-300 mb-4">{taError}</p>
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={() => setTaError(null)}>Close</Button>
         </div>
       </Modal>
+
+      {/* TA marking overlay */}
+      {taOpen && activeAssignment && (
+        <TaMarkingView
+          assignment={activeAssignment}
+          onClose={async () => {
+            setTaOpen(false)
+            // Ask if they want to keep or clear the assignment
+          }}
+        />
+      )}
     </>
   )
 }

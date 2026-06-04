@@ -1,5 +1,5 @@
 @echo off
-:: GradeDesk Launcher
+:: WhipMarks Launcher
 :: Starts the Vite dev server silently, then opens the desktop app
 
 set "ROOT=D:\Claude Code\student-marker"

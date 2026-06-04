@@ -1,3 +1,5 @@
+import { cn } from '../../utils/cn'
+
 interface Tab {
   id: string
   label: string
@@ -11,20 +13,23 @@ interface Props {
 
 export function TabBar({ tabs, active, onChange }: Props) {
   return (
-    <div className="flex gap-1 border-b border-gray-800 px-1">
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => onChange(tab.id)}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-            active === tab.id
-              ? 'border-orange-500 text-orange-400'
-              : 'border-transparent text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <div className="px-5 py-3 border-b border-gray-700">
+      <div className="bg-gray-900 rounded-xl p-1 flex gap-1 w-fit">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={cn(
+              'px-4 py-1.5 text-sm font-medium rounded-lg transition-all',
+              active === tab.id
+                ? 'bg-gray-800 text-gray-100 shadow-sm'
+                : 'text-gray-400 hover:text-gray-200'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

@@ -1,6 +1,6 @@
-' GradeDesk Launcher
+' WhipMarks Launcher
 ' Starts Vite as a fully detached hidden process, then opens the app.
-' Run via: wscript.exe gradedesk-launch.vbs  (no console window shown)
+' Run via: wscript.exe whipmarks-launch.vbs  (no console window shown)
 Option Explicit
 
 Dim shell, root, node, vite, appExe
@@ -41,7 +41,7 @@ For i = 1 To 15
     Set http = Nothing
 Next
 
-' Open GradeDesk (normal window)
+' Open WhipMarks (normal window)
 shell.Run """" & appExe & """", 1, False
 
 Set shell = Nothing

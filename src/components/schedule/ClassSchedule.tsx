@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Calendar, FileText } from 'lucide-react'
 import { useScheduleWeeks, upsertScheduleWeek } from '../../db/hooks/useSchedule'
 import { updateClassStartDate } from '../../db/hooks/useClasses'
@@ -71,12 +71,12 @@ function WeekRow({ weekNum, dateLabel, savedWeek, classId, dueProjects }: WeekRo
     )}>
       <div className="flex items-center gap-3 px-5 py-3">
         {/* Week badge */}
-        <div className="shrink-0 w-9 h-6 rounded bg-orange-950/70 border border-orange-900/50 flex items-center justify-center">
-          <span className="text-[11px] font-bold text-orange-400 tabular-nums leading-none">{weekNum}</span>
+        <div className="shrink-0 w-9 h-6 rounded bg-gray-800/70 border border-gray-700/50 flex items-center justify-center">
+          <span className="text-[11px] font-bold text-gray-100 tabular-nums leading-none">{weekNum}</span>
         </div>
 
         {/* Date range */}
-        <span className="shrink-0 w-36 text-xs text-gray-500 tabular-nums font-mono">{dateLabel}</span>
+        <span className="shrink-0 w-36 text-xs text-gray-400 tabular-nums font-mono">{dateLabel}</span>
 
         {/* Title input */}
         <input
@@ -85,7 +85,7 @@ function WeekRow({ weekNum, dateLabel, savedWeek, classId, dueProjects }: WeekRo
           onBlur={save}
           onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
           placeholder="Week topic or activity…"
-          className="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-700 focus:outline-none"
+          className="flex-1 bg-transparent text-sm text-gray-100 placeholder-chiffon-muted/50 focus:outline-none"
         />
 
         {/* Due project badges */}
@@ -93,7 +93,7 @@ function WeekRow({ weekNum, dateLabel, savedWeek, classId, dueProjects }: WeekRo
           <span
             key={p.id}
             title={`${p.name} due this week`}
-            className="shrink-0 text-[10px] font-semibold bg-orange-950/60 text-orange-400 border border-orange-900/40 rounded px-1.5 py-0.5 max-w-[96px] truncate"
+            className="shrink-0 text-[10px] font-semibold bg-gray-800/60 text-gray-100 border border-gray-700/40 rounded px-1.5 py-0.5 max-w-[96px] truncate"
           >
             {p.name}
           </span>
@@ -109,7 +109,7 @@ function WeekRow({ weekNum, dateLabel, savedWeek, classId, dueProjects }: WeekRo
               ? 'text-blue-400 bg-blue-950/40 border border-blue-900/40'
               : hasNotes
               ? 'text-blue-500/60 hover:text-blue-400'
-              : 'text-gray-700 hover:text-gray-500 hover:bg-gray-800'
+              : 'text-gray-400/50 hover:text-gray-400 hover:bg-gray-800'
           )}
         >
           <FileText size={13} />
@@ -124,7 +124,7 @@ function WeekRow({ weekNum, dateLabel, savedWeek, classId, dueProjects }: WeekRo
             onBlur={save}
             placeholder="Notes, readings, resources, or reminders for this week…"
             rows={3}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-600 resize-none focus:outline-none focus:border-gray-600 transition-colors"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-chiffon-muted/50 resize-none focus:outline-none focus:border-gray-600 transition-colors"
           />
         </div>
       )}
@@ -154,21 +154,21 @@ export function ClassSchedule({ classId, startDate, projects }: Props) {
 
       {/* Start date config bar */}
       <div className="flex items-center gap-4 mb-5 px-4 py-3 bg-gray-900/60 border border-gray-800 rounded-xl">
-        <Calendar size={15} className="text-orange-400 shrink-0" />
+        <Calendar size={15} className="shrink-0" style={{ color: '#c2410c' }} />
         <span className="text-sm text-gray-400 shrink-0">Semester start date:</span>
         <input
           type="date"
           value={startDate ?? ''}
           onChange={e => updateClassStartDate(classId, e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-orange-500 transition-colors"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-gray-200 transition-colors"
         />
         {startDate && startDateObj && (
-          <span className="text-xs text-gray-600 ml-1">
+          <span className="text-xs text-gray-400/70 ml-1">
             Week 1 starts {fmt(startDateObj)} · Week {NUM_WEEKS} ends {fmt(addDays(startDateObj, NUM_WEEKS * 7 - 1))}
           </span>
         )}
         {!startDate && (
-          <span className="text-xs text-gray-600">Set a date to see week-by-week dates and project due indicators</span>
+          <span className="text-xs text-gray-400/70">Set a date to see week-by-week dates and project due indicators</span>
         )}
       </div>
 
@@ -178,8 +178,8 @@ export function ClassSchedule({ classId, startDate, projects }: Props) {
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-2 border-b border-gray-700 bg-gray-900/80">
           <div className="w-9 shrink-0" />
-          <span className="w-36 shrink-0 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Dates</span>
-          <span className="flex-1 text-[10px] font-semibold text-gray-500 uppercase tracking-widest">Topic / Activity</span>
+          <span className="w-36 shrink-0 text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Dates</span>
+          <span className="flex-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Topic / Activity</span>
           <div className="w-8 shrink-0" />
         </div>
 
@@ -195,7 +195,7 @@ export function ClassSchedule({ classId, startDate, projects }: Props) {
         ))}
       </div>
 
-      <p className="text-[11px] text-gray-700 mt-3 text-center">
+      <p className="text-[11px] text-gray-400/50 mt-3 text-center">
         Click a row to type · <FileText size={10} className="inline mb-px" /> to add notes · Saves automatically
       </p>
     </div>

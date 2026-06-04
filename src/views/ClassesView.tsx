@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Upload, BookOpen, Users, FolderOpen, Download, RotateCcw } from 'lucide-react'
 import { useClasses, createClass } from '../db/hooks/useClasses'
@@ -20,28 +20,23 @@ function ClassCard({ c, isFirst }: { c: { id: string; name: string; createdAt: n
     <button
       onClick={() => navigate(`/classes/${c.id}`)}
       {...(isFirst ? { 'data-tutorial': 'class-card' } : {})}
-      className="relative bg-gray-800/80 border border-gray-700/80 rounded-2xl p-7 text-left hover:border-orange-500/40 hover:bg-gray-750 transition-all duration-200 group overflow-hidden shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30"
+      className="relative bg-gray-850 border border-gray-700 rounded-2xl p-6 text-left hover:border-orange-500/30 hover:bg-gray-800 transition-all duration-200 group overflow-hidden shadow-lg shadow-black/40 hover:shadow-xl hover:shadow-black/50"
     >
-      {/* Subtle top reflection */}
-      <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-2xl bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
-      {/* Orange left accent bar */}
-      <div className="absolute left-0 top-6 bottom-6 w-0.5 bg-orange-500/50 rounded-r group-hover:bg-orange-500 transition-colors" />
-
-      <div className="flex items-start justify-between mb-5">
-        <div className="p-2.5 bg-orange-950/80 rounded-xl border border-orange-900/40">
-          <BookOpen size={20} className="text-orange-400" />
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: '#c2410c' }}>
+          <BookOpen size={20} className="text-orange-100" />
         </div>
-        <span className="text-xs text-gray-600">{new Date(c.createdAt).toLocaleDateString()}</span>
+        <span className="text-xs text-gray-400/70">{new Date(c.createdAt).toLocaleDateString()}</span>
       </div>
 
-      <h3 className="text-xl font-bold text-gray-100 mb-1 group-hover:text-white transition-colors leading-snug">{c.name}</h3>
+      <h3 className="text-lg font-medium text-gray-100 mb-1 group-hover:text-white transition-colors leading-snug">{c.name}</h3>
 
       <div className="flex gap-4 mt-4 pt-4 border-t border-gray-700/60">
-        <span className="flex items-center gap-1.5 text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
-          <Users size={13} /> {students.length} <span className="text-gray-700">students</span>
+        <span className="flex items-center gap-1.5 text-sm text-gray-400 group-hover:text-gray-400 transition-colors">
+          <Users size={13} /> {students.length} <span className="text-gray-400/50">students</span>
         </span>
-        <span className="flex items-center gap-1.5 text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
-          <FolderOpen size={13} /> {projects.length} <span className="text-gray-700">projects</span>
+        <span className="flex items-center gap-1.5 text-sm text-gray-400 group-hover:text-gray-400 transition-colors">
+          <FolderOpen size={13} /> {projects.length} <span className="text-gray-400/50">projects</span>
         </span>
       </div>
     </button>
@@ -64,7 +59,9 @@ export function ClassesView() {
   const [restoreDragging, setRestoreDragging] = useState(false)
   const [importState, setImportState] = useState<ImportState | null>(null)
   const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
   const [restoring, setRestoring] = useState(false)
+  const [restoreError, setRestoreError] = useState<string | null>(null)
   const [dbChecked, setDbChecked] = useState(false)
   const [showRestorePrompt, setShowRestorePrompt] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -83,9 +80,12 @@ export function ClassesView() {
   async function handleRestoreFile(file: File) {
     if (!file.name.match(/\.json$/i)) return
     setRestoring(true)
+    setRestoreError(null)
     try {
       await restoreFromFile(file)
       setShowRestorePrompt(false)
+    } catch (err) {
+      setRestoreError(err instanceof Error ? err.message : 'File may be corrupt or from an incompatible version')
     } finally {
       setRestoring(false)
     }
@@ -93,11 +93,16 @@ export function ClassesView() {
 
   async function processFile(file: File) {
     if (!/\.(csv|xlsx|xls)$/i.test(file.name)) return
-    const { headers, rows } = await parseSpreadsheetFile(file)
-    const nameCol = detectNameColumn(headers) ?? headers[0]
-    const firstNameCol = headers.find(h => /first.?name|given.?name|forename/i.test(h)) ?? ''
-    const className = file.name.replace(/\.(csv|xlsx|xls)$/i, '')
-    setImportState({ file, headers, rows, nameCol, firstNameCol, className })
+    setImportError(null)
+    try {
+      const { headers, rows } = await parseSpreadsheetFile(file)
+      const nameCol = detectNameColumn(headers) ?? headers[0]
+      const firstNameCol = headers.find(h => /first.?name|given.?name|forename/i.test(h)) ?? ''
+      const className = file.name.replace(/\.(csv|xlsx|xls)$/i, '')
+      setImportState({ file, headers, rows, nameCol, firstNameCol, className })
+    } catch (err) {
+      setImportError('Could not read file: ' + (err instanceof Error ? err.message : 'Unknown error'))
+    }
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -110,29 +115,34 @@ export function ClassesView() {
   async function handleImport() {
     if (!importState) return
     setImporting(true)
+    setImportError(null)
+    try {
+      const students = importState.rows
+        .map(r => ({
+          name: r[importState.nameCol]?.trim() ?? '',
+          firstName: importState.firstNameCol ? r[importState.firstNameCol]?.trim() : undefined,
+        }))
+        .filter(s => s.name)
 
-    const students = importState.rows
-      .map(r => ({
-        name: r[importState.nameCol]?.trim() ?? '',
-        firstName: importState.firstNameCol ? r[importState.firstNameCol]?.trim() : undefined,
-      }))
-      .filter(s => s.name)
+      const existing = classes.find(c => c.name === importState.className)
+      let classId: string
+      if (existing) {
+        classId = existing.id
+        const existingStudents = await db.students.where('classId').equals(classId).toArray()
+        await bulkAddStudents(classId, students, existingStudents.length)
+      } else {
+        const c = await createClass(importState.className)
+        classId = c.id
+        await bulkAddStudents(classId, students)
+      }
 
-    const existing = classes.find(c => c.name === importState.className)
-    let classId: string
-    if (existing) {
-      classId = existing.id
-      const existingStudents = await db.students.where('classId').equals(classId).toArray()
-      await bulkAddStudents(classId, students, existingStudents.length)
-    } else {
-      const c = await createClass(importState.className)
-      classId = c.id
-      await bulkAddStudents(classId, students)
+      setImportState(null)
+      navigate(`/classes/${classId}`)
+    } catch (err) {
+      setImportError('Import failed: ' + (err instanceof Error ? err.message : 'Unknown error'))
+    } finally {
+      setImporting(false)
     }
-
-    setImporting(false)
-    setImportState(null)
-    navigate(`/classes/${classId}`)
   }
 
   const previewName = (r: Record<string, string>) => {
@@ -145,20 +155,17 @@ export function ClassesView() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-100">Classes</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your classes and students</p>
-        </div>
+      <div className="flex items-center justify-between mb-5">
+        <span className="text-base font-medium text-gray-100 tracking-wide">Your classes</span>
         <div className="flex items-center gap-2">
           {classes.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={downloadBackup}>
+            <button onClick={downloadBackup} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-400 hover:text-gray-100 transition-colors">
               <Download size={15} /> Save Backup
-            </Button>
+            </button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => fileRef.current?.click()} data-tutorial="import-btn">
+          <button onClick={() => fileRef.current?.click()} data-tutorial="import-btn" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all hover:brightness-110" style={{ background: '#5D3F3A', color: '#FFDBD5' }}>
             <Upload size={15} /> Import
-          </Button>
+          </button>
         </div>
         <input
           ref={fileRef}
@@ -176,6 +183,13 @@ export function ClassesView() {
         />
       </div>
 
+      {importError && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-400">
+          {importError}
+          <button onClick={() => setImportError(null)} className="shrink-0 text-red-400/70 hover:text-red-300">✕</button>
+        </div>
+      )}
+
       {/* Restore prompt — shown when DB is empty and no localStorage backup */}
       {showRestorePrompt && classes.length === 0 && (
         <div
@@ -184,18 +198,19 @@ export function ClassesView() {
           onDrop={e => { e.preventDefault(); setRestoreDragging(false); const f = e.dataTransfer.files[0]; if (f) handleRestoreFile(f) }}
           onClick={() => restoreRef.current?.click()}
           className={`mb-6 border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-            restoreDragging ? 'border-orange-500 bg-orange-950/20' : 'border-orange-900/60 bg-orange-950/10 hover:border-orange-700/60'
+            restoreDragging ? 'border-orange-500 bg-orange-950/20' : 'border-gray-700/60 bg-gray-950/20 hover:border-orange-700/40'
           }`}
         >
-          <RotateCcw size={32} className="text-orange-600 mx-auto mb-3" />
-          <p className="text-gray-300 font-medium">Restore from backup</p>
-          <p className="text-sm text-gray-500 mt-1">Drop your <span className="text-gray-300">gradedesk-*.json</span> backup file here, or click to browse</p>
-          {restoring && <p className="text-sm text-orange-400 mt-3">Restoring…</p>}
+          <RotateCcw size={32} className="text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-100 font-medium">Restore from backup</p>
+          <p className="text-sm text-gray-400 mt-1">Drop your <span className="text-gray-100">whipmarks-*.json</span> backup file here, or click to browse</p>
+          {restoring && <p className="text-sm text-gray-100 mt-3">Restoring…</p>}
+          {restoreError && <p className="text-sm text-red-400 mt-3">{restoreError}</p>}
           <div className="mt-5 border-t border-gray-800 pt-5">
-            <p className="text-xs text-gray-600 mb-2">No backup? Start fresh by importing a class list below</p>
+            <p className="text-xs text-gray-400/70 mb-2">No backup? Start fresh by importing a class list below</p>
             <button
               onClick={e => { e.stopPropagation(); setShowRestorePrompt(false) }}
-              className="text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2"
+              className="text-xs text-gray-400 hover:text-gray-100 underline underline-offset-2"
             >
               Skip and start fresh
             </button>
@@ -214,9 +229,9 @@ export function ClassesView() {
             dragging ? 'border-orange-500 bg-orange-950/20' : 'border-gray-700 hover:border-gray-600'
           }`}
         >
-          <Upload size={32} className="text-gray-600 mx-auto mb-3" />
+          <Upload size={32} className="text-gray-400/70 mx-auto mb-3" />
           <p className="text-gray-400 font-medium">Drop a class list here</p>
-          <p className="text-sm text-gray-600 mt-1">or click to browse — CSV or Excel (.xlsx) with a name column</p>
+          <p className="text-sm text-gray-400/70 mt-1">or click to browse — CSV or Excel (.xlsx) with a name column</p>
         </div>
       )}
 
@@ -230,7 +245,7 @@ export function ClassesView() {
               dragging ? 'border-orange-500 bg-orange-950/20' : 'border-gray-800 hover:border-gray-700'
             }`}
           >
-            <p className="text-xs text-gray-600">Drop CSV or Excel file to import a class</p>
+            <p className="text-xs text-gray-400/70">Drop CSV or Excel file to import a class</p>
           </div>
 
           <div className={`grid gap-4 ${classes.length === 1 ? 'grid-cols-1 max-w-sm' : classes.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
@@ -240,7 +255,7 @@ export function ClassesView() {
       )}
 
       {/* Import Column Mapper Modal */}
-      <Modal open={!!importState} onClose={() => setImportState(null)} title="Import Class List" maxWidth="max-w-lg">
+      <Modal open={!!importState} onClose={() => { setImportState(null); setImportError(null) }} title="Import Class List" maxWidth="max-w-lg">
         {importState && (
           <div className="flex flex-col gap-4">
             <Input
@@ -253,7 +268,7 @@ export function ClassesView() {
               <div>
                 <label className="text-xs font-medium text-gray-400 mb-1 block">Last / full name column</label>
                 <select
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-500"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-400"
                   value={importState.nameCol}
                   onChange={e => setImportState(s => s ? { ...s, nameCol: e.target.value } : s)}
                 >
@@ -263,9 +278,9 @@ export function ClassesView() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-400 mb-1 block">First name column <span className="text-gray-600">(optional)</span></label>
+                <label className="text-xs font-medium text-gray-400 mb-1 block">First name column <span className="text-gray-400/70">(optional)</span></label>
                 <select
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-500"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-400"
                   value={importState.firstNameCol}
                   onChange={e => setImportState(s => s ? { ...s, firstNameCol: e.target.value } : s)}
                 >
@@ -281,14 +296,18 @@ export function ClassesView() {
               <p className="text-xs font-medium text-gray-400 mb-2">Preview (first 5)</p>
               <div className="bg-gray-900 rounded-lg p-3 flex flex-col gap-1">
                 {importState.rows.slice(0, 5).map((r, i) => (
-                  <span key={i} className="text-sm text-gray-300">{previewName(r)}</span>
+                  <span key={i} className="text-sm text-gray-100">{previewName(r)}</span>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 mt-1">{importState.rows.length} students total</p>
+              <p className="text-xs text-gray-400 mt-1">{importState.rows.length} students total</p>
             </div>
 
+            {importError && (
+              <p className="text-sm text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">{importError}</p>
+            )}
+
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setImportState(null)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => { setImportState(null); setImportError(null) }}>Cancel</Button>
               <Button variant="primary" onClick={handleImport} disabled={importing}>
                 {importing ? 'Importing…' : `Import ${importState.rows.length} Students`}
               </Button>

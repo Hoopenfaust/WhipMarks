@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import * as XLSX from 'xlsx'
 import { FileSpreadsheet, Upload, Trash2 } from 'lucide-react'
 import { Modal } from '../ui/Modal'
@@ -158,7 +158,7 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
   const totalWeight = editRows.reduce((s, r) => s + r.weight, 0)
   const weightOk = Math.abs(totalWeight - 100) < 1
 
-  const selectClass = "bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-orange-500"
+  const selectClass = "bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-100 focus:outline-none focus:border-gray-200"
   const cellInput = "w-full bg-transparent text-sm text-gray-100 focus:outline-none"
 
   return (
@@ -171,12 +171,12 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl py-12 cursor-pointer transition-all ${dragOver ? 'border-orange-500 bg-orange-500/5' : 'border-gray-700 hover:border-gray-500 hover:bg-gray-800/40'}`}
+            className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl py-12 cursor-pointer transition-all ${dragOver ? 'border-gray-200 bg-gray-100/5' : 'border-gray-700 hover:border-gray-200-muted hover:bg-gray-800/40'}`}
           >
-            <FileSpreadsheet size={36} className={dragOver ? 'text-orange-400' : 'text-gray-500'} />
+            <FileSpreadsheet size={36} className={dragOver ? 'text-gray-100' : 'text-gray-400'} />
             <div className="text-center">
-              <p className="text-sm font-medium text-gray-300">Drop your spreadsheet here</p>
-              <p className="text-xs text-gray-600 mt-1">or click to browse — .xlsx, .xls, .ods, .csv</p>
+              <p className="text-sm font-medium text-gray-100">Drop your spreadsheet here</p>
+              <p className="text-xs text-gray-400/70 mt-1">or click to browse — .xlsx, .xls, .ods, .csv</p>
             </div>
             <input
               ref={fileInputRef}
@@ -194,7 +194,7 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Column mapping</p>
                 <button
                   onClick={() => { setRawRows([]); setHeaders([]); setEditRows([]) }}
-                  className="text-xs text-gray-600 hover:text-gray-400 flex items-center gap-1"
+                  className="text-xs text-gray-400/70 hover:text-gray-400 flex items-center gap-1"
                 >
                   <Upload size={11} /> Change file
                 </button>
@@ -207,7 +207,7 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
                   ['Weight (%)', colWeight, setColWeight],
                 ] as [string, string, (v: string) => void][]).map(([label, val, setter]) => (
                   <div key={label} className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-500">{label}</label>
+                    <label className="text-xs text-gray-400">{label}</label>
                     <select value={val} onChange={e => setter(e.target.value)} className={selectClass}>
                       <option value="">— none —</option>
                       {headers.map(h => <option key={h} value={h}>{h}</option>)}
@@ -232,10 +232,10 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-700 bg-gray-900/60">
-                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500 w-[38%]">Name</th>
-                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Description</th>
-                        <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 w-20">Marks</th>
-                        <th className="text-right px-3 py-2 text-xs font-medium text-gray-500 w-20">Weight</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-400 w-[38%]">Name</th>
+                        <th className="text-left px-3 py-2 text-xs font-medium text-gray-400">Description</th>
+                        <th className="text-right px-3 py-2 text-xs font-medium text-gray-400 w-20">Marks</th>
+                        <th className="text-right px-3 py-2 text-xs font-medium text-gray-400 w-20">Weight</th>
                         <th className="w-8" />
                       </tr>
                     </thead>
@@ -277,13 +277,13 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
                                 onChange={e => updateRow(i, 'weight', e.target.value)}
                                 className={`${cellInput} text-right w-12`}
                               />
-                              <span className="text-gray-500 text-xs">%</span>
+                              <span className="text-gray-400 text-xs">%</span>
                             </div>
                           </td>
                           <td className="px-2">
                             <button
                               onClick={() => removeRow(i)}
-                              className="text-gray-700 hover:text-red-400 p-0.5 rounded transition-colors"
+                              className="text-gray-400/50 hover:text-red-400 p-0.5 rounded transition-colors"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -297,7 +297,7 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
             )}
 
             {editRows.length === 0 && (
-              <p className="text-sm text-gray-600 text-center py-4">
+              <p className="text-sm text-gray-400/70 text-center py-4">
                 No rows found. Make sure the <strong className="text-gray-400">Criterion name</strong> column is mapped correctly.
               </p>
             )}

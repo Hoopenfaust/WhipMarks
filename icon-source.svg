@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Clips shadow/highlight overlays to the ball circle (group-space coords) -->
+    <clipPath id="bc">
+      <circle cx="0" cy="0" r="170"/>
+    </clipPath>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="1024" height="1024" rx="185" fill="#150a08"/>
+
+  <!--
+    Mace group — ball centre at SVG ≈ (500, 375), tilted 12° clockwise.
+    Spike trick: every spike is a triangle pointing straight UP
+    (tip at (0,−tip_r), base at (±half_w, −170)), then rotate(θ) swings it
+    to the right direction. Ball radius = 170.
+  -->
+  <g transform="translate(500,375) rotate(12)">
+
+    <!-- ═══════════════════════════════════════════
+         SPIKES  (drawn first — behind the ball)
+         ═══════════════════════════════════════════ -->
+
+    <!-- top cluster -->
+    <polygon points="0,-340  -24,-170  24,-170" transform="rotate(0)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-308  -16,-170  16,-170" transform="rotate(20)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-292  -17,-170  17,-170" transform="rotate(-22)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+
+    <!-- right cluster -->
+    <polygon points="0,-362  -19,-170  19,-170" transform="rotate(47)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-338  -18,-170  18,-170" transform="rotate(72)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-312  -20,-170  20,-170" transform="rotate(97)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+
+    <!-- lower-right cluster -->
+    <polygon points="0,-285  -20,-170  20,-170" transform="rotate(125)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-258  -18,-170  18,-170" transform="rotate(157)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+
+    <!-- lower-left cluster (handle area — fewer, shorter) -->
+    <polygon points="0,-242  -19,-170  19,-170" transform="rotate(198)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-253  -21,-170  21,-170" transform="rotate(228)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+
+    <!-- left cluster -->
+    <polygon points="0,-292  -22,-170  22,-170" transform="rotate(260)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-312  -20,-170  20,-170" transform="rotate(285)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+
+    <!-- upper-left cluster -->
+    <polygon points="0,-332  -19,-170  19,-170" transform="rotate(318)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <polygon points="0,-294  -17,-170  17,-170" transform="rotate(340)"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+
+    <!-- ═══════════════════════════════════════════
+         HANDLE  (behind the ball body)
+         ═══════════════════════════════════════════ -->
+
+    <!-- upper guard collar -->
+    <rect x="-36" y="158" width="72" height="36" rx="9"
+          fill="#F59400" stroke="#0D0600" stroke-width="13"/>
+    <!-- collar detail line -->
+    <line x1="-36" y1="172" x2="36" y2="172" stroke="#0D0600" stroke-width="5" opacity="0.45"/>
+
+    <!-- grip shaft (very slightly tapered) -->
+    <polygon points="-18,194  18,194  14,442  -14,442"
+             fill="#F59400" stroke="#0D0600" stroke-width="11" stroke-linejoin="round"/>
+    <!-- shadow strip along right edge of grip -->
+    <polygon points="8,194  18,194  14,442  10,442"
+             fill="#0D0600" opacity="0.48"/>
+
+    <!-- grip wrap marks -->
+    <line x1="-18" y1="225" x2="18" y2="225" stroke="#0D0600" stroke-width="7.5"/>
+    <line x1="-17" y1="258" x2="17" y2="258" stroke="#0D0600" stroke-width="7.5"/>
+    <line x1="-17" y1="290" x2="17" y2="290" stroke="#0D0600" stroke-width="7.5"/>
+    <line x1="-16" y1="320" x2="16" y2="320" stroke="#0D0600" stroke-width="7"/>
+    <line x1="-16" y1="350" x2="16" y2="350" stroke="#0D0600" stroke-width="7"/>
+    <line x1="-15" y1="380" x2="15" y2="380" stroke="#0D0600" stroke-width="7"/>
+    <line x1="-15" y1="410" x2="15" y2="410" stroke="#0D0600" stroke-width="6.5"/>
+
+    <!-- middle accent band -->
+    <rect x="-24" y="308" width="48" height="22" rx="5"
+          fill="#F59400" stroke="#0D0600" stroke-width="11"/>
+
+    <!-- lower guard collar -->
+    <rect x="-32" y="434" width="64" height="28" rx="7"
+          fill="#F59400" stroke="#0D0600" stroke-width="13"/>
+    <line x1="-32" y1="446" x2="32" y2="446" stroke="#0D0600" stroke-width="4" opacity="0.4"/>
+
+    <!-- pommel -->
+    <circle cx="0" cy="498" r="44"
+            fill="#F59400" stroke="#0D0600" stroke-width="14"/>
+    <ellipse cx="-14" cy="486" rx="15" ry="10" fill="white" opacity="0.20"/>
+    <ellipse cx="13" cy="508" rx="25" ry="19" fill="#0D0600" opacity="0.36"/>
+
+    <!-- ═══════════════════════════════════════════
+         BALL BODY  (on top of spikes & handle)
+         ═══════════════════════════════════════════ -->
+
+    <circle cx="0" cy="0" r="170"
+            fill="#F59400" stroke="#0D0600" stroke-width="17"/>
+
+    <!-- shadow: dark ellipse clipped to ball, covering lower-right half -->
+    <ellipse cx="50" cy="42" rx="172" ry="152"
+             fill="#0D0600" opacity="0.60" clip-path="url(#bc)"/>
+
+    <!-- surface contour lines (lit side) -->
+    <path d="M -148,-68 Q 0,-98 148,-68"
+          fill="none" stroke="#0D0600" stroke-width="8" opacity="0.38" clip-path="url(#bc)"/>
+    <path d="M -154,-18 Q 0,-38 154,-18"
+          fill="none" stroke="#0D0600" stroke-width="5" opacity="0.22" clip-path="url(#bc)"/>
+    <path d="M -88,-138 Q 0,-158 88,-138"
+          fill="none" stroke="#0D0600" stroke-width="5" opacity="0.22" clip-path="url(#bc)"/>
+
+    <!-- spike-base holes (small dark dots where each spike meets the ball) -->
+    <!-- positions = (−170·sinθ, −170·cosθ) for each spike angle θ -->
+    <circle cx="0"    cy="-155" r="10" fill="#0D0600" opacity="0.78"/>  <!-- θ=0   -->
+    <circle cx="-55"  cy="-146" r="9"  fill="#0D0600" opacity="0.75"/>  <!-- θ=20  -->
+    <circle cx="63"   cy="-146" r="9"  fill="#0D0600" opacity="0.75"/>  <!-- θ=−22 -->
+    <circle cx="-120" cy="-111" r="9"  fill="#0D0600" opacity="0.72"/>  <!-- θ=47  -->
+    <circle cx="-157" cy="-49"  r="9"  fill="#0D0600" opacity="0.72"/>  <!-- θ=72  -->
+    <circle cx="-164" cy="21"   r="9"  fill="#0D0600" opacity="0.70"/>  <!-- θ=97  -->
+    <circle cx="-136" cy="96"   r="8"  fill="#0D0600" opacity="0.65"/>  <!-- θ=125 -->
+    <circle cx="-70"  cy="152"  r="8"  fill="#0D0600" opacity="0.58"/>  <!-- θ=157 -->
+    <circle cx="52"   cy="158"  r="8"  fill="#0D0600" opacity="0.52"/>  <!-- θ=198 -->
+    <circle cx="124"  cy="112"  r="8"  fill="#0D0600" opacity="0.58"/>  <!-- θ=228 -->
+    <circle cx="163"  cy="30"   r="9"  fill="#0D0600" opacity="0.65"/>  <!-- θ=260 -->
+    <circle cx="160"  cy="-43"  r="9"  fill="#0D0600" opacity="0.70"/>  <!-- θ=285 -->
+    <circle cx="109"  cy="-124" r="9"  fill="#0D0600" opacity="0.72"/>  <!-- θ=318 -->
+    <circle cx="57"   cy="-153" r="8"  fill="#0D0600" opacity="0.72"/>  <!-- θ=340 -->
+
+    <!-- specular highlight (upper-left of ball) -->
+    <ellipse cx="-50" cy="-62" rx="60" ry="38"
+             fill="white" opacity="0.22" clip-path="url(#bc)"
+             transform="rotate(-22,-50,-62)"/>
+
+  </g>
+</svg>

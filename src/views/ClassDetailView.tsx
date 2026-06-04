@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom'
-import { Plus, Trash2, Pencil, BarChart2, ChevronRight, Camera, CheckCircle2, Circle, Check } from 'lucide-react'
+import { Plus, Trash2, Pencil, BarChart2, ChevronRight, Camera, CheckCircle2, Circle, Check, Flag, ArrowUpDown, Calendar } from 'lucide-react'
 import { Spinner } from '../components/ui/Spinner'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useClass, updateClass } from '../db/hooks/useClasses'
+import { useClass, updateClass, deleteClass } from '../db/hooks/useClasses'
 import { useStudents, addStudent, deleteStudent, updateStudentName, updateStudentPhoto, updateStudentNames, updateStudentNotes, updateStudentChecklist } from '../db/hooks/useStudents'
-import { useProjects, createProject, deleteProject } from '../db/hooks/useProjects'
+import { useProjects, createProject, updateProject, deleteProject } from '../db/hooks/useProjects'
 import { useAllMarksForClass, upsertMark } from '../db/hooks/useMarks'
 import { db } from '../db/db'
 import { calcProjectPercentage, calcSemesterMark, gradeColor } from '../utils/marks'
@@ -17,8 +17,12 @@ import { SlideOver } from '../components/ui/SlideOver'
 
 import { resizeImageToDataUrl } from '../utils/photo'
 import { ClassSchedule } from '../components/schedule/ClassSchedule'
+import { GanttChart } from '../components/schedule/GanttChart'
 import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../types'
 import { newId } from '../utils/id'
+import { cn } from '../utils/cn'
+
+type SortMode = 'default' | 'name' | 'mark-high' | 'mark-low'
 
 const TABS = [
   { id: 'roster', label: 'Roster' },
@@ -99,8 +103,8 @@ function StudentAvatar({ student, size = 80, onPhotoClick, onPhotoDrop, uploadin
       className={[
         'relative flex-shrink-0', sizeClass, 'rounded-full overflow-hidden focus:outline-none',
         'transition-all duration-150',
-        interactive && !uploading ? 'cursor-pointer hover:scale-105 active:scale-95 hover:ring-2 hover:ring-orange-500/60 hover:ring-offset-2 hover:ring-offset-gray-900' : 'cursor-default',
-        dragOver ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-gray-900 scale-105' : '',
+        interactive && !uploading ? 'cursor-pointer hover:scale-105 active:scale-95 hover:ring-2 hover:ring-chiffon/60 hover:ring-offset-2 hover:ring-offset-gray-900' : 'cursor-default',
+        dragOver ? 'ring-2 ring-chiffon ring-offset-2 ring-offset-gray-900 scale-105' : '',
       ].join(' ')}
       title={interactive ? 'Click to upload or drag a photo here' : undefined}
     >
@@ -132,7 +136,7 @@ function StudentAvatar({ student, size = 80, onPhotoClick, onPhotoDrop, uploadin
 
       {/* Drag-over overlay */}
       {dragOver && !uploading && (
-        <div className="absolute inset-0 bg-orange-500/50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gray-100/50 flex items-center justify-center">
           <Camera size={iconSize} className="text-white" />
         </div>
       )}
@@ -175,12 +179,27 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       {/* Reflection gradient */}
       <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
 
+      {/* At-risk flag */}
+      {semesterMark !== null && semesterMark < 65 && (
+        <div
+          className={cn(
+            'absolute top-3 left-3 z-10 p-1 rounded-md',
+            semesterMark < 50
+              ? 'text-red-400 bg-red-950/60'
+              : 'text-amber-400 bg-amber-950/60'
+          )}
+          title={semesterMark < 50 ? 'Failing' : 'Borderline'}
+        >
+          <Flag size={13} />
+        </div>
+      )}
+
       {/* Action buttons */}
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-        <button onClick={onEdit} className="p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-gray-300">
+        <button onClick={onEdit} className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-gray-100">
           <Pencil size={13} />
         </button>
-        <button onClick={onDelete} className="p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400">
+        <button onClick={onDelete} className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-red-400">
           <Trash2 size={13} />
         </button>
       </div>
@@ -193,7 +212,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
         {student.firstName && (
           <p className="text-3xl font-semibold text-gray-100 leading-tight">{student.firstName}</p>
         )}
-        <p className="text-xl text-gray-500">{student.name}</p>
+        <p className="text-xl text-gray-400">{student.name}</p>
       </div>
 
       {/* Stats grid — wraps to multiple rows when projects overflow */}
@@ -205,9 +224,9 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
               {semesterMark.toFixed(0)}%
             </span>
           ) : (
-            <span className="text-2xl font-bold leading-none text-gray-600">—</span>
+            <span className="text-2xl font-bold leading-none text-gray-400/70">—</span>
           )}
-          <span className="text-xs text-gray-500 mt-1">sem.</span>
+          <span className="text-xs text-gray-400 mt-1">sem.</span>
         </div>
 
         {/* Per-project tiles */}
@@ -218,9 +237,9 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
                 {pct.toFixed(0)}%
               </span>
             ) : (
-              <span className="text-2xl font-bold leading-none text-gray-600">—</span>
+              <span className="text-2xl font-bold leading-none text-gray-400/70">—</span>
             )}
-            <span className="text-xs text-gray-500 text-center w-full truncate mt-1" title={name}>
+            <span className="text-xs text-gray-400 text-center w-full truncate mt-1" title={name}>
               {name}
             </span>
           </div>
@@ -255,7 +274,7 @@ function ProgressChart({ projects, allMarks, allCriteria }: { projects: Project[
 
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-700 px-3 pt-3 pb-1">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Progress</p>
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Progress</p>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="overflow-visible">
         {/* Grade zone backgrounds */}
         <rect x={pad.left} y={yAt(100)} width={chartW} height={yAt(65) - yAt(100)} fill="rgba(52,211,153,0.06)" />
@@ -283,14 +302,14 @@ function ProgressChart({ projects, allMarks, allCriteria }: { projects: Project[
                 {d.pct.toFixed(0)}%
               </text>
               <text x={xAt(d.idx)} y={H - pad.bottom + 14} textAnchor="middle" fontSize={9} fill="#71717a">
-                {d.name.length > 9 ? d.name.slice(0, 8) + '…' : d.name}
+                {d.name.length > 13 ? d.name.slice(0, 12) + '…' : d.name}
               </text>
             </g>
           ) : (
             <g key={d.idx}>
               <circle cx={xAt(d.idx)} cy={pad.top + chartH / 2} r={3} fill="#3f3f46" />
               <text x={xAt(d.idx)} y={H - pad.bottom + 14} textAnchor="middle" fontSize={9} fill="#3f3f46">
-                {d.name.length > 9 ? d.name.slice(0, 8) + '…' : d.name}
+                {d.name.length > 13 ? d.name.slice(0, 12) + '…' : d.name}
               </text>
             </g>
           )
@@ -316,43 +335,42 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
   const [editFirstName, setEditFirstName] = useState('')
   const [editLastName, setEditLastName] = useState('')
   const [notes, setNotes] = useState(student.notes ?? '')
+  const [notesError, setNotesError] = useState<string | null>(null)
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>(() => {
     try { return student.checklistItems ? JSON.parse(student.checklistItems) : [] }
     catch { return [] }
   })
+  const [checklistError, setChecklistError] = useState<string | null>(null)
   const [newItemText, setNewItemText] = useState('')
 
   // Sync if student prop changes (e.g. drawer opens for different student)
   useEffect(() => {
     setNotes(student.notes ?? '')
+    setNotesError(null)
+    setChecklistError(null)
     try { setChecklistItems(student.checklistItems ? JSON.parse(student.checklistItems) : []) }
     catch { setChecklistItems([]) }
   }, [student.id])
 
   async function saveNotes() {
+    setNotesError(null)
     try {
       await updateStudentNotes(student.id, notes)
-      // Read back to confirm
-      const saved = await db.students.get(student.id)
-      if ((saved?.notes ?? '') !== notes) {
-        alert('Notes saved but read-back did not match — please try again.')
-      }
     } catch (err) {
-      alert('Failed to save notes: ' + String(err))
+      setNotes(student.notes ?? '')
+      setNotesError('Failed to save notes')
       console.error('saveNotes failed:', err)
     }
   }
 
   async function saveChecklist(updated: ChecklistItem[]) {
+    setChecklistError(null)
     try {
       await updateStudentChecklist(student.id, updated)
-      // Read back to confirm
-      const saved = await db.students.get(student.id)
-      if (!saved?.checklistItems) {
-        alert('Checklist saved but read-back failed — please try again.')
-      }
     } catch (err) {
-      alert('Failed to save checklist: ' + String(err))
+      try { setChecklistItems(student.checklistItems ? JSON.parse(student.checklistItems) : []) }
+      catch { setChecklistItems([]) }
+      setChecklistError('Failed to save checklist')
       console.error('saveChecklist failed:', err)
     }
   }
@@ -419,7 +437,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                 onChange={e => setEditFirstName(e.target.value)}
                 placeholder="First name"
                 autoFocus
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500"
+                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-chiffon-muted/50 focus:outline-none focus:border-gray-200"
                 onKeyDown={async e => {
                   if (e.key === 'Enter') {
                     if (editLastName.trim()) { await updateStudentNames(student.id, editFirstName.trim(), editLastName.trim()); setEditingName(false) }
@@ -431,7 +449,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                 value={editLastName}
                 onChange={e => setEditLastName(e.target.value)}
                 placeholder="Last name"
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500"
+                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-chiffon-muted/50 focus:outline-none focus:border-gray-200"
                 onKeyDown={async e => {
                   if (e.key === 'Enter') {
                     if (editLastName.trim()) { await updateStudentNames(student.id, editFirstName.trim(), editLastName.trim()); setEditingName(false) }
@@ -442,11 +460,12 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
               <div className="flex gap-2">
                 <button
                   onClick={async () => { if (editLastName.trim()) { await updateStudentNames(student.id, editFirstName.trim(), editLastName.trim()); setEditingName(false) } }}
-                  className="px-3 py-1 bg-orange-500 hover:bg-orange-400 text-white text-xs font-medium rounded-lg transition-colors"
+                  className="px-3 py-1 text-xs font-medium rounded-full transition-all hover:brightness-110"
+                  style={{ background: '#FFB59C', color: '#5F1500' }}
                 >
                   Save
                 </button>
-                <button onClick={() => setEditingName(false)} className="px-3 py-1 text-gray-400 hover:text-gray-200 text-xs rounded-lg transition-colors">
+                <button onClick={() => setEditingName(false)} className="px-3 py-1 text-gray-400 hover:text-gray-100 text-xs rounded-lg transition-colors">
                   Cancel
                 </button>
               </div>
@@ -458,7 +477,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
               </p>
               <button
                 onClick={() => { setEditFirstName(student.firstName ?? ''); setEditLastName(student.name); setEditingName(true) }}
-                className="opacity-0 group-hover/name:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-gray-300 transition-all shrink-0"
+                className="opacity-0 group-hover/name:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-gray-100 transition-all shrink-0"
               >
                 <Pencil size={13} />
               </button>
@@ -479,20 +498,22 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
 
       {/* Notes */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</label>
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Notes</label>
         <textarea
           value={notes}
-          onChange={e => setNotes(e.target.value)}
+          onChange={e => { setNotes(e.target.value); setNotesError(null) }}
           onBlur={saveNotes}
           placeholder="Add notes about this student…"
           rows={3}
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-300 placeholder-gray-700 resize-none focus:outline-none focus:border-gray-500 transition-colors"
+          className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-100 placeholder-chiffon-muted/50 resize-none focus:outline-none focus:border-gray-200-muted transition-colors"
         />
+        {notesError && <p className="text-xs text-red-400">{notesError}</p>}
       </div>
 
       {/* Improvement Checklist */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Checklist</label>
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Checklist</label>
+        {checklistError && <p className="text-xs text-red-400">{checklistError}</p>}
 
         {checklistItems.length > 0 && (
           <div className="flex flex-col gap-1 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
@@ -500,19 +521,19 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
               <div key={item.id} className="flex items-start gap-2.5 px-3 py-2.5 border-b border-gray-800 last:border-0 group/item">
                 <button
                   onClick={() => toggleChecklistItem(item.id)}
-                  className="mt-0.5 shrink-0 text-gray-600 hover:text-orange-400 transition-colors"
+                  className="mt-0.5 shrink-0 text-gray-400/70 hover:text-gray-100 transition-colors"
                 >
                   {item.done
                     ? <CheckCircle2 size={16} className="text-emerald-500" />
                     : <Circle size={16} />
                   }
                 </button>
-                <span className={`flex-1 text-sm leading-snug select-none ${item.done ? 'line-through text-gray-600' : 'text-gray-300'}`}>
+                <span className={`flex-1 text-sm leading-snug select-none ${item.done ? 'line-through text-gray-400/70' : 'text-gray-100'}`}>
                   {item.text}
                 </span>
                 <button
                   onClick={() => deleteChecklistItem(item.id)}
-                  className="opacity-0 group-hover/item:opacity-100 shrink-0 p-0.5 text-gray-600 hover:text-red-400 transition-all"
+                  className="opacity-0 group-hover/item:opacity-100 shrink-0 p-0.5 text-gray-400/70 hover:text-red-400 transition-all"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -527,12 +548,12 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
             onChange={e => setNewItemText(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addChecklistItem() } }}
             placeholder="Add improvement item…"
-            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder-gray-700 focus:outline-none focus:border-gray-500 transition-colors"
+            className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-chiffon-muted/50 focus:outline-none focus:border-gray-200-muted transition-colors"
           />
           <button
             onClick={addChecklistItem}
             disabled={!newItemText.trim()}
-            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 hover:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Plus size={15} />
           </button>
@@ -540,7 +561,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
       </div>
 
       {sorted.length === 0 && (
-        <p className="text-sm text-gray-500">No projects yet.</p>
+        <p className="text-sm text-gray-400">No projects yet.</p>
       )}
 
       {/* Per-project breakdown */}
@@ -556,24 +577,25 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
             <div className="flex items-center gap-2 flex-wrap">
               <Link
                 to={`/classes/${classId}/projects/${project.id}`}
-                className="font-bold text-gray-100 text-lg hover:text-orange-400 transition-colors flex items-center gap-1"
+                className="font-bold text-gray-100 text-lg hover:text-gray-100 transition-colors flex items-center gap-1"
               >
                 {project.name}
-                <ChevronRight size={16} className="text-gray-600" />
+                <ChevronRight size={16} className="text-gray-400/70" />
               </Link>
               {project.semesterWeight > 0 && (
-                <span className="text-xs bg-orange-950 text-orange-400 border border-orange-900/50 rounded px-1.5 py-0.5">
+                <span className="text-xs bg-gray-800 text-gray-100 border border-gray-700/50 rounded px-1.5 py-0.5">
                   {Math.round(project.semesterWeight * 100)}% of semester
                 </span>
               )}
               {project.dueDate && (
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-gray-400/70">
                   Due {new Date(project.dueDate).toLocaleDateString()}
                 </span>
               )}
               <Link
                 to={`/classes/${classId}/projects/${project.id}?tab=marking`}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-400 text-white text-xs font-semibold transition-colors shrink-0"
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110 shrink-0"
+                style={{ background: '#5D3F3A', color: '#FFDBD5' }}
               >
                 <BarChart2 size={12} />
                 Mark
@@ -581,15 +603,15 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
             </div>
 
             {criteria.length === 0 ? (
-              <p className="text-xs text-gray-600 pl-1">No rubric set up yet.</p>
+              <p className="text-xs text-gray-400/70 pl-1">No rubric set up yet.</p>
             ) : (
               <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-gray-700">
-                      <th className="text-left px-4 py-3 text-gray-500 font-medium text-sm">Criterion</th>
-                      <th className="text-right px-4 py-3 text-gray-500 font-medium text-sm">Score</th>
-                      <th className="text-right px-4 py-3 text-gray-500 font-medium text-sm w-16">%</th>
+                      <th className="text-left px-4 py-3 text-gray-400 font-medium text-sm">Criterion</th>
+                      <th className="text-right px-4 py-3 text-gray-400 font-medium text-sm">Score</th>
+                      <th className="text-right px-4 py-3 text-gray-400 font-medium text-sm w-16">%</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -604,7 +626,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                           {isEditing ? (
                             <td colSpan={3} className="px-3 py-3">
                               <div className="flex flex-col gap-2">
-                                <p className="text-gray-300 font-medium">{c.name}</p>
+                                <p className="text-gray-100 font-medium">{c.name}</p>
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="number"
@@ -618,27 +640,28 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                                     }}
                                     autoFocus
                                     placeholder="0"
-                                    className="w-20 bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-orange-500"
+                                    className="w-20 bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-sm text-gray-100 focus:outline-none focus:border-gray-200"
                                   />
-                                  <span className="text-gray-500">/ {c.maxMarks}</span>
+                                  <span className="text-gray-400">/ {c.maxMarks}</span>
                                 </div>
                                 <textarea
                                   value={editFeedback}
                                   onChange={e => setEditFeedback(e.target.value)}
                                   placeholder="Feedback (optional)"
                                   rows={2}
-                                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 resize-none"
+                                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-2 py-1.5 text-xs text-gray-100 placeholder-chiffon-muted/50 focus:outline-none focus:border-gray-200 resize-none"
                                 />
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => saveEdit(project.id, c.id, c.maxMarks)}
-                                    className="px-3 py-1 bg-orange-500 hover:bg-orange-400 text-white text-xs font-medium rounded-lg transition-colors"
+                                    className="px-3 py-1 text-xs font-medium rounded-full transition-all hover:brightness-110"
+                  style={{ background: '#FFB59C', color: '#5F1500' }}
                                   >
                                     Save
                                   </button>
                                   <button
                                     onClick={() => setEditingId(null)}
-                                    className="px-3 py-1 text-gray-400 hover:text-gray-200 text-xs rounded-lg transition-colors"
+                                    className="px-3 py-1 text-gray-400 hover:text-gray-100 text-xs rounded-lg transition-colors"
                                   >
                                     Cancel
                                   </button>
@@ -647,25 +670,25 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                             </td>
                           ) : (
                             <>
-                              <td className="px-4 py-3 text-gray-300 text-sm">
+                              <td className="px-4 py-3 text-gray-100 text-sm">
                                 <div className="flex items-center gap-2">
                                   {scored
-                                    ? <CheckCircle2 size={13} className="text-gray-600 shrink-0" />
-                                    : <Circle size={13} className="text-gray-700 shrink-0" />
+                                    ? <CheckCircle2 size={13} className="text-gray-400/70 shrink-0" />
+                                    : <Circle size={13} className="text-gray-400/50 shrink-0" />
                                   }
                                   {c.name}
                                 </div>
                               </td>
                               <td
-                                className="px-4 py-3 text-right text-gray-300 text-sm cursor-pointer hover:text-orange-400 transition-colors group/score"
+                                className="px-4 py-3 text-right text-gray-100 text-sm cursor-pointer hover:text-gray-100 transition-colors group/score"
                                 onClick={() => openEdit(c, mark)}
                                 title="Click to edit"
                               >
                                 <span className="group-hover/score:underline underline-offset-2 flex items-center justify-end gap-1">
-                                  {scored ? `${mark.score} / ${c.maxMarks}` : <Plus size={14} className="text-gray-600 group-hover/score:text-orange-400" />}
+                                  {scored ? `${mark.score} / ${c.maxMarks}` : <Plus size={14} className="text-gray-400/70 group-hover/score:text-gray-100" />}
                                 </span>
                               </td>
-                              <td className={`px-4 py-3 text-right font-medium text-sm ${pctCell !== null ? gradeColor(pctCell) : 'text-gray-600'}`}>
+                              <td className={`px-4 py-3 text-right font-medium text-sm ${pctCell !== null ? gradeColor(pctCell) : 'text-gray-400/70'}`}>
                                 {pctCell !== null ? `${pctCell.toFixed(0)}%` : '—'}
                               </td>
                             </>
@@ -678,7 +701,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                     <tr className="border-t border-gray-700 bg-gray-850">
                       <td className="px-4 py-3 text-gray-400 font-medium text-sm">Total</td>
                       <td />
-                      <td className={`px-4 py-3 text-right font-bold text-base ${pct !== null && hasAnyMark ? gradeColor(pct) : 'text-gray-600'}`}>
+                      <td className={`px-4 py-3 text-right font-bold text-base ${pct !== null && hasAnyMark ? gradeColor(pct) : 'text-gray-400/70'}`}>
                         {pct !== null && hasAnyMark ? `${pct.toFixed(1)}%` : '—'}
                       </td>
                     </tr>
@@ -691,7 +714,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                       const c = criteria.find(cr => cr.id === m.criterionId)
                       return (
                         <div key={m.id}>
-                          <span className="text-sm text-gray-500 font-medium">{c?.name}: </span>
+                          <span className="text-sm text-gray-400 font-medium">{c?.name}: </span>
                           <span className="text-sm text-gray-400">{m.feedback}</span>
                         </div>
                       )
@@ -709,6 +732,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
 
 function ProjectForm({ classId, onDone }: { classId: string; onDone: () => void }) {
   const [name, setName] = useState('')
+  const [startDate, setStartDate] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [weight, setWeight] = useState('1')
   const navigate = useNavigate()
@@ -718,6 +742,7 @@ function ProjectForm({ classId, onDone }: { classId: string; onDone: () => void 
     const project = await createProject({
       classId,
       name: name.trim(),
+      startDate: startDate || undefined,
       dueDate,
       semesterWeight: Math.max(0, Math.min(1, parseFloat(weight) / 100 || 0)),
       totalMarks: 0,
@@ -730,7 +755,10 @@ function ProjectForm({ classId, onDone }: { classId: string; onDone: () => void 
     <div className="flex flex-col gap-4">
       <Input label="Project name" placeholder="e.g. Term 2 Assignment" value={name}
         onChange={e => setName(e.target.value)} autoFocus />
-      <Input label="Due date" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+      <div className="grid grid-cols-2 gap-3">
+        <Input label="Start date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        <Input label="Due date" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+      </div>
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-gray-400">Semester weight (%)</label>
         <div className="flex items-center gap-2">
@@ -738,9 +766,9 @@ function ProjectForm({ classId, onDone }: { classId: string; onDone: () => void 
             type="number" min="0" max="100" step="5"
             value={weight}
             onChange={e => setWeight(e.target.value)}
-            className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-500"
+            className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-200-muted"
           />
-          <span className="text-sm text-gray-500">% of final semester mark</span>
+          <span className="text-sm text-gray-400">% of final semester mark</span>
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-2">
@@ -767,16 +795,20 @@ export function ClassDetailView() {
 
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') ?? 'roster')
+  const [sortMode, setSortMode] = useState<SortMode>('default')
+  const [scheduleView, setScheduleView] = useState<'weekly' | 'gantt'>('weekly')
   const [addStudentName, setAddStudentName] = useState('')
   const [addProjectOpen, setAddProjectOpen] = useState(false)
   const [editingClass, setEditingClass] = useState(false)
   const [className, setClassName] = useState('')
+  const [deletingClass, setDeletingClass] = useState(false)
   const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null)
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null)
   const [editStudentId, setEditStudentId] = useState<string | null>(null)
   const [editStudentName, setEditStudentName] = useState('')
   const [detailStudentId, setDetailStudentId] = useState<string | null>(null)
   const [uploadingStudentId, setUploadingStudentId] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const photoTargetId = useRef<string | null>(null)
 
@@ -788,7 +820,7 @@ export function ClassDetailView() {
     }
   }, [location.state])
 
-  if (!classObj) return <div className="p-8 text-gray-500 text-sm">Class not found.</div>
+  if (!classObj) return <div className="p-8 text-gray-400 text-sm">Class not found.</div>
 
   function getProjectMarks(studentId: string): { name: string; pct: number | null }[] {
     return projects.map(p => {
@@ -838,16 +870,12 @@ export function ClassDetailView() {
 
   async function savePhoto(id: string, file: File) {
     setUploadingStudentId(id)
+    setPhotoError(null)
     try {
       const dataUrl = await resizeImageToDataUrl(file)
       await updateStudentPhoto(id, dataUrl)
-      // Read back to confirm the write actually landed
-      const saved = await db.students.get(id)
-      if (!saved?.photo) {
-        alert('Photo saved to DB but read-back failed — please report this.')
-      }
     } catch (err) {
-      alert('Photo upload error: ' + String(err))
+      setPhotoError('Photo upload failed — please try again.')
       console.error('Photo upload failed:', err)
     } finally {
       setUploadingStudentId(null)
@@ -869,25 +897,32 @@ export function ClassDetailView() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="border-b border-gray-800 px-8 py-6">
-        <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-2.5">
-          <Link to="/classes" className="hover:text-gray-300">Classes</Link>
+      <div className="border-b border-gray-700 px-8 py-6">
+        <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-2.5">
+          <Link to="/classes" className="hover:text-gray-100">Classes</Link>
           <ChevronRight size={14} />
-          <span className="text-gray-300">{classObj.name}</span>
+          <span className="text-gray-100">{classObj.name}</span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-100">{classObj.name}</h1>
+            <h1 className="text-2xl font-normal text-gray-100">{classObj.name}</h1>
             <button
               onClick={() => { setClassName(classObj.name); setEditingClass(true) }}
-              className="p-1 text-gray-600 hover:text-gray-400 rounded"
+              className="p-1 text-gray-400/70 hover:text-gray-400 rounded"
             >
               <Pencil size={14} />
+            </button>
+            <button
+              onClick={() => setDeletingClass(true)}
+              className="p-1 text-gray-400/40 hover:text-red-400 rounded transition-colors"
+              title="Delete class"
+            >
+              <Trash2 size={14} />
             </button>
           </div>
           <Link
             to={`/classes/${classId}/semester`}
-            className="flex items-center gap-1.5 text-sm text-orange-400 hover:text-orange-300 font-medium"
+            className="flex items-center gap-1.5 text-sm text-gray-100 hover:text-gray-100 font-medium"
           >
             <BarChart2 size={15} /> Semester Summary
           </Link>
@@ -904,6 +939,12 @@ export function ClassDetailView() {
         {/* ROSTER TAB */}
         {tab === 'roster' && (
           <div>
+            {photoError && (
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-red-900/50 bg-red-950/30 px-4 py-3 text-sm text-red-400">
+                {photoError}
+                <button onClick={() => setPhotoError(null)} className="shrink-0 text-red-400/70 hover:text-red-300">✕</button>
+              </div>
+            )}
             <form onSubmit={handleAddStudent} className="flex gap-2 mb-6 max-w-sm">
               <Input
                 placeholder="Student name"
@@ -917,12 +958,61 @@ export function ClassDetailView() {
             </form>
 
             {students.length === 0 ? (
-              <p className="text-sm text-gray-600">No students yet. Add one above or import a CSV from the Classes page.</p>
+              <p className="text-sm text-gray-400/70">No students yet. Add one above or import a CSV from the Classes page.</p>
             ) : (
+              <>
+                {/* Sort controls */}
+                <div className="flex items-center gap-2 mb-5">
+                  <ArrowUpDown size={13} className="text-gray-400/60 shrink-0" />
+                  {([
+                    { id: 'default', label: 'Default' },
+                    { id: 'name',    label: 'A → Z' },
+                    { id: 'mark-high', label: 'Mark ↓' },
+                    { id: 'mark-low',  label: 'Mark ↑' },
+                  ] as { id: SortMode; label: string }[]).map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setSortMode(opt.id)}
+                      className={cn(
+                        'px-3 py-1 rounded-full text-xs font-medium transition-all',
+                        sortMode === opt.id
+                          ? 'text-[#FFDBD5]'
+                          : 'bg-gray-800 text-gray-400 hover:text-gray-100 hover:bg-gray-750'
+                      )}
+                      style={sortMode === opt.id ? { background: '#5D3F3A' } : undefined}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                  <span className="ml-auto text-xs text-gray-400/50">{students.length} students</span>
+                </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {students.map(s => (
+                {(() => {
+                  const sorted = (() => {
+                    if (sortMode === 'name') {
+                      return [...students].sort((a, b) => {
+                        const na = a.firstName ? `${a.firstName} ${a.name}` : a.name
+                        const nb = b.firstName ? `${b.firstName} ${b.name}` : b.name
+                        return na.localeCompare(nb)
+                      })
+                    }
+                    if (sortMode === 'mark-high' || sortMode === 'mark-low') {
+                      return [...students].sort((a, b) => {
+                        const ma = getSemesterMark(a.id)
+                        const mb = getSemesterMark(b.id)
+                        if (ma === null && mb === null) return 0
+                        if (ma === null) return 1
+                        if (mb === null) return -1
+                        return sortMode === 'mark-high' ? mb - ma : ma - mb
+                      })
+                    }
+                    return students
+                  })()
+                  return sorted
+                })().map(s => (
                   editStudentId === s.id ? (
-                    <div key={s.id} className="bg-gray-800 border border-orange-700 rounded-xl p-4 flex flex-col gap-2">
+                    <div key={s.id} className="bg-gray-800 border border-gray-200/40 rounded-xl p-4 flex flex-col gap-2">
                       <input
                         className="bg-gray-750 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100 focus:outline-none w-full"
                         value={editStudentName}
@@ -940,7 +1030,7 @@ export function ClassDetailView() {
                           if (e.key === 'Escape') setEditStudentId(null)
                         }}
                       />
-                      <p className="text-xs text-gray-500">Enter to save, Esc to cancel</p>
+                      <p className="text-xs text-gray-400">Enter to save, Esc to cancel</p>
                     </div>
                   ) : (
                     <StudentCard
@@ -958,6 +1048,7 @@ export function ClassDetailView() {
                   )
                 ))}
               </div>
+              </>
             )}
           </div>
         )}
@@ -972,7 +1063,7 @@ export function ClassDetailView() {
             </div>
 
             {projects.length === 0 ? (
-              <p className="text-sm text-gray-600">No projects yet.</p>
+              <p className="text-sm text-gray-400/70">No projects yet.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {projects.map(p => {
@@ -988,39 +1079,62 @@ export function ClassDetailView() {
                   return (
                     <div
                       key={p.id}
-                      className="bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 rounded-xl p-5 group relative cursor-pointer select-none shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 hover:border-orange-500/30 transition-all duration-200 overflow-hidden"
+                      className="bg-gray-850 border border-gray-700 rounded-2xl p-7 group relative cursor-pointer select-none hover:border-orange-500/30 hover:bg-gray-800 transition-all duration-200 shadow-md shadow-black/40 hover:shadow-lg hover:shadow-black/50"
                       onClick={() => navigate(`/classes/${classId}/projects/${p.id}`)}
                     >
-                      {/* Reflection gradient */}
-                      <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
                       <div className="flex items-start justify-between mb-3">
-                        <span className="text-base font-bold text-orange-400">{Math.round(p.semesterWeight * 100)}% of semester</span>
+                        <span className="text-base font-bold text-gray-100">{Math.round(p.semesterWeight * 100)}% of semester</span>
                         <button
                           onClick={e => { e.stopPropagation(); setDeleteProjectId(p.id) }}
-                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-red-400 transition-all relative z-10"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-red-400 transition-all relative z-10"
                         >
                           <Trash2 size={15} />
                         </button>
                       </div>
-                      <h3 className="text-3xl font-bold text-gray-100 mb-1 leading-tight">{p.name}</h3>
-                      {p.dueDate && (
-                        <p className="text-sm text-gray-500">Due {new Date(p.dueDate).toLocaleDateString()}</p>
-                      )}
+                      <h3 className="text-3xl font-bold text-gray-100 mb-3 leading-tight">{p.name}</h3>
+
+                      {/* Date fields — always visible, inline editable */}
+                      <div className="flex flex-wrap gap-3 mt-1" onClick={e => e.stopPropagation()}>
+                        <label className="flex items-center gap-5 px-5 py-2.5 bg-gray-900 border border-gray-700 rounded-lg cursor-pointer hover:border-gray-600 transition-colors group/date">
+                          <Calendar size={13} className="shrink-0" style={{ color: '#c2410c' }} />
+                          <span className="text-xs font-semibold uppercase tracking-wider shrink-0" style={{ color: '#c2410c' }}>Start</span>
+                          <input
+                            type="date"
+                            value={p.startDate ?? ''}
+                            onChange={async e => {
+                              await updateProject(p.id, { startDate: e.target.value || undefined })
+                            }}
+                            className="bg-transparent text-sm text-gray-300 focus:text-gray-100 focus:outline-none cursor-pointer w-[6.5rem]"
+                          />
+                        </label>
+                        <label className="flex items-center gap-5 px-5 py-2.5 bg-gray-900 border border-gray-700 rounded-lg cursor-pointer hover:border-gray-600 transition-colors group/date">
+                          <Calendar size={13} className="shrink-0" style={{ color: '#c2410c' }} />
+                          <span className="text-xs font-semibold uppercase tracking-wider shrink-0" style={{ color: '#c2410c' }}>Due</span>
+                          <input
+                            type="date"
+                            value={p.dueDate ?? ''}
+                            onChange={async e => {
+                              await updateProject(p.id, { dueDate: e.target.value })
+                            }}
+                            className="bg-transparent text-sm text-gray-300 focus:text-gray-100 focus:outline-none cursor-pointer w-[6.5rem]"
+                          />
+                        </label>
+                      </div>
                       {/* Marking progress */}
                       <div className="mt-4 pt-3 border-t border-gray-700/60">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-gray-400/70">
                             {markedStudents === 0 ? 'Not started' : allDone ? 'All marked ✓' : `${markedStudents} / ${totalStudents} marked`}
                           </span>
                           {markedStudents > 0 && (
-                            <span className={`text-xs font-medium ${allDone ? 'text-emerald-500' : 'text-gray-500'}`}>
+                            <span className={`text-xs font-medium ${allDone ? 'text-emerald-500' : 'text-gray-400'}`}>
                               {Math.round(progressPct)}%
                             </span>
                           )}
                         </div>
                         <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-emerald-500' : 'bg-orange-500'}`}
+                            className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-emerald-500' : 'bg-orange-400'}`}
                             style={{ width: `${progressPct}%` }}
                           />
                         </div>
@@ -1035,11 +1149,42 @@ export function ClassDetailView() {
 
         {/* SCHEDULE TAB */}
         {tab === 'schedule' && classId && (
-          <ClassSchedule
-            classId={classId}
-            startDate={classObj.startDate}
-            projects={projects}
-          />
+          <div className="flex flex-col gap-5">
+            {/* Sub-view toggle */}
+            <div className="flex items-center gap-2">
+              {(['weekly', 'gantt'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setScheduleView(v)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-xs font-medium transition-all',
+                    scheduleView === v
+                      ? 'text-[#FFDBD5]'
+                      : 'bg-gray-800 text-gray-400 hover:text-gray-100 hover:bg-gray-750'
+                  )}
+                  style={scheduleView === v ? { background: '#5D3F3A' } : undefined}
+                >
+                  {v === 'weekly' ? 'Weekly Schedule' : 'Gantt Chart'}
+                </button>
+              ))}
+            </div>
+
+            {scheduleView === 'weekly' && (
+              <ClassSchedule
+                classId={classId}
+                startDate={classObj.startDate}
+                projects={projects}
+              />
+            )}
+
+            {scheduleView === 'gantt' && (
+              <GanttChart
+                projects={projects}
+                classStartDate={classObj.startDate}
+                className={classObj.name}
+              />
+            )}
+          </div>
         )}
       </div>
 
@@ -1069,6 +1214,18 @@ export function ClassDetailView() {
       <SlideOver open={addProjectOpen} onClose={() => setAddProjectOpen(false)} title="New Project">
         {classId && <ProjectForm classId={classId} onDone={() => setAddProjectOpen(false)} />}
       </SlideOver>
+
+      <Modal open={deletingClass} onClose={() => setDeletingClass(false)} title="Delete Class">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-400">
+            This will permanently delete <span className="text-gray-100 font-medium">{classObj.name}</span>, all its students, projects, and marks. This cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setDeletingClass(false)}>Cancel</Button>
+            <Button variant="danger" onClick={async () => { await deleteClass(classId!); navigate('/classes') }}>Delete Class</Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal open={editingClass} onClose={() => setEditingClass(false)} title="Rename Class">
         <div className="flex flex-col gap-4">

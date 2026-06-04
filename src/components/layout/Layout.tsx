@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+﻿import { useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
@@ -36,14 +36,18 @@ export function Layout() {
     <div className="flex h-screen bg-gray-950 overflow-hidden">
       <AutoBackup />
       <Sidebar />
-      <main className="flex-1 overflow-y-auto relative">
-        <div className="absolute top-5 right-6 z-40">
-          <GlobalSearch />
-        </div>
-        <div className="pt-24">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top App Bar */}
+        <header className="h-16 bg-gray-900 border-b border-gray-700 flex items-center px-6 gap-4 shrink-0">
+          <h1 className="text-lg font-medium text-gray-100 tracking-wide">WhipMarks</h1>
+          <div className="ml-auto">
+            <GlobalSearch />
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto">
           <Outlet />
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

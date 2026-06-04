@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WhipMarks — Icon Options</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 56px 32px 72px;
+      font-family: system-ui, -apple-system, sans-serif;
+      gap: 48px;
+    }
+    h1 { color: #e5e5e5; margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+    p  { color: #777; margin: 0; font-size: 14px; }
+    .grid { display: flex; gap: 48px; flex-wrap: wrap; justify-content: center; }
+    .card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      cursor: default;
+    }
+    .name  { color: #e5e5e5; font-size: 15px; font-weight: 600; margin: 0; }
+    .label { color: #666; font-size: 13px; margin: 0; }
+
+    /* Also show each at taskbar/dock size */
+    .small { display: flex; gap: 8px; align-items: center; }
+    .small svg { border-radius: 6px; }
+  </style>
+</head>
+<body>
+
+  <h1>WhipMarks — Icon Options</h1>
+  <p>Pick your favourite and we'll convert it to all required Tauri icon sizes.</p>
+
+  <div class="grid">
+
+    <!-- ── Option 1: Warm Classic ─────────────────────────────────── -->
+    <div class="card">
+      <svg width="192" height="192" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+        <rect width="256" height="256" rx="52" fill="#C4832A"/>
+        <!-- Crown: double-humped fedora peak -->
+        <path d="M 52,152
+                 C 50,124 60,72 85,58
+                 C 100,50 114,55 122,68 C 125,73 126,77 128,79
+                 C 130,77 131,73 134,68
+                 C 142,55 156,50 171,58
+                 C 196,72 206,124 204,152 Z"
+              fill="#2C1206"/>
+        <!-- Hatband -->
+        <rect x="52" y="141" width="152" height="13" rx="2" fill="#100601"/>
+        <!-- Brim -->
+        <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#2C1206"/>
+        <!-- Whip body -->
+        <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184"
+              stroke="#F2D59F" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <!-- Whip mid-taper -->
+        <path d="M 226,206 C 240,199 250,191 252,181"
+              stroke="#F2D59F" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <!-- Crack tip -->
+        <path d="M 250,185 L 259,173"
+              stroke="#F2D59F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <!-- Taskbar preview -->
+      <div class="small">
+        <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#C4832A"/>
+          <path d="M 52,152 C 50,124 60,72 85,58 C 100,50 114,55 122,68 C 125,73 126,77 128,79 C 130,77 131,73 134,68 C 142,55 156,50 171,58 C 196,72 206,124 204,152 Z" fill="#2C1206"/>
+          <rect x="52" y="141" width="152" height="13" rx="2" fill="#100601"/>
+          <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#2C1206"/>
+          <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184" stroke="#F2D59F" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M 226,206 C 240,199 250,191 252,181" stroke="#F2D59F" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 250,185 L 259,173" stroke="#F2D59F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <svg width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#C4832A"/>
+          <path d="M 52,152 C 50,124 60,72 85,58 C 100,50 114,55 122,68 C 125,73 126,77 128,79 C 130,77 131,73 134,68 C 142,55 156,50 171,58 C 196,72 206,124 204,152 Z" fill="#2C1206"/>
+          <rect x="52" y="141" width="152" height="13" rx="2" fill="#100601"/>
+          <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#2C1206"/>
+          <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184" stroke="#F2D59F" stroke-width="7" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="name">Option 1 — Warm Classic</p>
+      <p class="label">Amber · Dark brown · Cream</p>
+    </div>
+
+    <!-- ── Option 2: Dark & Dramatic ──────────────────────────────── -->
+    <div class="card">
+      <svg width="192" height="192" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+        <rect width="256" height="256" rx="52" fill="#150E04"/>
+        <!-- Crown -->
+        <path d="M 52,152
+                 C 50,124 60,72 85,58
+                 C 100,50 114,55 122,68 C 125,73 126,77 128,79
+                 C 130,77 131,73 134,68
+                 C 142,55 156,50 171,58
+                 C 196,72 206,124 204,152 Z"
+              fill="#C8924A"/>
+        <!-- Hatband -->
+        <rect x="52" y="141" width="152" height="13" rx="2" fill="#5C3810"/>
+        <!-- Brim -->
+        <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#A87030"/>
+        <!-- Whip -->
+        <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184"
+              stroke="#F5C842" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M 226,206 C 240,199 250,191 252,181"
+              stroke="#F5C842" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M 250,185 L 259,173"
+              stroke="#F5C842" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="small">
+        <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#150E04"/>
+          <path d="M 52,152 C 50,124 60,72 85,58 C 100,50 114,55 122,68 C 125,73 126,77 128,79 C 130,77 131,73 134,68 C 142,55 156,50 171,58 C 196,72 206,124 204,152 Z" fill="#C8924A"/>
+          <rect x="52" y="141" width="152" height="13" rx="2" fill="#5C3810"/>
+          <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#A87030"/>
+          <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184" stroke="#F5C842" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M 226,206 C 240,199 250,191 252,181" stroke="#F5C842" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 250,185 L 259,173" stroke="#F5C842" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <svg width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#150E04"/>
+          <path d="M 52,152 C 50,124 60,72 85,58 C 100,50 114,55 122,68 C 125,73 126,77 128,79 C 130,77 131,73 134,68 C 142,55 156,50 171,58 C 196,72 206,124 204,152 Z" fill="#C8924A"/>
+          <rect x="52" y="141" width="152" height="13" rx="2" fill="#5C3810"/>
+          <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#A87030"/>
+          <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184" stroke="#F5C842" stroke-width="7" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="name">Option 2 — Dark &amp; Dramatic</p>
+      <p class="label">Near-black · Tan · Gold</p>
+    </div>
+
+    <!-- ── Option 3: Cream / Silhouette ───────────────────────────── -->
+    <div class="card">
+      <svg width="192" height="192" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+        <rect width="256" height="256" rx="52" fill="#F5EDD8"/>
+        <!-- Crown -->
+        <path d="M 52,152
+                 C 50,124 60,72 85,58
+                 C 100,50 114,55 122,68 C 125,73 126,77 128,79
+                 C 130,77 131,73 134,68
+                 C 142,55 156,50 171,58
+                 C 196,72 206,124 204,152 Z"
+              fill="#2C1206"/>
+        <!-- Hatband accent -->
+        <rect x="52" y="141" width="152" height="13" rx="2" fill="#7B3A10"/>
+        <!-- Brim -->
+        <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#2C1206"/>
+        <!-- Whip -->
+        <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184"
+              stroke="#5C2A08" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M 226,206 C 240,199 250,191 252,181"
+              stroke="#5C2A08" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M 250,185 L 259,173"
+              stroke="#5C2A08" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="small">
+        <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#F5EDD8"/>
+          <path d="M 52,152 C 50,124 60,72 85,58 C 100,50 114,55 122,68 C 125,73 126,77 128,79 C 130,77 131,73 134,68 C 142,55 156,50 171,58 C 196,72 206,124 204,152 Z" fill="#2C1206"/>
+          <rect x="52" y="141" width="152" height="13" rx="2" fill="#7B3A10"/>
+          <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#2C1206"/>
+          <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184" stroke="#5C2A08" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <path d="M 226,206 C 240,199 250,191 252,181" stroke="#5C2A08" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M 250,185 L 259,173" stroke="#5C2A08" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <svg width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#F5EDD8"/>
+          <path d="M 52,152 C 50,124 60,72 85,58 C 100,50 114,55 122,68 C 125,73 126,77 128,79 C 130,77 131,73 134,68 C 142,55 156,50 171,58 C 196,72 206,124 204,152 Z" fill="#2C1206"/>
+          <rect x="52" y="141" width="152" height="13" rx="2" fill="#7B3A10"/>
+          <path d="M 16,157 Q 128,174 240,157 L 235,170 Q 128,189 21,170 Z" fill="#2C1206"/>
+          <path d="M 46,173 C 82,202 145,224 200,213 C 224,208 242,197 249,184" stroke="#5C2A08" stroke-width="7" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="name">Option 3 — Cream Silhouette</p>
+      <p class="label">Parchment · Dark brown</p>
+    </div>
+
+    <!-- ── Option 4: Retro Badge ───────────────────────────────────── -->
+    <div class="card">
+      <svg width="192" height="192" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+        <rect width="256" height="256" rx="52" fill="#1A2535"/>
+        <!-- Badge ring -->
+        <circle cx="128" cy="118" r="102" fill="#122030" stroke="#C4832A" stroke-width="7"/>
+        <!-- Crown (scaled + shifted to sit inside badge) -->
+        <path d="M 60,138
+                 C 58,114 67,68 89,55
+                 C 103,47 115,52 122,64 C 125,69 126,73 128,75
+                 C 130,73 131,69 134,64
+                 C 141,52 153,47 167,55
+                 C 189,68 198,114 196,138 Z"
+              fill="#C8924A"/>
+        <!-- Hatband -->
+        <rect x="60" y="128" width="136" height="12" rx="2" fill="#5C3810"/>
+        <!-- Brim -->
+        <path d="M 26,144 Q 128,159 230,144 L 226,155 Q 128,172 30,155 Z" fill="#A87030"/>
+        <!-- Whip -->
+        <path d="M 32,157 C 65,182 120,200 170,190 C 196,185 214,172 220,160"
+              stroke="#F5C842" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M 202,172 C 214,166 222,159 224,150"
+              stroke="#F5C842" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M 222,154 L 230,144"
+              stroke="#F5C842" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="small">
+        <svg width="32" height="32" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#1A2535"/>
+          <circle cx="128" cy="118" r="102" fill="#122030" stroke="#C4832A" stroke-width="7"/>
+          <path d="M 60,138 C 58,114 67,68 89,55 C 103,47 115,52 122,64 C 125,69 126,73 128,75 C 130,73 131,69 134,64 C 141,52 153,47 167,55 C 189,68 198,114 196,138 Z" fill="#C8924A"/>
+          <rect x="60" y="128" width="136" height="12" rx="2" fill="#5C3810"/>
+          <path d="M 26,144 Q 128,159 230,144 L 226,155 Q 128,172 30,155 Z" fill="#A87030"/>
+          <path d="M 32,157 C 65,182 120,200 170,190 C 196,185 214,172 220,160" stroke="#F5C842" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path d="M 202,172 C 214,166 222,159 224,150" stroke="#F5C842" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M 222,154 L 230,144" stroke="#F5C842" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+        <svg width="20" height="20" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <rect width="256" height="256" rx="52" fill="#1A2535"/>
+          <circle cx="128" cy="118" r="102" fill="#122030" stroke="#C4832A" stroke-width="7"/>
+          <path d="M 60,138 C 58,114 67,68 89,55 C 103,47 115,52 122,64 C 125,69 126,73 128,75 C 130,73 131,69 134,64 C 141,52 153,47 167,55 C 189,68 198,114 196,138 Z" fill="#C8924A"/>
+          <rect x="60" y="128" width="136" height="12" rx="2" fill="#5C3810"/>
+          <path d="M 26,144 Q 128,159 230,144 L 226,155 Q 128,172 30,155 Z" fill="#A87030"/>
+          <path d="M 32,157 C 65,182 120,200 170,190 C 196,185 214,172 220,160" stroke="#F5C842" stroke-width="6" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="name">Option 4 — Retro Badge</p>
+      <p class="label">Navy · Bronze · Gold</p>
+    </div>
+
+  </div>
+
+</body>
+</html>

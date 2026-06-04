@@ -1,7 +1,7 @@
-export function Spinner({ size = 16 }: { size?: number }) {
+﻿export function Spinner({ size = 16 }: { size?: number }) {
   return (
     <svg
-      className="animate-spin text-gray-500"
+      className="animate-spin text-gray-400"
       style={{ width: size, height: size }}
       fill="none"
       viewBox="0 0 24 24"

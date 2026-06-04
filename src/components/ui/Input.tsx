@@ -1,4 +1,4 @@
-import { type InputHTMLAttributes, forwardRef } from 'react'
+﻿import { type InputHTMLAttributes, forwardRef } from 'react'
 import { cn } from '../../utils/cn'
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
@@ -13,8 +13,8 @@ export const Input = forwardRef<HTMLInputElement, Props>(
       <input
         ref={ref}
         className={cn(
-          'bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-500',
-          'focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500/50',
+          'bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-chiffon-muted/50',
+          'focus:outline-none focus:border-gray-200-muted focus:ring-1 focus:ring-chiffon/20',
           'disabled:opacity-40',
           error && 'border-red-700',
           className
@@ -38,8 +38,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       <textarea
         ref={ref}
         className={cn(
-          'bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-500 resize-none',
-          'focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500/50',
+          'bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-chiffon-muted/50 resize-none',
+          'focus:outline-none focus:border-gray-200-muted focus:ring-1 focus:ring-chiffon/20',
           className
         )}
         {...props}

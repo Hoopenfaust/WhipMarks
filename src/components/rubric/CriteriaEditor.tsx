@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -53,22 +53,22 @@ function CriterionRow({
         <button
           {...attributes}
           {...listeners}
-          className="text-gray-600 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none"
+          className="text-gray-400/70 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none"
         >
           <GripVertical size={16} />
         </button>
-        <span className="flex-1 text-sm font-medium text-gray-200 truncate">{c.name || 'Untitled criterion'}</span>
+        <span className="flex-1 text-sm font-medium text-gray-100 truncate">{c.name || 'Untitled criterion'}</span>
         <Badge variant="default" className="shrink-0">{c.maxMarks} pts</Badge>
         <Badge variant="orange" className="shrink-0">{Math.round(c.weight * 100)}%</Badge>
         <button
           onClick={() => setExpanded(v => !v)}
-          className="p-1 text-gray-500 hover:text-gray-300 rounded"
+          className="p-1 text-gray-400 hover:text-gray-100 rounded"
         >
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
         <button
           onClick={onDelete}
-          className="p-1 text-gray-600 hover:text-red-400 rounded"
+          className="p-1 text-gray-400/70 hover:text-red-400 rounded"
         >
           <Trash2 size={14} />
         </button>
@@ -93,7 +93,7 @@ function CriterionRow({
                 type="number" min="1" step="1"
                 value={c.maxMarks}
                 onChange={e => updateCriterion(c.id, { maxMarks: parseInt(e.target.value) || 1 })}
-                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-500"
+                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-200-muted"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -102,7 +102,7 @@ function CriterionRow({
                 type="number" min="0" max="100" step="5"
                 value={Math.round(c.weight * 100)}
                 onChange={e => updateCriterion(c.id, { weight: (parseInt(e.target.value) || 0) / 100 })}
-                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-500"
+                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-200-muted"
               />
             </div>
           </div>
@@ -176,7 +176,7 @@ export function CriteriaEditor({ projectId, criteria, generating, onRequestGener
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-300">Criteria</h3>
+        <h3 className="text-sm font-semibold text-gray-100">Criteria</h3>
         <div className="flex items-center gap-2">
           {criteria.length > 0 && (
             <Badge variant={weightOk ? 'success' : 'warning'}>
@@ -199,14 +199,14 @@ export function CriteriaEditor({ projectId, criteria, generating, onRequestGener
       </div>
 
       {generating && (
-        <div className="flex flex-col items-center gap-3 py-8 text-gray-500">
+        <div className="flex flex-col items-center gap-3 py-8 text-gray-400">
           <Spinner size={24} />
           <p className="text-sm">Reading document and building rubric…</p>
         </div>
       )}
 
       {adding && (
-        <div className="bg-gray-800 border border-orange-800/50 rounded-lg p-3 flex flex-col gap-3">
+        <div className="bg-gray-800 border border-gray-200/20 rounded-lg p-3 flex flex-col gap-3">
           <Input
             label="Name"
             placeholder="e.g. Research Quality"
@@ -218,12 +218,12 @@ export function CriteriaEditor({ projectId, criteria, generating, onRequestGener
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-400">Max marks</label>
               <input type="number" min="1" value={newMax} onChange={e => setNewMax(e.target.value)}
-                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-500" />
+                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-200-muted" />
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-400">Weight (%)</label>
               <input type="number" min="0" max="100" step="5" value={newWeight} onChange={e => setNewWeight(e.target.value)}
-                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-500" />
+                className="w-24 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-200-muted" />
             </div>
           </div>
           <div className="flex gap-2 justify-end">
@@ -234,7 +234,7 @@ export function CriteriaEditor({ projectId, criteria, generating, onRequestGener
       )}
 
       {criteria.length === 0 && !adding && (
-        <p className="text-sm text-gray-600 py-4 text-center">No criteria yet. Add one to start building your rubric.</p>
+        <p className="text-sm text-gray-400/70 py-4 text-center">No criteria yet. Add one to start building your rubric.</p>
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

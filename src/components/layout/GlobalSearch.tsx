@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -87,14 +87,14 @@ export function GlobalSearch({ onSelectStudent }: Props) {
 
   return (
     <>
-      {/* Trigger button — twice the original size */}
+      {/* Trigger button — app bar compact style */}
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-3 bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 rounded-xl px-6 py-4 text-gray-400 hover:text-gray-200 hover:border-gray-600 transition-all shadow-lg shadow-black/20 group"
+        className="flex items-center gap-2.5 bg-gray-800 border border-gray-700 rounded-full px-5 py-2 text-gray-400 hover:text-gray-100 hover:border-gray-600 transition-all group"
       >
-        <Search size={20} />
-        <span className="text-base">Search students…</span>
-        <kbd className="ml-2 text-xs text-gray-600 group-hover:text-gray-500 border border-gray-700 rounded px-1.5 py-0.5">Ctrl K</kbd>
+        <Search size={16} />
+        <span className="text-sm">Search students…</span>
+        <kbd className="ml-1 text-xs text-gray-400/70 group-hover:text-gray-400 border border-gray-700 rounded px-1.5 py-0.5">Ctrl K</kbd>
       </button>
 
       {/* Overlay */}
@@ -112,10 +112,10 @@ export function GlobalSearch({ onSelectStudent }: Props) {
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search students across all classes…"
-                className="flex-1 bg-transparent text-xl text-gray-100 placeholder-gray-600 focus:outline-none"
+                className="flex-1 bg-transparent text-xl text-gray-100 placeholder-chiffon-muted/50 focus:outline-none"
               />
               {query && (
-                <button onClick={() => setQuery('')} className="text-gray-500 hover:text-gray-300">
+                <button onClick={() => setQuery('')} className="text-gray-400 hover:text-gray-100">
                   <X size={16} />
                 </button>
               )}
@@ -135,26 +135,26 @@ export function GlobalSearch({ onSelectStudent }: Props) {
                       onClick={() => handleSelect(s.classId, s.id)}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold text-gray-300 shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold text-gray-100 shrink-0">
                           {initials(s)}
                         </div>
                         <div>
                           <p className="text-base font-medium text-gray-100">{displayName(s)}</p>
-                          <p className="text-sm text-gray-500">{classMap[s.classId] ?? 'Unknown class'}</p>
+                          <p className="text-sm text-gray-400">{classMap[s.classId] ?? 'Unknown class'}</p>
                         </div>
                       </div>
-                      <span className="text-xs text-gray-600">↵</span>
+                      <span className="text-xs text-gray-400/70">↵</span>
                     </button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="px-5 py-8 text-center text-gray-600 text-sm">
+              <div className="px-5 py-8 text-center text-gray-400/70 text-sm">
                 {query.trim().length > 0 ? `No students found for "${query}"` : 'No students yet'}
               </div>
             )}
 
-            <div className="px-5 py-2 border-t border-gray-800 flex items-center gap-4 text-[11px] text-gray-700">
+            <div className="px-5 py-2 border-t border-gray-800 flex items-center gap-4 text-[11px] text-gray-400/50">
               <span>↑↓ navigate</span>
               <span>↵ open</span>
               <span>Esc close</span>

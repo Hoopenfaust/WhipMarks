@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Trash2, BookTemplate, CheckCircle } from 'lucide-react'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
@@ -37,9 +37,9 @@ export function RubricTemplatePickerModal({ open, onClose, projectId, existingCo
     <Modal open={open} onClose={onClose} title="Apply Template" size="lg">
       {templates.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-10 text-center">
-          <BookTemplate size={36} className="text-gray-600" />
+          <BookTemplate size={36} className="text-gray-400/70" />
           <p className="text-sm text-gray-400">No templates saved yet.</p>
-          <p className="text-xs text-gray-500">Build a rubric and click "Save as template" to create one.</p>
+          <p className="text-xs text-gray-400">Build a rubric and click "Save as template" to create one.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -63,7 +63,7 @@ export function RubricTemplatePickerModal({ open, onClose, projectId, existingCo
                       variant="ghost"
                       size="sm"
                       onClick={async () => { await deleteTemplate(t.id) }}
-                      className="p-1.5 text-gray-500 hover:text-red-400"
+                      className="p-1.5 text-gray-400 hover:text-red-400"
                     >
                       <Trash2 size={14} />
                     </Button>
@@ -79,26 +79,28 @@ export function RubricTemplatePickerModal({ open, onClose, projectId, existingCo
                 </div>
 
                 {isConfirming && (
-                  <div className="flex items-center gap-2 pt-1 border-t border-gray-700 mt-1">
-                    <p className="text-xs text-amber-400 flex-1">
-                      This project already has criteria. Replace or append?
+                  <div className="flex flex-col gap-2 pt-2 border-t border-red-900/40 mt-1 bg-red-950/20 rounded-lg px-3 py-2.5">
+                    <p className="text-xs font-semibold text-red-300">
+                      ⚠ This project already has {existingCount} {existingCount === 1 ? 'criterion' : 'criteria'}. What would you like to do?
                     </p>
-                    <Button size="sm" variant="danger" onClick={() => handleApply(t.id, 'replace')}>
-                      Replace all
-                    </Button>
-                    <Button size="sm" variant="secondary" onClick={() => handleApply(t.id, 'append')}>
-                      Append
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setConfirmReplace(null)}>
-                      Cancel
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="danger" onClick={() => handleApply(t.id, 'replace')}>
+                        Replace all existing
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => handleApply(t.id, 'append')}>
+                        Add to existing
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setConfirmReplace(null)}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 )}
 
                 <div className="flex flex-wrap gap-1 mt-0.5">
                   {items.map((item, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 text-xs bg-gray-750 border border-gray-700 rounded px-2 py-0.5 text-gray-300">
-                      <CheckCircle size={10} className="text-gray-500" />
+                    <span key={i} className="inline-flex items-center gap-1 text-xs bg-gray-750 border border-gray-700 rounded px-2 py-0.5 text-gray-100">
+                      <CheckCircle size={10} className="text-gray-400" />
                       {item.name}
                     </span>
                   ))}
