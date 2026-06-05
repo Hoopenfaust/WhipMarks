@@ -49,6 +49,7 @@ interface ImportState {
   rows: Record<string, string>[]
   nameCol: string
   firstNameCol: string  // empty string = none
+  emailCol: string      // empty string = none
   className: string
 }
 
@@ -98,8 +99,9 @@ export function ClassesView() {
       const { headers, rows } = await parseSpreadsheetFile(file)
       const nameCol = detectNameColumn(headers) ?? headers[0]
       const firstNameCol = headers.find(h => /first.?name|given.?name|forename/i.test(h)) ?? ''
+      const emailCol = headers.find(h => /^e.?mail/i.test(h)) ?? ''
       const className = file.name.replace(/\.(csv|xlsx|xls)$/i, '')
-      setImportState({ file, headers, rows, nameCol, firstNameCol, className })
+      setImportState({ file, headers, rows, nameCol, firstNameCol, emailCol, className })
     } catch (err) {
       setImportError('Could not read file: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
@@ -121,6 +123,7 @@ export function ClassesView() {
         .map(r => ({
           name: r[importState.nameCol]?.trim() ?? '',
           firstName: importState.firstNameCol ? r[importState.firstNameCol]?.trim() : undefined,
+          email: importState.emailCol ? r[importState.emailCol]?.trim() : undefined,
         }))
         .filter(s => s.name)
 
@@ -290,6 +293,20 @@ export function ClassesView() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-400 mb-1 block">Email column <span className="text-gray-400/70">(optional — used to email mark reports)</span></label>
+              <select
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-400"
+                value={importState.emailCol}
+                onChange={e => setImportState(s => s ? { ...s, emailCol: e.target.value } : s)}
+              >
+                <option value="">— none —</option>
+                {importState.headers.map(h => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
             </div>
 
             <div>

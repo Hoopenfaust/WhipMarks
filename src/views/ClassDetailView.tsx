@@ -4,7 +4,7 @@ import { Plus, Trash2, Pencil, BarChart2, ChevronRight, Camera, CheckCircle2, Ci
 import { Spinner } from '../components/ui/Spinner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useClass, updateClass, deleteClass } from '../db/hooks/useClasses'
-import { useStudents, addStudent, deleteStudent, updateStudentName, updateStudentPhoto, updateStudentNames, updateStudentNotes, updateStudentChecklist } from '../db/hooks/useStudents'
+import { useStudents, addStudent, deleteStudent, updateStudentName, updateStudentPhoto, updateStudentNames, updateStudentNotes, updateStudentChecklist, updateStudentEmail } from '../db/hooks/useStudents'
 import { useProjects, createProject, updateProject, deleteProject } from '../db/hooks/useProjects'
 import { useAllMarksForClass, upsertMark } from '../db/hooks/useMarks'
 import { db } from '../db/db'
@@ -488,6 +488,15 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
               Semester: {semesterMark.toFixed(1)}%
             </p>
           )}
+          {/* Email — inline editable */}
+          <input
+            type="email"
+            defaultValue={student.email ?? ''}
+            placeholder="student@email.com"
+            onBlur={e => updateStudentEmail(student.id, e.target.value.trim())}
+            onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+            className="mt-1.5 w-full bg-transparent border-b border-gray-700 focus:border-gray-400 outline-none text-sm text-gray-400 placeholder-gray-600 py-0.5 transition-colors"
+          />
         </div>
       </div>
 

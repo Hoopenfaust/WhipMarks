@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark } from '../../db/hooks/useMarks'
 import { upsertImprovementNote } from '../../db/hooks/useImprovementNotes'
@@ -54,6 +54,7 @@ export function QuickMarkModal({
   const touchStartY = useRef(0)
 
   const student = students[studentIdx]
+  const [emailing, setEmailing] = useState(false)
   const submission = useSubmission(student.id, projectId)
   const submissionAnnotation = useSubmissionAnnotation(student.id, projectId)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -186,6 +187,77 @@ export function QuickMarkModal({
   const completedCount = criteria.filter(c => studentMarks.some(m => m.criterionId === c.id)).length
   const showDots = students.length <= 24
 
+  // ─── Email to Outlook ──────────────────────────────────────────────────────
+  async function sendEmail() {
+    if (!student.email) return
+    setEmailing(true)
+    try {
+      const firstName = student.firstName || student.name.split(' ')[0]
+      const studentMarksLocal = marks.filter(m => m.studentId === student.id)
+      const pct = calcProjectPercentage(studentMarksLocal, criteria)
+      const isComplete = criteria.every(c => studentMarksLocal.some(m => m.criterionId === c.id))
+
+      // Build mark breakdown lines
+      const lines = criteria.map(c => {
+        const mark = studentMarksLocal.find(m => m.criterionId === c.id)
+        const scoreLine = mark
+          ? `${c.name.padEnd(30)} ${String(mark.score).padStart(3)} / ${c.maxMarks}  (${((mark.score / c.maxMarks) * 100).toFixed(0)}%)`
+          : `${c.name.padEnd(30)} not marked`
+        const feedback = mark?.feedback ? `   > ${mark.feedback}` : ''
+        return [scoreLine, feedback].filter(Boolean).join('\n')
+      }).join('\n')
+
+      // Improvement note
+      const improvement = await db.improvementNotes.where('[studentId+projectId]').equals([student.id, projectId]).first()
+
+      const body = [
+        `Dear ${firstName},`,
+        '',
+        'Please find your assessment feedback below.',
+        '',
+        '─'.repeat(50),
+        isComplete ? `OVERALL MARK: ${pct.toFixed(1)}%` : 'MARKING IN PROGRESS',
+        '─'.repeat(50),
+        '',
+        lines,
+        '',
+        ...(improvement?.text ? ['─'.repeat(50), 'ROOM FOR IMPROVEMENT:', improvement.text, ''] : []),
+        ...(submission ? ['Your annotated submission is attached.', ''] : []),
+        'Kind regards',
+      ].join('\n')
+
+      const subject = `Assessment Feedback: ${student.firstName ? `${student.firstName} ${student.name}` : student.name}`
+
+      // Desktop (Tauri): open Outlook with attachment
+      const isTauri = typeof (window as any).__TAURI_INTERNALS__ !== 'undefined'
+      if (isTauri) {
+        const { invoke } = await import('@tauri-apps/api/core')
+        let attachmentPath: string | undefined
+
+        if (submission) {
+          // Export annotated PDF if annotations exist, otherwise use raw submission
+          const pdfBytes = new Uint8Array(submission.data)
+          const safeName = `${student.name.replace(/[^a-z0-9]/gi, '_')}_submission.pdf`
+          attachmentPath = await invoke<string>('write_temp_file', { filename: safeName, data: Array.from(pdfBytes) })
+        }
+
+        await invoke('open_outlook', {
+          to: student.email,
+          subject,
+          body,
+          attachmentPath: attachmentPath ?? null,
+        })
+      } else {
+        // PWA / iPad fallback: mailto link (no attachment)
+        const encodedSubject = encodeURIComponent(subject)
+        const encodedBody = encodeURIComponent(body)
+        window.location.href = `mailto:${student.email}?subject=${encodedSubject}&body=${encodedBody}`
+      }
+    } finally {
+      setEmailing(false)
+    }
+  }
+
   // Touch-friendly sizes
   const navBtnClass = isTouch
     ? 'p-3 rounded-xl text-gray-400 hover:text-gray-100 hover:bg-gray-800 disabled:opacity-25 disabled:cursor-not-allowed transition-colors'
@@ -240,6 +312,22 @@ export function QuickMarkModal({
           <button onClick={next} disabled={studentIdx === students.length - 1} className={navBtnClass}>
             <ChevronRight size={isTouch ? 24 : 20} />
           </button>
+
+          {/* Email student */}
+          {student.email && (
+            <button
+              onClick={sendEmail}
+              disabled={emailing}
+              title={`Email ${student.email}`}
+              className={cn('rounded-xl flex items-center gap-1.5 font-medium transition-colors disabled:opacity-50',
+                isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
+                'bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 hover:bg-emerald-900/60'
+              )}
+            >
+              <Mail size={isTouch ? 16 : 13} />
+              {emailing ? 'Opening…' : 'Email'}
+            </button>
+          )}
 
           {/* Annotate / upload submission */}
           <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={handleUploadSubmission} />

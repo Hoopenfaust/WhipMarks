@@ -13,6 +13,7 @@ export function useStudents(classId: string | undefined) {
 export interface StudentImportData {
   name: string
   firstName?: string
+  email?: string
 }
 
 export async function addStudent(classId: string, name: string, sortIndex: number): Promise<Student> {
@@ -30,10 +31,15 @@ export async function bulkAddStudents(classId: string, students: StudentImportDa
     classId,
     name: s.name,
     ...(s.firstName ? { firstName: s.firstName } : {}),
+    ...(s.email ? { email: s.email } : {}),
     sortIndex: startIndex + i,
   }))
   await db.students.bulkAdd(rows)
   return rows
+}
+
+export async function updateStudentEmail(id: string, email: string) {
+  await db.students.update(id, { email: email || undefined })
 }
 
 export async function deleteStudent(id: string) {
