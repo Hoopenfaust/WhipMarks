@@ -218,7 +218,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       {/* Stats grid — wraps to multiple rows when projects overflow */}
       <div className="w-full border-t border-gray-700 pt-3 flex flex-wrap gap-2 justify-center">
         {/* Semester tile */}
-        <div className="flex flex-col items-center gap-0.5 bg-gray-900/60 rounded-lg px-3 py-2 min-w-[64px]">
+        <div className="flex flex-col items-center gap-0.5 px-3 py-2 min-w-[64px]">
           {semesterMark !== null ? (
             <span className={`text-2xl font-bold leading-none ${gradeColor(semesterMark)}`}>
               {semesterMark.toFixed(0)}%
@@ -231,7 +231,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
 
         {/* Per-project tiles */}
         {projectMarks.map(({ name, pct }) => (
-          <div key={name} className="flex flex-col items-center gap-0.5 bg-gray-900/60 rounded-lg px-3 py-2 min-w-[64px] max-w-[96px]">
+          <div key={name} className="flex flex-col items-center gap-0.5 px-3 py-2 min-w-[64px] max-w-[96px]">
             {pct !== null ? (
               <span className={`text-2xl font-bold leading-none ${gradeColor(pct)}`}>
                 {pct.toFixed(0)}%
