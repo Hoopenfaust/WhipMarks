@@ -7,6 +7,7 @@ import { LEVELS } from '../../utils/levels'
 import { cn } from '../../utils/cn'
 import { QuickMarkModal } from './QuickMarkModal'
 import { SnippetPicker } from './SnippetPicker'
+import { useIsTouch } from '../../utils/useIsTouch'
 
 
 interface CellPopoverProps {
@@ -216,8 +217,10 @@ interface Props {
 }
 
 export function MarkingGrid({ students, criteria, marks, projectId, descriptors = [], snippets = [], onExportStudent }: Props) {
+  const isTouch = useIsTouch()
   const [activeCell, setActiveCell] = useState<{ studentIdx: number; criterionIdx: number } | null>(null)
   const [quickMarkIdx, setQuickMarkIdx] = useState<number | null>(null)
+  const [quickMarkCriterionIdx, setQuickMarkCriterionIdx] = useState<number | undefined>(undefined)
 
   function getMark(studentId: string, criterionId: string) {
     return marks.find(m => m.studentId === studentId && m.criterionId === criterionId)
@@ -252,12 +255,15 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
         <p className="text-xs text-gray-400">{students.length} students · {criteria.length} criteria</p>
       </div>
       <button
-        onClick={() => setQuickMarkIdx(0)}
+        onClick={() => { setQuickMarkCriterionIdx(undefined); setQuickMarkIdx(0) }}
         data-tutorial="quick-mark-btn"
-        className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-colors"
+        className={cn(
+          'flex items-center gap-2 rounded-full font-semibold transition-colors',
+          isTouch ? 'px-6 py-3.5 text-base' : 'px-5 py-2.5 text-sm'
+        )}
         style={{ background: '#FFB59C', color: '#5F1500' }}
       >
-        <Zap size={15} />
+        <Zap size={isTouch ? 18 : 15} />
         Quick Mark
       </button>
     </div>
@@ -291,7 +297,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
 
             return (
               <tr key={s.id} className={cn('group hover:bg-gray-200/5 transition-colors', rowBg)}>
-                <td className={cn('border-b border-r border-gray-700 px-4 py-2.5 text-sm font-medium whitespace-nowrap', rowBg)}>
+                <td className={cn('border-b border-r border-gray-700 font-medium whitespace-nowrap', rowBg, isTouch ? 'px-4 py-5 text-base' : 'px-4 py-2.5 text-sm')}>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setQuickMarkIdx(si)}
@@ -321,10 +327,18 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                     <td
                       key={c.id}
                       className={cn(
-                        'relative border-b border-r border-gray-700 px-4 py-2.5 cursor-pointer transition-colors',
+                        'relative border-b border-r border-gray-700 cursor-pointer transition-colors',
+                        isTouch ? 'px-4 py-5' : 'px-4 py-2.5',
                         isActive ? 'bg-gray-800/30' : 'hover:bg-gray-800'
                       )}
-                      onClick={() => setActiveCell(isActive ? null : { studentIdx: si, criterionIdx: ci })}
+                      onClick={() => {
+                        if (isTouch) {
+                          setQuickMarkCriterionIdx(ci)
+                          setQuickMarkIdx(si)
+                        } else {
+                          setActiveCell(isActive ? null : { studentIdx: si, criterionIdx: ci })
+                        }
+                      }}
                     >
                       {hasMark ? (
                         <span className={cn(
@@ -411,7 +425,8 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
         descriptors={descriptors}
         snippets={snippets}
         initialStudentIdx={quickMarkIdx}
-        onClose={() => setQuickMarkIdx(null)}
+        initialCriterionIdx={quickMarkCriterionIdx}
+        onClose={() => { setQuickMarkIdx(null); setQuickMarkCriterionIdx(undefined) }}
       />
     )}
     </div>
