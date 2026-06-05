@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -238,5 +239,29 @@ Rules:
 }
 
 export default defineConfig({
-  plugins: [react(), anthropicProxyPlugin()],
+  plugins: [
+    react(),
+    anthropicProxyPlugin(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      workbox: {
+        // Don't cache API routes — they must always hit the server
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [],
+      },
+      manifest: {
+        name: 'WhipMarks',
+        short_name: 'WhipMarks',
+        description: 'Student marking and rubric builder for educators',
+        theme_color: '#18181b',
+        background_color: '#0f0f10',
+        display: 'standalone',
+        orientation: 'any',
+        icons: [
+          { src: '/pwa-192.png', sizes: '128x128', type: 'image/png' },
+          { src: '/pwa-512.png', sizes: '256x256', type: 'image/png', purpose: 'any maskable' },
+        ],
+      },
+    }),
+  ],
 })
