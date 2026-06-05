@@ -43,9 +43,12 @@ export function QuickMarkModal({
   const [feedbackText, setFeedbackText] = useState('')
   const [markError, setMarkError] = useState<string | null>(null)
   const [improvementText, setImprovementText] = useState('')
-  const [recording, setRecording] = useState(false)
+  const [recording, setRecording] = useState(false)       // Room for Improvement
+  const [feedbackRecording, setFeedbackRecording] = useState(false) // per-criterion feedback
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const feedbackRecognitionRef = useRef<any>(null)
   const criterionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -139,6 +142,30 @@ export function QuickMarkModal({
     recognitionRef.current = r
     r.start()
     setRecording(true)
+  }
+
+  function toggleFeedbackRecording() {
+    if (feedbackRecording) {
+      feedbackRecognitionRef.current?.stop()
+      setFeedbackRecording(false)
+      return
+    }
+    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
+    if (!SR) return
+    const r = new SR()
+    r.continuous = true
+    r.interimResults = false
+    r.onresult = (e: any) => {
+      const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
+        e.results[e.resultIndex + i][0].transcript
+      ).join(' ').trim()
+      setFeedbackText((prev: string) => prev ? prev + ' ' + transcript : transcript)
+    }
+    r.onend = () => setFeedbackRecording(false)
+    r.onerror = () => setFeedbackRecording(false)
+    feedbackRecognitionRef.current = r
+    r.start()
+    setFeedbackRecording(true)
   }
 
   async function saveImprovement() {
@@ -466,14 +493,17 @@ export function QuickMarkModal({
                       value={feedbackText}
                       onChange={e => setFeedbackText(e.target.value)}
                       onKeyDown={e => {
-                        if (e.key === 'Escape') setFeedbackOpen(null)
+                        if (e.key === 'Escape') { feedbackRecognitionRef.current?.stop(); setFeedbackRecording(false); setFeedbackOpen(null) }
                         if (e.key === 'Enter' && e.metaKey) saveFeedback(c)
                       }}
                       rows={isTouch ? 4 : 2}
-                      placeholder="Feedback for this criterion…"
-                      className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-3 text-sm text-gray-100 placeholder-gray-500 resize-none focus:outline-none focus:border-gray-400"
+                      placeholder={feedbackRecording ? 'Listening…' : 'Feedback for this criterion…'}
+                      className={cn(
+                        'w-full bg-gray-800 border rounded-xl px-3 py-3 text-sm text-gray-100 placeholder-gray-500 resize-none focus:outline-none focus:border-gray-400',
+                        feedbackRecording ? 'border-red-500/50' : 'border-gray-600'
+                      )}
                     />
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       <button
                         onClick={() => saveFeedback(c)}
                         className={cn(
@@ -484,13 +514,26 @@ export function QuickMarkModal({
                         Save
                       </button>
                       <button
-                        onClick={() => setFeedbackOpen(null)}
+                        onClick={() => { feedbackRecognitionRef.current?.stop(); setFeedbackRecording(false); setFeedbackOpen(null) }}
                         className={cn(
                           'text-gray-400 hover:text-gray-100 rounded-xl transition-colors',
                           isTouch ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-xs'
                         )}
                       >
                         Cancel
+                      </button>
+                      <button
+                        onClick={toggleFeedbackRecording}
+                        className={cn(
+                          'ml-auto flex items-center gap-1.5 rounded-lg font-medium transition-colors',
+                          isTouch ? 'px-3 py-2 text-sm' : 'px-2.5 py-1 text-xs',
+                          feedbackRecording
+                            ? 'bg-red-500/20 border border-red-500/50 text-red-400 animate-pulse'
+                            : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600'
+                        )}
+                      >
+                        {feedbackRecording ? <Square size={isTouch ? 14 : 12} /> : <Mic size={isTouch ? 14 : 12} />}
+                        {feedbackRecording ? 'Stop' : 'Dictate'}
                       </button>
                     </div>
                   </div>
