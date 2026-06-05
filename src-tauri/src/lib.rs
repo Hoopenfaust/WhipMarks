@@ -1,5 +1,7 @@
 use std::fs;
 use tauri::command;
+use base64::Engine as _;
+use base64::engine::general_purpose::STANDARD as BASE64;
 
 /// Write bytes to a temp file. Returns the absolute path.
 #[command]
@@ -10,8 +12,9 @@ fn write_temp_file(filename: String, data: Vec<u8>) -> Result<String, String> {
     Ok(path.to_string_lossy().to_string())
 }
 
-/// Open Outlook (Windows) with a pre-filled email.
-/// Writes a temporary .ps1 script and executes it via PowerShell.
+/// Open the default mail client (new Outlook, classic Outlook, etc.) with a
+/// pre-filled email. Creates a standards-compliant .eml file and opens it via
+/// the Windows shell, so whichever app handles .eml is used — no COM needed.
 #[command]
 fn open_outlook(
     to: String,
@@ -19,48 +22,75 @@ fn open_outlook(
     body: String,
     attachment_path: Option<String>,
 ) -> Result<(), String> {
-    let attach_line = match &attachment_path {
-        Some(p) if !p.is_empty() => format!(
-            "$mail.Attachments.Add(@\"\n{}\n\"@.Trim())",
-            p
-        ),
-        _ => String::new(),
+    let boundary = "WhipMarksMIMEBoundary20250101";
+
+    let eml = if let Some(ref path) = attachment_path {
+        // Multipart/mixed with PDF attachment
+        let attachment_bytes = fs::read(path).map_err(|e| e.to_string())?;
+        let encoded = BASE64.encode(&attachment_bytes);
+        let filename = std::path::Path::new(path)
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+
+        // Chunk base64 into 76-char lines (RFC 2045)
+        let chunked: String = encoded
+            .as_bytes()
+            .chunks(76)
+            .map(|c| std::str::from_utf8(c).unwrap_or(""))
+            .collect::<Vec<_>>()
+            .join("\r\n");
+
+        format!(
+            "To: {to}\r\n\
+             Subject: {subject}\r\n\
+             MIME-Version: 1.0\r\n\
+             Content-Type: multipart/mixed; boundary=\"{boundary}\"\r\n\
+             \r\n\
+             --{boundary}\r\n\
+             Content-Type: text/plain; charset=utf-8\r\n\
+             \r\n\
+             {body}\r\n\
+             \r\n\
+             --{boundary}\r\n\
+             Content-Type: application/pdf; name=\"{filename}\"\r\n\
+             Content-Transfer-Encoding: base64\r\n\
+             Content-Disposition: attachment; filename=\"{filename}\"\r\n\
+             \r\n\
+             {chunked}\r\n\
+             \r\n\
+             --{boundary}--\r\n",
+            to = to,
+            subject = subject,
+            boundary = boundary,
+            body = body,
+            filename = filename,
+            chunked = chunked,
+        )
+    } else {
+        // Plain text only
+        format!(
+            "To: {to}\r\n\
+             Subject: {subject}\r\n\
+             MIME-Version: 1.0\r\n\
+             Content-Type: text/plain; charset=utf-8\r\n\
+             \r\n\
+             {body}\r\n",
+            to = to,
+            subject = subject,
+            body = body,
+        )
     };
 
-    let script = format!(
-        r#"
-$ol = New-Object -ComObject Outlook.Application
-$mail = $ol.CreateItem(0)
-$mail.To = @"
-{to}
-"@.Trim()
-$mail.Subject = @"
-{subject}
-"@.Trim()
-$mail.Body = @"
-{body}
-"@
-{attach}
-$mail.Display()
-"#,
-        to = to,
-        subject = subject,
-        body = body,
-        attach = attach_line,
-    );
+    // Write the .eml file to temp
+    let mut eml_path = std::env::temp_dir();
+    eml_path.push("whipmarks_email.eml");
+    fs::write(&eml_path, eml.as_bytes()).map_err(|e| e.to_string())?;
 
-    let mut script_path = std::env::temp_dir();
-    script_path.push("whipmarks_outlook.ps1");
-    fs::write(&script_path, &script).map_err(|e| e.to_string())?;
-
-    std::process::Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            script_path.to_str().unwrap_or(""),
-        ])
+    // Open with the default mail handler (new Outlook, classic, etc.)
+    std::process::Command::new("cmd")
+        .args(["/c", "start", "", &eml_path.to_string_lossy()])
         .spawn()
         .map_err(|e| e.to_string())?;
 
