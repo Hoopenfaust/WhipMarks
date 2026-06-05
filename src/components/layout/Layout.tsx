@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
 import { saveToLocalStorage } from '../../utils/backup'
+import { useState } from 'react'
 import { Sidebar } from './Sidebar'
 import { GlobalSearch } from './GlobalSearch'
 import { SyncStatus } from '../auth/SyncStatus'
@@ -34,6 +35,8 @@ function AutoBackup() {
 }
 
 export function Layout() {
+  const [loginOpen, setLoginOpen] = useState(false)
+
   return (
     <div className="flex h-screen bg-gray-950 overflow-hidden">
       <AutoBackup />
@@ -43,11 +46,12 @@ export function Layout() {
         <header className="h-16 bg-gray-900 border-b border-gray-700 flex items-center px-6 gap-4 shrink-0">
           <h1 className="text-lg font-medium text-gray-100 tracking-wide">WhipMarks</h1>
           <div className="ml-auto flex items-center gap-3">
-            <SyncStatus />
+            <SyncStatus onLoginClick={() => setLoginOpen(true)} />
             <GlobalSearch />
           </div>
         </header>
-        <SyncLoginModal />
+        {/* Login modal only opens when user explicitly taps "Sign in to sync" */}
+        {loginOpen && <SyncLoginModal onDone={() => setLoginOpen(false)} />}
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>

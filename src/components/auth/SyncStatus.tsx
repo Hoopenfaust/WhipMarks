@@ -8,7 +8,7 @@ const CLOUD_URL = import.meta.env.VITE_DEXIE_CLOUD_URL as string | undefined
  * Shows in the app header. When cloud is not configured, renders nothing.
  * When configured, shows login state + sync status.
  */
-export function SyncStatus() {
+export function SyncStatus({ onLoginClick }: { onLoginClick: () => void }) {
   const currentUser = useObservable(db.cloud.currentUser)
   const syncState = useObservable(db.cloud.syncState)
 
@@ -20,7 +20,7 @@ export function SyncStatus() {
   if (!isLoggedIn) {
     return (
       <button
-        onClick={() => db.cloud.login()}
+        onClick={onLoginClick}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-colors border border-gray-700 hover:border-gray-600"
         title="Sign in to sync across devices"
       >
