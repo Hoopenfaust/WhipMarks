@@ -310,9 +310,9 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                       <button
                         onClick={() => onExportStudent(s)}
                         title="Export assessment report"
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-gray-400/70 hover:text-gray-100 hover:bg-gray-200/10 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-500 hover:text-orange-300 hover:bg-orange-950/50 transition-all hover:scale-110"
                       >
-                        <FileDown size={13} />
+                        <FileDown size={16} />
                       </button>
                     )}
                   </div>
