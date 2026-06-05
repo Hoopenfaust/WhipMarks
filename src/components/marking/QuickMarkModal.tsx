@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark } from '../../db/hooks/useMarks'
 import { upsertImprovementNote } from '../../db/hooks/useImprovementNotes'
+import { useSubmission, useSubmissionAnnotation, saveSubmission, parseAnnotations } from '../../db/hooks/useSubmissions'
 import { db } from '../../db/db'
 import { LEVELS } from '../../utils/levels'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
 import { cn } from '../../utils/cn'
 import { SnippetPicker } from './SnippetPicker'
 import { useIsTouch } from '../../utils/useIsTouch'
+import { AnnotatorView } from '../annotator/AnnotatorView'
 
 interface Props {
   students: Student[]
@@ -35,6 +37,7 @@ export function QuickMarkModal({
 }: Props) {
   const isTouch = useIsTouch()
   const [studentIdx, setStudentIdx] = useState(Math.max(0, Math.min(initialStudentIdx, students.length - 1)))
+  const [annotating, setAnnotating] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
   const [feedbackOpen, setFeedbackOpen] = useState<string | null>(null)
   const [feedbackText, setFeedbackText] = useState('')
@@ -51,6 +54,18 @@ export function QuickMarkModal({
   const touchStartY = useRef(0)
 
   const student = students[studentIdx]
+  const submission = useSubmission(student.id, projectId)
+  const submissionAnnotation = useSubmissionAnnotation(student.id, projectId)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleUploadSubmission(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || file.type !== 'application/pdf') return
+    const data = await file.arrayBuffer()
+    await saveSubmission(student.id, projectId, data, file.name)
+    setAnnotating(true)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const prev = useCallback(() => setStudentIdx(i => Math.max(0, i - 1)), [])
   const next = useCallback(() => setStudentIdx(i => Math.min(students.length - 1, i + 1)), [students.length])
@@ -177,6 +192,7 @@ export function QuickMarkModal({
     : 'p-1.5 rounded-lg text-gray-400 hover:text-gray-100 hover:bg-gray-800 disabled:opacity-25 disabled:cursor-not-allowed transition-colors'
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       onClick={() => { saveImprovement(); onClose() }}
@@ -224,6 +240,34 @@ export function QuickMarkModal({
           <button onClick={next} disabled={studentIdx === students.length - 1} className={navBtnClass}>
             <ChevronRight size={isTouch ? 24 : 20} />
           </button>
+
+          {/* Annotate / upload submission */}
+          <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={handleUploadSubmission} />
+          {submission ? (
+            <button
+              onClick={() => setAnnotating(true)}
+              title="Open annotated submission"
+              className={cn('rounded-xl flex items-center gap-1.5 font-medium transition-colors',
+                isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
+                'bg-blue-950/60 border border-blue-800/50 text-blue-300 hover:bg-blue-900/60'
+              )}
+            >
+              <FileText size={isTouch ? 16 : 13} />
+              Annotate
+            </button>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              title="Upload student submission PDF"
+              className={cn('rounded-xl flex items-center gap-1.5 font-medium transition-colors',
+                isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
+                'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600'
+              )}
+            >
+              <Upload size={isTouch ? 16 : 13} />
+              Upload PDF
+            </button>
+          )}
 
           <button
             onClick={() => { saveImprovement(); onClose() }}
@@ -464,5 +508,18 @@ export function QuickMarkModal({
         </div>
       </div>
     </div>
+
+    {/* Full-screen annotator — shown when submission exists and annotate is clicked */}
+    {annotating && submission && (
+      <AnnotatorView
+        student={student}
+        projectId={projectId}
+        pdfData={submission.data}
+        filename={submission.filename}
+        initialAnnotations={parseAnnotations(submissionAnnotation)}
+        onClose={() => setAnnotating(false)}
+      />
+    )}
+    </>
   )
 }

@@ -157,6 +157,69 @@ export interface ImprovementNote {
   updatedAt: number
 }
 
+// ─── Student Submissions & Annotations ──────────────────────────────────────
+
+export interface StudentSubmission {
+  id: string
+  studentId: string
+  projectId: string
+  data: ArrayBuffer        // raw PDF bytes
+  filename: string
+  uploadedAt: number
+}
+
+export type AnnotationTool = 'pen' | 'highlight' | 'text' | 'stamp' | 'eraser'
+export type StampType = 'check' | 'cross' | 'question' | 'star'
+
+export interface PenStroke {
+  id: string
+  points: number[][]       // [x, y, pressure] normalized 0–1
+  color: string
+  width: number
+}
+
+export interface TextPin {
+  id: string
+  x: number                // normalized 0–1
+  y: number
+  text: string
+  color: string
+}
+
+export interface HighlightRect {
+  id: string
+  x: number
+  y: number
+  width: number
+  height: number
+  color: string
+}
+
+export interface AnnotationStamp {
+  id: string
+  x: number
+  y: number
+  type: StampType
+}
+
+export interface PageAnnotations {
+  pageNumber: number
+  strokes: PenStroke[]
+  textPins: TextPin[]
+  highlights: HighlightRect[]
+  stamps: AnnotationStamp[]
+}
+
+export interface SubmissionAnnotation {
+  id: string               // `${studentId}-${projectId}`
+  studentId: string
+  projectId: string
+  pagesJson: string        // JSON.stringify(PageAnnotations[])
+  updatedAt: number
+}
+
+// ─── Library ─────────────────────────────────────────────────────────────────
+
 export interface LibraryProject {
   id: string
   name: string

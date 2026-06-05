@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import dexieCloud from 'dexie-cloud-addon'
-import type { Class, Student, Project, RubricCriterion, Mark, ProjectSheet, RubricDescriptor, RubricTemplate, ScheduleWeek, TaMark, TaAssignment, Competency, CriterionCompetency, Snippet, ImprovementNote, LibraryProject, LibraryProjectCriterion } from '../types'
+import type { Class, Student, Project, RubricCriterion, Mark, ProjectSheet, RubricDescriptor, RubricTemplate, ScheduleWeek, TaMark, TaAssignment, Competency, CriterionCompetency, Snippet, ImprovementNote, LibraryProject, LibraryProjectCriterion, StudentSubmission, SubmissionAnnotation } from '../types'
 
 class AppDatabase extends Dexie {
   classes!: Table<Class>
@@ -20,6 +20,8 @@ class AppDatabase extends Dexie {
   improvementNotes!: Table<ImprovementNote>
   libraryProjects!: Table<LibraryProject>
   libraryProjectCriteria!: Table<LibraryProjectCriterion>
+  studentSubmissions!: Table<StudentSubmission>
+  submissionAnnotations!: Table<SubmissionAnnotation>
 
   constructor() {
     super('GradeDesk', { addons: [dexieCloud] })
@@ -117,6 +119,27 @@ class AppDatabase extends Dexie {
       libraryProjects: '&id, createdAt',
       libraryProjectCriteria: '&id, libraryProjectId, sortIndex',
     })
+    this.version(10).stores({
+      classes: '&id, createdAt',
+      students: '&id, classId, sortIndex',
+      projects: '&id, classId, createdAt',
+      criteria: '&id, projectId, sortIndex',
+      marks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      projectSheets: '&id, projectId',
+      descriptors: '&id, criterionId',
+      rubricTemplates: '&id, createdAt',
+      scheduleWeeks: '&id, [classId+weekNumber], classId',
+      taMarks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      taAssignments: '&projectId',
+      competencies: '&id, projectId, sortIndex',
+      criterionCompetencies: '&id, criterionId, competencyId',
+      snippets: '&id, projectId, createdAt',
+      improvementNotes: '&id, [studentId+projectId], projectId',
+      libraryProjects: '&id, createdAt',
+      libraryProjectCriteria: '&id, libraryProjectId, sortIndex',
+      studentSubmissions: '&id, [studentId+projectId], projectId',
+      submissionAnnotations: '&id, [studentId+projectId]',
+    })
   }
 }
 
@@ -133,9 +156,10 @@ if (cloudUrl) {
     socialAuth: false,       // OTP email only — no OAuth popups (works in Tauri + PWA)
     tryUseServiceWorker: false,
     unsyncedTables: [
-      'projectSheets',   // raw PDF/image binary — too large to sync
-      'taAssignments',   // local TA workflow state
-      'taMarks',         // local TA marks before import
+      'projectSheets',        // raw PDF/image binary — too large to sync
+      'taAssignments',        // local TA workflow state
+      'taMarks',              // local TA marks before import
+      'studentSubmissions',   // raw PDF binary — too large to sync
     ],
   })
 }
