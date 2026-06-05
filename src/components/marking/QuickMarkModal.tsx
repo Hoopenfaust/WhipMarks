@@ -491,26 +491,13 @@ export function QuickMarkModal({
                 {/* Feedback */}
                 {isEditingFeedback ? (
                   <div className="flex flex-col gap-2 mt-2">
-                    {/* Toolbar: snippets + dictate */}
+                    {/* Snippets toolbar */}
                     <div className="flex items-center gap-2">
                       <SnippetPicker
                         projectId={projectId}
                         snippets={snippets}
                         onInsert={text => setFeedbackText(prev => prev ? prev + ' ' + text : text)}
                       />
-                      <button
-                        onClick={toggleFeedbackRecording}
-                        className={cn(
-                          'flex items-center gap-1.5 rounded-lg font-medium transition-colors',
-                          isTouch ? 'px-3 py-2 text-sm' : 'px-2.5 py-1 text-xs',
-                          feedbackRecording
-                            ? 'bg-red-500/20 border border-red-500/50 text-red-400 animate-pulse'
-                            : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600'
-                        )}
-                      >
-                        {feedbackRecording ? <Square size={isTouch ? 14 : 12} /> : <Mic size={isTouch ? 14 : 12} />}
-                        {feedbackRecording ? 'Stop' : 'Dictate'}
-                      </button>
                     </div>
 
                     <textarea
@@ -581,17 +568,32 @@ export function QuickMarkModal({
                         >
                           Cancel
                         </button>
-                        {feedbackText.trim() && (
+                        <div className="ml-auto flex items-center gap-2">
+                          {feedbackText.trim() && (
+                            <button
+                              onClick={() => { setSavingSnippetFor(c.id); setSnippetLabel('') }}
+                              className={cn(
+                                'text-gray-400 hover:text-gray-100 border border-gray-700 hover:border-gray-500 rounded-lg transition-colors',
+                                isTouch ? 'px-3 py-2 text-sm' : 'px-2.5 py-1 text-xs'
+                              )}
+                            >
+                              + Save as snippet
+                            </button>
+                          )}
                           <button
-                            onClick={() => { setSavingSnippetFor(c.id); setSnippetLabel('') }}
+                            onClick={toggleFeedbackRecording}
                             className={cn(
-                              'ml-auto text-gray-400 hover:text-gray-100 border border-gray-700 hover:border-gray-500 rounded-lg transition-colors',
-                              isTouch ? 'px-3 py-2 text-sm' : 'px-2.5 py-1 text-xs'
+                              'flex items-center gap-1.5 rounded-lg font-medium transition-colors',
+                              isTouch ? 'px-3 py-2 text-sm' : 'px-2.5 py-1 text-xs',
+                              feedbackRecording
+                                ? 'bg-red-500/20 border border-red-500/50 text-red-400 animate-pulse'
+                                : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600'
                             )}
                           >
-                            + Save as snippet
+                            {feedbackRecording ? <Square size={isTouch ? 14 : 12} /> : <Mic size={isTouch ? 14 : 12} />}
+                            {feedbackRecording ? 'Stop' : 'Dictate'}
                           </button>
-                        )}
+                        </div>
                       </div>
                     )}
                   </div>
