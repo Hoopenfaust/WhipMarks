@@ -591,6 +591,16 @@ export function QuickMarkModal({
                 recording ? 'border-red-500/50' : 'border-gray-700'
               )}
             />
+            <button
+              onClick={saveImprovement}
+              className={cn(
+                'mt-2 w-full font-medium rounded-xl transition-colors',
+                isTouch ? 'py-3 text-sm' : 'py-1.5 text-xs',
+                'bg-gray-100 hover:bg-gray-100/90 text-gray-900'
+              )}
+            >
+              Save
+            </button>
           </div>
         </div>
 
