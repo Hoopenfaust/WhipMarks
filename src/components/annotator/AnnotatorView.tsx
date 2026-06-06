@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { getStroke } from 'perfect-freehand'
@@ -74,11 +75,14 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
   const drawCanvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null)
+  const pdfBytesRef = useRef<Uint8Array | null>(null)
   const historyRef = useRef<PageAnnotations[][]>([])
 
   // ─── Load PDF ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    pdfjsLib.getDocument({ data: new Uint8Array(pdfData) }).promise.then(pdf => {
+    // Save an independent copy before pdfjs can transfer/detach the buffer
+    pdfBytesRef.current = new Uint8Array(pdfData.slice(0))
+    pdfjsLib.getDocument({ data: new Uint8Array(pdfData.slice(0)) }).promise.then(pdf => {
       pdfDocRef.current = pdf
       setTotalPages(pdf.numPages)
       renderPage(pdf, 1)
@@ -357,10 +361,10 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
 
   // ─── Export annotated PDF ──────────────────────────────────────────────────
   async function exportPdf() {
-    if (!pdfDocRef.current) return
+    if (!pdfDocRef.current || !pdfBytesRef.current) return
     setExporting(true)
     try {
-      const pdfDoc = await PDFDocument.load(pdfData)
+      const pdfDoc = await PDFDocument.load(pdfBytesRef.current)
       const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica)
       const pdfPages = pdfDoc.getPages()
 
@@ -421,8 +425,11 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
 
         // Embed the annotated canvas as image into PDF page
         const imgData = offscreen.toDataURL('image/png')
-        const imgBytes = await fetch(imgData).then(r => r.arrayBuffer())
-        const embeddedImg = await pdfDoc.embedPng(new Uint8Array(imgBytes))
+        const base64 = imgData.split(',')[1]
+        const binary = atob(base64)
+        const imgBytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) imgBytes[i] = binary.charCodeAt(i)
+        const embeddedImg = await pdfDoc.embedPng(imgBytes)
         pdfPage.drawImage(embeddedImg, { x: 0, y: 0, width: W, height: H })
 
         // Text pins as actual PDF text (so they're selectable)
@@ -439,13 +446,13 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
       }
 
       const pdfBytes = await pdfDoc.save()
-      const blob = new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${student.name}_${filename}_annotated.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
+      await invoke('save_pdf', {
+        filename: `${student.name}_${filename}_annotated.pdf`,
+        data: Array.from(pdfBytes),
+      })
+    } catch (err) {
+      console.error('PDF export failed:', err)
+      alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setExporting(false)
     }

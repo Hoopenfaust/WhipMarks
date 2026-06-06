@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$env:PATH = \"C:\\Program Files\\nodejs;$env:PATH\"; Set-Location \"D:\\Claude Code\\student-marker\"; npm run build",
+            "timeout": 120,
+            "statusMessage": "Running npm run build..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2,6 +2,7 @@ use std::fs;
 use tauri::command;
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64;
+use rfd::FileDialog;
 
 /// Write bytes to a temp file. Returns the absolute path.
 #[command]
@@ -10,6 +11,23 @@ fn write_temp_file(filename: String, data: Vec<u8>) -> Result<String, String> {
     path.push(&filename);
     fs::write(&path, &data).map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().to_string())
+}
+
+/// Show a native save dialog and write the PDF bytes to the chosen path.
+/// Returns the path if saved, or None if the user cancelled.
+#[command]
+fn save_pdf(filename: String, data: Vec<u8>) -> Result<Option<String>, String> {
+    let path = FileDialog::new()
+        .set_file_name(&filename)
+        .add_filter("PDF", &["pdf"])
+        .save_file();
+    match path {
+        Some(p) => {
+            fs::write(&p, &data).map_err(|e| e.to_string())?;
+            Ok(Some(p.to_string_lossy().to_string()))
+        }
+        None => Ok(None),
+    }
 }
 
 /// Open the default mail client (new Outlook, classic Outlook, etc.) with a
@@ -100,7 +118,7 @@ fn open_outlook(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook])
+        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
