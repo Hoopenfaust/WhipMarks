@@ -165,16 +165,16 @@ interface StudentCardProps {
   onDelete: () => void
   onPhotoClick: () => void
   onPhotoDrop: (file: File) => void
-  onDoubleClick: () => void
+  onSelect: () => void
 }
 
-function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, onPhotoClick, onPhotoDrop, onDoubleClick, uploading = false }: StudentCardProps) {
+function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, onPhotoClick, onPhotoDrop, onSelect, uploading = false }: StudentCardProps) {
   const color = studentColor(student.id)
   return (
     <div
       className="backdrop-blur-sm rounded-xl p-8 flex flex-col items-center gap-5 group relative cursor-pointer select-none shadow-sm shadow-black/15 hover:shadow-md hover:shadow-black/20 transition-all duration-200"
       style={{ background: color.cardBg, borderWidth: 1, borderStyle: 'solid', borderColor: color.border }}
-      onDoubleClick={onDoubleClick}
+      onClick={onSelect}
     >
       {/* Reflection gradient */}
       <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-xl bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none" />
@@ -1059,7 +1059,7 @@ export function ClassDetailView() {
                       onDelete={() => setDeleteStudentId(s.id)}
                       onPhotoClick={() => handlePhotoClick(s.id)}
                       onPhotoDrop={(file) => handlePhotoDrop(s.id, file)}
-                      onDoubleClick={() => setDetailStudentId(s.id)}
+                      onSelect={() => setDetailStudentId(s.id)}
                       uploading={uploadingStudentId === s.id}
                     />
                   )
