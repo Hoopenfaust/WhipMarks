@@ -32,7 +32,7 @@ export function SyncStatus({ onLoginClick }: { onLoginClick: () => void }) {
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-emerald-400 border border-emerald-900/50 bg-emerald-950/30">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/50 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30">
         {isSyncing
           ? <RefreshCw size={12} className="animate-spin" />
           : <Cloud size={13} />

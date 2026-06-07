@@ -20,11 +20,11 @@ function ClassCard({ c, isFirst }: { c: { id: string; name: string; createdAt: n
     <button
       onClick={() => navigate(`/classes/${c.id}`)}
       {...(isFirst ? { 'data-tutorial': 'class-card' } : {})}
-      className="relative bg-gray-850 border border-gray-700 rounded-2xl p-6 text-left hover:border-orange-500/30 hover:bg-gray-800 transition-all duration-200 group overflow-hidden shadow-lg shadow-black/40 hover:shadow-xl hover:shadow-black/50"
+      className="relative bg-gray-850 border border-gray-700 rounded-2xl p-6 text-left hover:border-indigo-500/30 hover:bg-gray-800 transition-all duration-200 group overflow-hidden shadow-sm shadow-black/20 hover:shadow-md hover:shadow-black/25"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: '#c2410c' }}>
-          <BookOpen size={20} className="text-orange-100" />
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-indigo-600 dark:bg-indigo-600">
+          <BookOpen size={20} className="text-white" />
         </div>
         <span className="text-xs text-gray-400/70">{new Date(c.createdAt).toLocaleDateString()}</span>
       </div>
@@ -166,7 +166,7 @@ export function ClassesView() {
               <Download size={15} /> Save Backup
             </button>
           )}
-          <button onClick={() => fileRef.current?.click()} data-tutorial="import-btn" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all hover:brightness-110" style={{ background: '#5D3F3A', color: '#FFDBD5' }}>
+          <button onClick={() => fileRef.current?.click()} data-tutorial="import-btn" className="btn-accent inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all">
             <Upload size={15} /> Import
           </button>
         </div>
@@ -201,7 +201,7 @@ export function ClassesView() {
           onDrop={e => { e.preventDefault(); setRestoreDragging(false); const f = e.dataTransfer.files[0]; if (f) handleRestoreFile(f) }}
           onClick={() => restoreRef.current?.click()}
           className={`mb-6 border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-            restoreDragging ? 'border-orange-500 bg-orange-950/20' : 'border-gray-700/60 bg-gray-950/20 hover:border-orange-700/40'
+            restoreDragging ? 'border-indigo-500 bg-indigo-950/20' : 'border-gray-700/60 bg-gray-950/20 hover:border-indigo-700/40'
           }`}
         >
           <RotateCcw size={32} className="text-gray-400 mx-auto mb-3" />
@@ -229,7 +229,7 @@ export function ClassesView() {
           onDrop={handleDrop}
           onClick={() => fileRef.current?.click()}
           className={`mb-6 border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-            dragging ? 'border-orange-500 bg-orange-950/20' : 'border-gray-700 hover:border-gray-600'
+            dragging ? 'border-indigo-500 bg-indigo-950/20' : 'border-gray-700 hover:border-gray-600'
           }`}
         >
           <Upload size={32} className="text-gray-400/70 mx-auto mb-3" />
@@ -245,7 +245,7 @@ export function ClassesView() {
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             className={`mb-6 border border-dashed rounded-lg p-3 text-center transition-colors ${
-              dragging ? 'border-orange-500 bg-orange-950/20' : 'border-gray-800 hover:border-gray-700'
+              dragging ? 'border-indigo-500 bg-indigo-950/20' : 'border-gray-800 hover:border-gray-700'
             }`}
           >
             <p className="text-xs text-gray-400/70">Drop CSV or Excel file to import a class</p>

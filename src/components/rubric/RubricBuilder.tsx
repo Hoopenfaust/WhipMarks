@@ -344,10 +344,10 @@ export function RubricBuilder({ projectId, criteria, projectName }: Props) {
           {/* Guided option — primary */}
           <button
             onClick={() => setGuided(true)}
-            className="w-full flex flex-col gap-1 p-4 rounded-xl border-2 border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-500/60 transition-all text-left"
+            className="w-full flex flex-col gap-1 p-4 rounded-xl border-2 border-indigo-500/40 bg-indigo-500/5 hover:bg-indigo-500/10 hover:border-indigo-500/60 transition-all text-left"
           >
             <div className="flex items-center gap-2">
-              <Sparkles size={15} className="text-orange-400 shrink-0" />
+              <Sparkles size={15} className="text-indigo-400 shrink-0" />
               <span className="text-sm font-semibold text-gray-100">Guide me through it</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed pl-5">
@@ -412,7 +412,7 @@ export function RubricBuilder({ projectId, criteria, projectName }: Props) {
             >
               <span className={cn(
                 'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
-                step === 1 ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-400'
+                step === 1 ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-400'
               )}>1</span>
               Criteria
             </button>
@@ -425,7 +425,7 @@ export function RubricBuilder({ projectId, criteria, projectName }: Props) {
             >
               <span className={cn(
                 'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0',
-                step === 2 ? 'bg-orange-500 text-white' : 'bg-gray-700 text-gray-400'
+                step === 2 ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-400'
               )}>2</span>
               Performance Levels
             </button>

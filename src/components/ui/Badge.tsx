@@ -13,12 +13,11 @@ export function Badge({ children, variant = 'default', className }: Props) {
     success: 'bg-emerald-950 text-emerald-400',
     warning: 'bg-amber-950 text-amber-400',
     danger: 'bg-red-950 text-red-400',
-    orange: 'text-[#FFDBD1]',
+    orange: 'bg-indigo-900 text-indigo-300',
   }
   return (
     <span
       className={cn('inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium', variants[variant], className)}
-      style={variant === 'orange' ? { background: '#c2410c' } : undefined}
     >
       {children}
     </span>

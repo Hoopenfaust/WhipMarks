@@ -177,12 +177,12 @@ export function TaMarkingView({ assignment, onClose }: Props) {
       />
 
       {/* TA mode banner */}
-      <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-gray-700" style={{ background: '#1a0f00' }}>
+      <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-gray-700 bg-indigo-950/40">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
           <div>
-            <p className="text-sm font-semibold text-orange-300">TA Mode — {projectName}</p>
-            <p className="text-xs text-orange-400/70">{assignment.className} · Marking as {taName}</p>
+            <p className="text-sm font-semibold text-indigo-300">TA Mode — {projectName}</p>
+            <p className="text-xs text-indigo-400/70">{assignment.className} · Marking as {taName}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -193,7 +193,7 @@ export function TaMarkingView({ assignment, onClose }: Props) {
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors',
               allDone
-                ? 'bg-orange-500 hover:bg-orange-400 text-white'
+                ? 'bg-indigo-500 hover:bg-indigo-400 text-white'
                 : 'bg-gray-800 text-gray-500 cursor-not-allowed'
             )}
           >

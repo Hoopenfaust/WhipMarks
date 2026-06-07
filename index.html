@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark font-sans">
+<html lang="en" class="font-sans">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -10,6 +10,13 @@
   </head>
   <body class="bg-gray-950 text-gray-100 font-sans">
     <div id="root"></div>
+    <!-- Init theme before first render to avoid flash -->
+    <script>
+      (function() {
+        var t = localStorage.getItem('whipmarks-theme') ?? 'light';
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

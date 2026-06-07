@@ -61,7 +61,7 @@ export function LibraryView() {
             {projects.map(p => (
               <div
                 key={p.id}
-                className="relative bg-gray-850 border border-gray-700 rounded-2xl p-6 hover:border-orange-500/30 hover:bg-gray-800 transition-all duration-200 group shadow-lg shadow-black/40 cursor-pointer"
+                className="relative bg-gray-850 border border-gray-700 rounded-2xl p-6 hover:border-indigo-500/30 hover:bg-gray-800 transition-all duration-200 group shadow-sm shadow-black/20 cursor-pointer"
                 onClick={() => navigate(`/library/${p.id}`)}
               >
                 <button

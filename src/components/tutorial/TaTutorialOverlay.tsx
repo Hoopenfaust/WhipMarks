@@ -115,8 +115,8 @@ export function TaTutorialOverlay({ projectId, projectName, taName, studentCount
           {/* TA Mode badge */}
           <div className="flex items-center gap-2 px-8 pt-6 pb-0">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-              style={{ background: '#1a0f00', color: '#fb923c', border: '1px solid rgba(249,115,22,0.3)' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block" />
+              style={{ background: 'rgba(79,70,229,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 inline-block" />
               TA Mode
             </div>
           </div>

@@ -154,7 +154,7 @@ export function ClassSchedule({ classId, startDate, projects }: Props) {
 
       {/* Start date config bar */}
       <div className="flex items-center gap-4 mb-5 px-4 py-3 bg-gray-900/60 border border-gray-800 rounded-xl">
-        <Calendar size={15} className="shrink-0" style={{ color: '#c2410c' }} />
+        <Calendar size={15} className="shrink-0 text-indigo-500" />
         <span className="text-sm text-gray-400 shrink-0">Semester start date:</span>
         <input
           type="date"

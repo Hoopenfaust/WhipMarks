@@ -327,8 +327,7 @@ export function GanttChart({ projects, classStartDate, className = 'Class' }: Pr
         </p>
         <button
           onClick={exportPdf}
-          className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:brightness-110"
-          style={{ background: '#5D3F3A', color: '#FFDBD5' }}
+          className="btn-accent flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:brightness-110"
         >
           <FileDown size={15} />
           Export PDF
@@ -387,8 +386,8 @@ export function GanttChart({ projects, classStartDate, className = 'Class' }: Pr
           {todayX !== null && (
             <g>
               <line x1={todayX} y1={HEADER_H} x2={todayX} y2={totalH}
-                stroke="#f97316" strokeWidth="2" strokeDasharray="5 4" />
-              <rect x={todayX - 26} y={HEADER_H - 22} width={52} height={22} rx="4" fill="#f97316" />
+                stroke="#6366f1" strokeWidth="2" strokeDasharray="5 4" />
+              <rect x={todayX - 26} y={HEADER_H - 22} width={52} height={22} rx="4" fill="#6366f1" />
               <text x={todayX} y={HEADER_H - 6} fill="#fff" fontSize="11"
                 fontFamily="system-ui, sans-serif" fontWeight="700"
                 textAnchor="middle" letterSpacing="0.06em">TODAY</text>
@@ -452,7 +451,7 @@ export function GanttChart({ projects, classStartDate, className = 'Class' }: Pr
 
           {/* Legend */}
           <g transform={`translate(${LABEL_W + 12}, ${totalH - 12})`}>
-            <line x1={0} y1={0} x2={28} y2={0} stroke="#f97316" strokeWidth="2" strokeDasharray="5 4" />
+            <line x1={0} y1={0} x2={28} y2={0} stroke="#6366f1" strokeWidth="2" strokeDasharray="5 4" />
             <text x={36} y={5} fill="#6b7280" fontSize="13" fontFamily="system-ui, sans-serif">Today</text>
             {hasAnyStart ? (
               <>

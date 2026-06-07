@@ -91,8 +91,7 @@ export function SemesterSummaryView() {
         </div>
         <button
           onClick={exportCsv}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all hover:brightness-110"
-          style={{ background: '#5D3F3A', color: '#FFDBD5' }}
+          className="btn-accent inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
         >
           <Download size={15} /> Export CSV
         </button>

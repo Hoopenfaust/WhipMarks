@@ -399,7 +399,7 @@ export function QuickMarkModal({
         {/* Progress bar */}
         <div className="h-1 bg-gray-800 shrink-0">
           <div
-            className="h-full bg-orange-500/60 transition-all duration-300"
+            className="h-full bg-indigo-500/60 transition-all duration-300"
             style={{ width: criteria.length > 0 ? `${(completedCount / criteria.length) * 100}%` : '0%' }}
           />
         </div>
@@ -697,7 +697,7 @@ export function QuickMarkModal({
             <div className="flex items-center gap-2">
               <div className="w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-orange-500/60 rounded-full transition-all"
+                  className="h-full bg-indigo-500/60 rounded-full transition-all"
                   style={{ width: `${students.length > 0 ? ((studentIdx + 1) / students.length) * 100 : 0}%` }}
                 />
               </div>

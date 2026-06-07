@@ -56,7 +56,7 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       className={cn(
         'px-3 py-1.5 rounded-lg text-sm font-medium border transition-all',
         active
-          ? 'bg-orange-500/20 border-orange-500/60 text-orange-300'
+          ? 'bg-indigo-500/20 border-indigo-500/60 text-indigo-300'
           : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
       )}
     >
@@ -270,13 +270,13 @@ function Step3({ answers, onChange }: {
             type="range" min={0} max={100} step={10}
             value={answers.outcomeWeight}
             onChange={e => onChange({ outcomeWeight: parseInt(e.target.value) })}
-            className="w-full accent-orange-500 mt-1"
+            className="w-full accent-indigo-500 mt-1"
           />
           <div className="flex justify-between text-xs text-gray-500">
             <span>Process & research</span>
             <span>Final outcome</span>
           </div>
-          <p className="text-sm text-orange-400 font-medium text-center">
+          <p className="text-sm text-indigo-400 font-medium text-center">
             {answers.outcomeWeight === 50
               ? 'Equal balance'
               : answers.outcomeWeight > 50
@@ -301,7 +301,7 @@ function GeneratedCriterionCard({ c, index }: { c: GeneratedCriterionWithDescrip
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-750 transition-colors"
       >
-        <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 text-xs font-bold flex items-center justify-center shrink-0">
+        <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center justify-center shrink-0">
           {index + 1}
         </span>
         <div className="flex-1 min-w-0">
@@ -378,7 +378,7 @@ function GeneratingScreen() {
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-6 text-center">
       <div className="w-16 h-16 rounded-2xl bg-gray-800/60 border border-gray-700/40 flex items-center justify-center text-4xl shadow-inner">
-        <Sparkles size={28} className="text-orange-400 animate-pulse" />
+        <Sparkles size={28} className="text-indigo-400 animate-pulse" />
       </div>
       <div>
         <p className="text-2xl font-bold text-gray-100 mb-3">Building your rubric…</p>

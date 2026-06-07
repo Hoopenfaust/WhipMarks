@@ -85,8 +85,7 @@ export function TaModerationView({ students, criteria, teacherMarks, taMarks, pr
         <button
           onClick={importResults}
           disabled={importing}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-colors"
-          style={{ background: '#5D3F3A', color: '#FFDBD5' }}
+          className="btn-accent flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-colors"
         >
           <Upload size={14} />
           {importing ? 'Importing…' : 'Import TA Results'}

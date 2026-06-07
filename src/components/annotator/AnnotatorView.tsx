@@ -472,7 +472,7 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
       title={label}
       className={cn(
         'flex flex-col items-center gap-1 p-2 rounded-xl transition-colors w-14',
-        tool === t ? 'bg-orange-950/80 text-orange-300' : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800'
+        tool === t ? 'bg-indigo-950/80 text-indigo-300' : 'text-gray-400 hover:text-gray-100 hover:bg-gray-800'
       )}
     >
       {icon}
@@ -659,7 +659,7 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
                   }}
                   onBlur={commitText}
                   placeholder="Type note…"
-                  className="bg-gray-900/90 border border-orange-500/50 rounded px-2 py-1 text-sm text-gray-100 outline-none min-w-32"
+                  className="bg-gray-900/90 border border-indigo-500/50 rounded px-2 py-1 text-sm text-gray-100 outline-none min-w-32"
                   style={{ color: textColor }}
                 />
               </div>

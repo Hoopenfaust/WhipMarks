@@ -120,7 +120,7 @@ export function ProjectView() {
             </button>
             <div className="flex items-center gap-2 text-xs text-gray-400">
               <div className="w-24 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                <div className="h-full bg-indigo-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
               </div>
               <span>{marked}/{total} marked</span>
             </div>

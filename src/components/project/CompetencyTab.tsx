@@ -88,7 +88,7 @@ export function CompetencyTab({ projectId, criteria }: Props) {
 
   return (
     <div
-      className={cn('overflow-y-auto p-6 flex flex-col gap-6 relative transition-colors', dragging && 'bg-orange-950/10')}
+      className={cn('overflow-y-auto p-6 flex flex-col gap-6 relative transition-colors', dragging && 'bg-indigo-950/10')}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -96,10 +96,10 @@ export function CompetencyTab({ projectId, criteria }: Props) {
       {/* Drop overlay */}
       {dragging && (
         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-          <div className="border-2 border-dashed border-orange-500 rounded-2xl px-12 py-8 flex flex-col items-center gap-3 bg-gray-900/90 shadow-xl">
-            <Upload size={28} className="text-orange-400" />
-            <p className="text-sm font-semibold text-orange-300">Drop course outline to extract competencies</p>
-            <p className="text-xs text-orange-400/70">PDF, Word (.docx), or plain text</p>
+          <div className="border-2 border-dashed border-indigo-500 rounded-2xl px-12 py-8 flex flex-col items-center gap-3 bg-gray-900/90 shadow-xl">
+            <Upload size={28} className="text-indigo-400" />
+            <p className="text-sm font-semibold text-indigo-300">Drop course outline to extract competencies</p>
+            <p className="text-xs text-indigo-400/70">PDF, Word (.docx), or plain text</p>
           </div>
         </div>
       )}
@@ -155,7 +155,7 @@ export function CompetencyTab({ projectId, criteria }: Props) {
           <div className="flex gap-2 justify-end">
             <button onClick={() => setAdding(false)} className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-100">Cancel</button>
             <button onClick={handleAdd} disabled={!newName.trim()}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-900/60 text-orange-300 hover:bg-orange-900 disabled:opacity-40 transition-colors">
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-900/60 text-indigo-300 hover:bg-indigo-900 disabled:opacity-40 transition-colors">
               Add
             </button>
           </div>
@@ -231,7 +231,7 @@ export function CompetencyTab({ projectId, criteria }: Props) {
                       <label key={c.id} className="flex items-center gap-2.5 cursor-pointer group">
                         <input type="checkbox" checked={mapped}
                           onChange={() => toggleCriterionCompetency(c.id, comp.id)}
-                          className="accent-orange-400 w-3.5 h-3.5" />
+                          className="accent-indigo-400 w-3.5 h-3.5" />
                         <span className={cn('text-xs transition-colors', mapped ? 'text-gray-100' : 'text-gray-400 group-hover:text-gray-300')}>
                           {c.name}
                         </span>

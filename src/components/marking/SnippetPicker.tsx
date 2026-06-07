@@ -137,7 +137,7 @@ export function SnippetPicker({ projectId, snippets, onInsert }: Props) {
                   </div>
                 ) : (
                   <button onClick={() => handleInsert(s)}
-                    className="opacity-0 group-hover:opacity-100 shrink-0 px-2 py-1 rounded text-[10px] font-semibold bg-orange-900/60 text-orange-300 hover:bg-orange-900 transition-all">
+                    className="opacity-0 group-hover:opacity-100 shrink-0 px-2 py-1 rounded text-[10px] font-semibold bg-indigo-900/60 text-indigo-300 hover:bg-indigo-900 transition-all">
                     Insert
                   </button>
                 )}

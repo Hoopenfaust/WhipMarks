@@ -1,6 +1,6 @@
 ﻿import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom'
-import { Plus, Trash2, Pencil, BarChart2, ChevronRight, Camera, CheckCircle2, Circle, Check, Flag, ArrowUpDown, Calendar } from 'lucide-react'
+import { Plus, Trash2, Pencil, BarChart2, ChevronRight, Camera, CheckCircle2, Circle, Check, Flag, Star, ArrowUpDown, Calendar } from 'lucide-react'
 import { Spinner } from '../components/ui/Spinner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useClass, updateClass, deleteClass } from '../db/hooks/useClasses'
@@ -38,7 +38,7 @@ const STUDENT_PALETTE = [
   { cardBg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.30)', avatarBg: 'rgba(245,158,11,0.22)', avatarText: '#fcd34d' }, // amber
   { cardBg: 'rgba(236,72,153,0.07)', border: 'rgba(236,72,153,0.30)', avatarBg: 'rgba(236,72,153,0.22)', avatarText: '#f9a8d4' }, // pink
   { cardBg: 'rgba(6,182,212,0.07)',  border: 'rgba(6,182,212,0.30)',  avatarBg: 'rgba(6,182,212,0.22)',  avatarText: '#67e8f9' }, // cyan
-  { cardBg: 'rgba(249,115,22,0.07)', border: 'rgba(249,115,22,0.30)', avatarBg: 'rgba(249,115,22,0.22)', avatarText: '#fdba74' }, // orange
+  { cardBg: 'rgba(34,211,238,0.07)',  border: 'rgba(34,211,238,0.30)',  avatarBg: 'rgba(34,211,238,0.22)',  avatarText: '#67e8f9' }, // sky
   { cardBg: 'rgba(20,184,166,0.07)', border: 'rgba(20,184,166,0.30)', avatarBg: 'rgba(20,184,166,0.22)', avatarText: '#5eead4' }, // teal
   { cardBg: 'rgba(99,102,241,0.07)', border: 'rgba(99,102,241,0.30)', avatarBg: 'rgba(99,102,241,0.22)', avatarText: '#a5b4fc' }, // indigo
   { cardBg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.30)',  avatarBg: 'rgba(239,68,68,0.22)',  avatarText: '#fca5a5' }, // rose
@@ -61,7 +61,7 @@ function StudentAvatar({ student, size = 80, onPhotoClick, onPhotoDrop, uploadin
     .join('')
     .slice(0, 2) || student.name[0]?.toUpperCase() || '?'
 
-  const sizeClass = size >= 160 ? 'w-40 h-40 text-3xl' : size >= 80 ? 'w-20 h-20 text-lg' : 'w-10 h-10 text-sm'
+  const sizeClass = size >= 160 ? 'w-48 h-48 text-4xl' : size >= 80 ? 'w-20 h-20 text-lg' : 'w-10 h-10 text-sm'
   const iconSize  = size >= 80 ? 22 : 12
 
   // Flash a checkmark briefly after a successful upload
@@ -103,8 +103,8 @@ function StudentAvatar({ student, size = 80, onPhotoClick, onPhotoDrop, uploadin
       className={[
         'relative flex-shrink-0', sizeClass, 'rounded-full overflow-hidden focus:outline-none',
         'transition-all duration-150',
-        interactive && !uploading ? 'cursor-pointer hover:scale-105 active:scale-95 hover:ring-2 hover:ring-chiffon/60 hover:ring-offset-2 hover:ring-offset-gray-900' : 'cursor-default',
-        dragOver ? 'ring-2 ring-chiffon ring-offset-2 ring-offset-gray-900 scale-105' : '',
+        interactive && !uploading ? 'cursor-pointer hover:scale-105 active:scale-95 hover:ring-2 hover:ring-indigo-400/60 hover:ring-offset-2 hover:ring-offset-gray-900' : 'cursor-default',
+        dragOver ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-gray-900 scale-105' : '',
       ].join(' ')}
       title={interactive ? 'Click to upload or drag a photo here' : undefined}
     >
@@ -172,7 +172,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
   const color = studentColor(student.id)
   return (
     <div
-      className="backdrop-blur-sm rounded-xl p-8 flex flex-col items-center gap-5 group relative cursor-pointer select-none shadow-lg shadow-black/30 hover:shadow-xl hover:shadow-black/40 transition-all duration-200"
+      className="backdrop-blur-sm rounded-xl p-8 flex flex-col items-center gap-5 group relative cursor-pointer select-none shadow-sm shadow-black/15 hover:shadow-md hover:shadow-black/20 transition-all duration-200"
       style={{ background: color.cardBg, borderWidth: 1, borderStyle: 'solid', borderColor: color.border }}
       onDoubleClick={onDoubleClick}
     >
@@ -183,14 +183,24 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       {semesterMark !== null && semesterMark < 65 && (
         <div
           className={cn(
-            'absolute top-3 left-3 z-10 p-1 rounded-md',
+            'absolute top-3 left-3 z-10 p-2 rounded-lg',
             semesterMark < 50
-              ? 'text-red-400 bg-red-950/60'
-              : 'text-amber-400 bg-amber-950/60'
+              ? 'text-red-400 bg-gray-900/80 backdrop-blur-sm'
+              : 'text-amber-400 bg-gray-900/80 backdrop-blur-sm'
           )}
           title={semesterMark < 50 ? 'Failing' : 'Borderline'}
         >
-          <Flag size={13} />
+          <Flag size={18} />
+        </div>
+      )}
+
+      {/* Top student star */}
+      {semesterMark !== null && semesterMark >= 85 && (
+        <div
+          className="absolute top-3 left-3 z-10 p-2 rounded-lg text-indigo-300 bg-gray-900/80 backdrop-blur-sm"
+          title="High achiever"
+        >
+          <Star size={18} className="fill-indigo-300" />
         </div>
       )}
 
@@ -205,39 +215,39 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       </div>
 
       {/* Photo */}
-      <StudentAvatar student={student} size={160} onPhotoClick={onPhotoClick} onPhotoDrop={onPhotoDrop} uploading={uploading} />
+      <StudentAvatar student={student} size={192} onPhotoClick={onPhotoClick} onPhotoDrop={onPhotoDrop} uploading={uploading} />
 
       {/* Name */}
       <div className="text-center">
         {student.firstName && (
-          <p className="text-3xl font-semibold text-gray-100 leading-tight">{student.firstName}</p>
+          <p className="text-4xl font-semibold text-gray-100 leading-tight">{student.firstName}</p>
         )}
-        <p className="text-xl text-gray-400">{student.name}</p>
+        <p className="text-2xl text-gray-400">{student.name}</p>
       </div>
 
       {/* Stats grid — wraps to multiple rows when projects overflow */}
-      <div className="w-full border-t border-gray-700 pt-3 flex flex-wrap gap-2 justify-center">
+      <div className="w-full border-t border-gray-700 pt-4 flex flex-wrap gap-3 justify-center">
         {/* Semester tile */}
-        <div className="flex flex-col items-center gap-0.5 px-3 py-2 min-w-[64px]">
+        <div className="flex flex-col items-center gap-0.5 px-4 py-2 min-w-[72px]">
           {semesterMark !== null ? (
-            <span className={`text-2xl font-bold leading-none ${gradeColor(semesterMark)}`}>
+            <span className={`text-3xl font-bold leading-none ${gradeColor(semesterMark)}`}>
               {semesterMark.toFixed(0)}%
             </span>
           ) : (
-            <span className="text-2xl font-bold leading-none text-gray-400/70">—</span>
+            <span className="text-3xl font-bold leading-none text-gray-400/70">—</span>
           )}
           <span className="text-xs text-gray-400 mt-1">sem.</span>
         </div>
 
         {/* Per-project tiles */}
         {projectMarks.map(({ name, pct }) => (
-          <div key={name} className="flex flex-col items-center gap-0.5 px-3 py-2 min-w-[64px] max-w-[96px]">
+          <div key={name} className="flex flex-col items-center gap-0.5 px-4 py-2 min-w-[72px] max-w-[104px]">
             {pct !== null ? (
-              <span className={`text-2xl font-bold leading-none ${gradeColor(pct)}`}>
+              <span className={`text-3xl font-bold leading-none ${gradeColor(pct)}`}>
                 {pct.toFixed(0)}%
               </span>
             ) : (
-              <span className="text-2xl font-bold leading-none text-gray-400/70">—</span>
+              <span className="text-3xl font-bold leading-none text-gray-400/70">—</span>
             )}
             <span className="text-xs text-gray-400 text-center w-full truncate mt-1" title={name}>
               {name}
@@ -289,7 +299,7 @@ function ProgressChart({ projects, allMarks, allCriteria }: { projects: Project[
         ))}
         {/* Connect line */}
         {scored.length >= 2 && (
-          <polyline points={linePts} fill="none" stroke="#f97316" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          <polyline points={linePts} fill="none" stroke="#6366f1" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         )}
         {/* Dots */}
         {dataPoints.map(d => (
@@ -603,8 +613,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
               )}
               <Link
                 to={`/classes/${classId}/projects/${project.id}?tab=marking`}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110 shrink-0"
-                style={{ background: '#5D3F3A', color: '#FFDBD5' }}
+                className="btn-accent ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110 shrink-0"
               >
                 <BarChart2 size={12} />
                 Mark
@@ -985,10 +994,9 @@ export function ClassDetailView() {
                       className={cn(
                         'px-3 py-1 rounded-full text-xs font-medium transition-all',
                         sortMode === opt.id
-                          ? 'text-[#FFDBD5]'
+                          ? 'btn-accent'
                           : 'bg-gray-800 text-gray-400 hover:text-gray-100 hover:bg-gray-750'
                       )}
-                      style={sortMode === opt.id ? { background: '#5D3F3A' } : undefined}
                     >
                       {opt.label}
                     </button>
@@ -1088,7 +1096,7 @@ export function ClassDetailView() {
                   return (
                     <div
                       key={p.id}
-                      className="bg-gray-850 border border-gray-700 rounded-2xl p-7 group relative cursor-pointer select-none hover:border-orange-500/30 hover:bg-gray-800 transition-all duration-200 shadow-md shadow-black/40 hover:shadow-lg hover:shadow-black/50"
+                      className="bg-gray-850 border border-gray-700 rounded-2xl p-7 group relative cursor-pointer select-none hover:border-indigo-500/30 hover:bg-gray-800 transition-all duration-200 shadow-sm shadow-black/20 hover:shadow-md hover:shadow-black/25"
                       onClick={() => navigate(`/classes/${classId}/projects/${p.id}`)}
                     >
                       <div className="flex items-start justify-between mb-3">
@@ -1105,8 +1113,8 @@ export function ClassDetailView() {
                       {/* Date fields — always visible, inline editable */}
                       <div className="flex flex-wrap gap-3 mt-1" onClick={e => e.stopPropagation()}>
                         <label className="flex items-center gap-5 px-5 py-2.5 bg-gray-900 border border-gray-700 rounded-lg cursor-pointer hover:border-gray-600 transition-colors group/date">
-                          <Calendar size={13} className="shrink-0" style={{ color: '#c2410c' }} />
-                          <span className="text-xs font-semibold uppercase tracking-wider shrink-0" style={{ color: '#c2410c' }}>Start</span>
+                          <Calendar size={13} className="shrink-0 text-indigo-500" />
+                          <span className="text-xs font-semibold uppercase tracking-wider shrink-0 text-indigo-500">Start</span>
                           <input
                             type="date"
                             value={p.startDate ?? ''}
@@ -1117,8 +1125,8 @@ export function ClassDetailView() {
                           />
                         </label>
                         <label className="flex items-center gap-5 px-5 py-2.5 bg-gray-900 border border-gray-700 rounded-lg cursor-pointer hover:border-gray-600 transition-colors group/date">
-                          <Calendar size={13} className="shrink-0" style={{ color: '#c2410c' }} />
-                          <span className="text-xs font-semibold uppercase tracking-wider shrink-0" style={{ color: '#c2410c' }}>Due</span>
+                          <Calendar size={13} className="shrink-0 text-indigo-500" />
+                          <span className="text-xs font-semibold uppercase tracking-wider shrink-0 text-indigo-500">Due</span>
                           <input
                             type="date"
                             value={p.dueDate ?? ''}
@@ -1143,7 +1151,7 @@ export function ClassDetailView() {
                         </div>
                         <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-emerald-500' : 'bg-orange-400'}`}
+                            className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-emerald-500' : 'bg-indigo-400'}`}
                             style={{ width: `${progressPct}%` }}
                           />
                         </div>
@@ -1168,10 +1176,9 @@ export function ClassDetailView() {
                   className={cn(
                     'px-3 py-1.5 rounded-full text-xs font-medium transition-all',
                     scheduleView === v
-                      ? 'text-[#FFDBD5]'
+                      ? 'btn-accent'
                       : 'bg-gray-800 text-gray-400 hover:text-gray-100 hover:bg-gray-750'
                   )}
-                  style={scheduleView === v ? { background: '#5D3F3A' } : undefined}
                 >
                   {v === 'weekly' ? 'Weekly Schedule' : 'Gantt Chart'}
                 </button>

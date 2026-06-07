@@ -35,7 +35,7 @@ function EditableHeading({ value, onChange, className }: { value: string; onChan
     return (
       <input
         ref={ref}
-        className={`bg-transparent border-b border-orange-500 outline-none ${className}`}
+        className={`bg-transparent border-b border-indigo-500 outline-none ${className}`}
         value={draft}
         onChange={e => setDraft(e.target.value)}
         onBlur={commit}
@@ -44,7 +44,7 @@ function EditableHeading({ value, onChange, className }: { value: string; onChan
     )
   }
   return (
-    <span className={`cursor-pointer hover:text-orange-300 transition-colors ${className}`} onClick={() => setEditing(true)} title="Click to edit">
+    <span className={`cursor-pointer hover:text-indigo-300 transition-colors ${className}`} onClick={() => setEditing(true)} title="Click to edit">
       {value}
     </span>
   )
@@ -76,7 +76,7 @@ function CriterionRow({
             <input
               type="number"
               min="0"
-              className="w-16 bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-xs text-gray-100 outline-none focus:border-orange-500 text-right"
+              className="w-16 bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-xs text-gray-100 outline-none focus:border-indigo-500 text-right"
               value={c.maxMarks}
               onChange={e => onUpdate({ maxMarks: parseFloat(e.target.value) || 0 })}
               title="Max marks"
@@ -88,7 +88,7 @@ function CriterionRow({
               type="number"
               min="0"
               step="0.1"
-              className="w-14 bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-xs text-gray-100 outline-none focus:border-orange-500 text-right"
+              className="w-14 bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-xs text-gray-100 outline-none focus:border-indigo-500 text-right"
               value={c.weight}
               onChange={e => onUpdate({ weight: parseFloat(e.target.value) || 0 })}
               title="Weight"
@@ -113,7 +113,7 @@ function CriterionRow({
       {expanded && (
         <div className="px-4 pb-3 border-t border-gray-700/60 pt-3">
           <textarea
-            className="w-full bg-gray-750 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-orange-500 resize-none"
+            className="w-full bg-gray-750 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-indigo-500 resize-none"
             rows={2}
             placeholder="Description (optional)"
             value={c.description}
@@ -224,7 +224,7 @@ export function LibraryProjectView() {
               <input
                 type="number"
                 min="1"
-                className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-sm text-gray-100 outline-none focus:border-orange-500 text-center"
+                className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500 text-center"
                 defaultValue={project.totalMarks}
                 onBlur={e => {
                   const v = parseInt(e.target.value, 10)
@@ -235,7 +235,7 @@ export function LibraryProjectView() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-400">Description:</span>
               <input
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-orange-500"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-indigo-500"
                 placeholder="Optional"
                 defaultValue={project.description ?? ''}
                 onBlur={e => scheduleSave({ description: e.target.value || undefined })}
@@ -288,7 +288,7 @@ export function LibraryProjectView() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Class</label>
                 <select
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 outline-none focus:border-orange-500"
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 outline-none focus:border-indigo-500"
                   value={attachClassId}
                   onChange={e => setAttachClassId(e.target.value)}
                 >

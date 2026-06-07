@@ -102,7 +102,7 @@ export function TaAssignModal({ project, className, students, criteria, descript
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggle(s.id)}
-                      className="accent-orange-400"
+                      className="accent-indigo-400"
                     />
                     <span className="text-sm text-gray-100">{displayName}</span>
                   </label>

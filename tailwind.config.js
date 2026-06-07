@@ -2,12 +2,14 @@
 export default {
   darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  safelist: ['text-indigo-700'],
   theme: {
     extend: {
       fontFamily: {
         sans: ['Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
       },
       colors: {
+        chiffon: '#a5b4fc', // indigo-300 — replaces old warm accent
         gray: {
           50:  '#FAF5F3',
           100: '#EDE0DC',
