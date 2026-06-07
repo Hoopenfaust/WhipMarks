@@ -248,6 +248,7 @@ export default defineConfig({
         // Don't cache API routes — they must always hit the server
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB
       },
       manifest: {
         name: 'WhipMarks',
