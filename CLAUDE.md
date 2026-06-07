@@ -95,7 +95,7 @@ Tailwind CSS v3 with custom gray shades defined in `tailwind.config.js`:
 | `amber-400` | — | Borderline 50–65% |
 | `red-400` | — | Fail < 50% |
 
-Dark mode is forced via `class="dark"` on `<html>` — `darkMode: 'class'` in config. Never use `bg-black`, `bg-white`, or light-mode colours. Border radius on cards/modals is `rounded-xl`; inputs and buttons use `rounded-lg`.
+Theme is user-selectable (light default, dark optional) via the sun/moon toggle in the sidebar. `darkMode: 'class'` in Tailwind config — `dark` class on `<html>` enables dark mode. Light mode overrides live in `index.css` under `html:not(.dark)` selectors. Accent colour is indigo in light mode, orange in dark mode — both map through the same `orange-*` Tailwind classes, overridden via CSS. Theme persisted in localStorage under `whipmarks-theme`. Border radius on cards/modals is `rounded-xl`; inputs and buttons use `rounded-lg`.
 
 All type-only imports must use `import type { … }` — TypeScript is configured with `verbatimModuleSyntax`.
 

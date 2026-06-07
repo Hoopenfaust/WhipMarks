@@ -150,7 +150,7 @@ export function ClassSchedule({ classId, startDate, projects }: Props) {
   const startDateObj = startDate ? new Date(startDate + 'T00:00:00') : null
 
   return (
-    <div className="max-w-4xl mx-auto pb-8">
+    <div className="pb-8">
 
       {/* Start date config bar */}
       <div className="flex items-center gap-4 mb-5 px-4 py-3 bg-gray-900/60 border border-gray-800 rounded-xl">
