@@ -61,7 +61,7 @@ function StudentAvatar({ student, size = 80, onPhotoClick, onPhotoDrop, uploadin
     .join('')
     .slice(0, 2) || student.name[0]?.toUpperCase() || '?'
 
-  const sizeClass = size >= 160 ? 'w-48 h-48 text-4xl' : size >= 80 ? 'w-20 h-20 text-lg' : 'w-10 h-10 text-sm'
+  const sizeClass = size >= 160 ? 'w-36 h-36 text-3xl' : size >= 80 ? 'w-20 h-20 text-lg' : 'w-10 h-10 text-sm'
   const iconSize  = size >= 80 ? 22 : 12
 
   // Flash a checkmark briefly after a successful upload
