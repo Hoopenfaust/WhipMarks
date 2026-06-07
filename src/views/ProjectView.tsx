@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
-import { ChevronRight, UserCheck } from 'lucide-react'
+import { ChevronRight, UserCheck, Pencil, Check } from 'lucide-react'
 import { useProject, updateProject } from '../db/hooks/useProjects'
 import { useCriteria, bulkAddCriteria } from '../db/hooks/useCriteria'
 import { useProjectMarks } from '../db/hooks/useMarks'
@@ -55,6 +55,25 @@ export function ProjectView() {
   const [showAssign, setShowAssign]       = useState(false)
   const [taRefresh, setTaRefresh]         = useState(0)
 
+  // Inline editing state
+  const [editingName, setEditingName]     = useState(false)
+  const [draftName, setDraftName]         = useState('')
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editingName) nameInputRef.current?.select()
+  }, [editingName])
+
+  function startEditName() {
+    setDraftName(project!.name)
+    setEditingName(true)
+  }
+  async function commitName() {
+    const trimmed = draftName.trim()
+    if (trimmed && trimmed !== project!.name) await updateProject(projectId!, { name: trimmed })
+    setEditingName(false)
+  }
+
   if (!project || !classObj) return <div className="p-8 text-gray-400 text-sm">Project not found.</div>
 
   const hasTaMarks = taMarks.length > 0
@@ -87,8 +106,8 @@ export function ProjectView() {
   return (
     <div className="flex flex-col h-full">
       {/* Breadcrumb header */}
-      <div className="border-b border-gray-700 px-8 py-6">
-        <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-2.5">
+      <div className="border-b border-gray-700 px-8 py-5">
+        <div className="flex items-center gap-1.5 text-sm text-gray-400 mb-3">
           <Link to="/classes" className="hover:text-gray-100">Classes</Link>
           <ChevronRight size={14} />
           <Link to={`/classes/${classId}`} className="hover:text-gray-100">{classObj.name}</Link>
@@ -97,20 +116,97 @@ export function ProjectView() {
           <ChevronRight size={14} />
           <span className="text-gray-100">{project.name}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-normal text-gray-100">{project.name}</h1>
-          <Badge variant="orange">{Math.round(project.semesterWeight * 100)}% of semester</Badge>
-          {project.dueDate && (
-            <Badge variant="default">Due {new Date(project.dueDate).toLocaleDateString()}</Badge>
-          )}
-          {hasTaMarks && (
-            <Badge variant="default">
-              <UserCheck size={11} className="inline mr-1" />
-              TA marked
-            </Badge>
-          )}
-          <div className="ml-auto flex items-center gap-3">
-            {/* Assign to TA button */}
+
+        <div className="flex items-start justify-between gap-4">
+          {/* Left: name + editable meta fields */}
+          <div className="flex flex-col gap-2 min-w-0">
+            {/* Project name */}
+            <div className="flex items-center gap-2 group/name">
+              {editingName ? (
+                <>
+                  <input
+                    ref={nameInputRef}
+                    value={draftName}
+                    onChange={e => setDraftName(e.target.value)}
+                    onBlur={commitName}
+                    onKeyDown={e => { if (e.key === 'Enter') commitName(); if (e.key === 'Escape') setEditingName(false) }}
+                    className="text-2xl font-normal bg-transparent border-b border-indigo-500 text-gray-100 focus:outline-none min-w-0 w-80"
+                  />
+                  <button onClick={commitName} className="p-1 rounded text-indigo-400 hover:text-indigo-300">
+                    <Check size={16} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-normal text-gray-100 truncate">{project.name}</h1>
+                  <button
+                    onClick={startEditName}
+                    className="opacity-0 group-hover/name:opacity-100 p-1 rounded text-gray-400 hover:text-gray-100 transition-opacity"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Editable meta row */}
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Semester weight */}
+              <label className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span className="shrink-0">Semester weight</span>
+                <input
+                  type="number" min={0} max={100} step={5}
+                  value={Math.round(project.semesterWeight * 100)}
+                  onChange={e => updateProject(projectId!, { semesterWeight: Number(e.target.value) / 100 })}
+                  className="w-14 bg-gray-800 border border-gray-700 rounded px-2 py-0.5 text-xs text-gray-100 text-center focus:outline-none focus:border-indigo-500 transition-colors"
+                />
+                <span className="shrink-0">%</span>
+              </label>
+
+              {/* Start date */}
+              <label className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span className="shrink-0">Start</span>
+                <input
+                  type="date"
+                  value={project.startDate ?? ''}
+                  onChange={e => updateProject(projectId!, { startDate: e.target.value || undefined })}
+                  className="bg-gray-800 border border-gray-700 rounded px-2 py-0.5 text-xs text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors"
+                />
+              </label>
+
+              {/* Due date */}
+              <label className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span className="shrink-0">Due</span>
+                <input
+                  type="date"
+                  value={project.dueDate ?? ''}
+                  onChange={e => updateProject(projectId!, { dueDate: e.target.value })}
+                  className="bg-gray-800 border border-gray-700 rounded px-2 py-0.5 text-xs text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors"
+                />
+              </label>
+
+              {/* Total marks */}
+              <label className="flex items-center gap-1.5 text-xs text-gray-400">
+                <span className="shrink-0">Total marks</span>
+                <input
+                  type="number" min={1} step={1}
+                  value={project.totalMarks}
+                  onChange={e => updateProject(projectId!, { totalMarks: Number(e.target.value) })}
+                  className="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-0.5 text-xs text-gray-100 text-center focus:outline-none focus:border-indigo-500 transition-colors"
+                />
+              </label>
+
+              {hasTaMarks && (
+                <span className="flex items-center gap-1 text-xs text-gray-400 border border-gray-700 rounded px-2 py-0.5">
+                  <UserCheck size={11} />
+                  TA marked
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: TA button + progress */}
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setShowAssign(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-500 transition-colors"
