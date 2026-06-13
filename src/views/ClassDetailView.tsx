@@ -172,7 +172,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
   const color = studentColor(student.id)
   return (
     <div
-      className="backdrop-blur-sm rounded-xl p-8 flex flex-col items-center gap-5 group relative cursor-pointer select-none shadow-sm shadow-black/15 hover:shadow-md hover:shadow-black/20 transition-all duration-200"
+      className="student-card backdrop-blur-sm rounded-xl p-8 flex flex-col items-center gap-5 group relative cursor-pointer select-none shadow-sm shadow-black/15 hover:shadow-md hover:shadow-black/20 transition-all duration-200"
       style={{ background: color.cardBg, borderWidth: 1, borderStyle: 'solid', borderColor: color.border }}
       onClick={onSelect}
     >
