@@ -1004,7 +1004,7 @@ export function ClassDetailView() {
                   <span className="ml-auto text-xs text-gray-400/50">{students.length} students</span>
                 </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+              <div className="roster-grid grid grid-cols-2 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
                 {(() => {
                   const sorted = (() => {
                     if (sortMode === 'name') {

@@ -353,3 +353,11 @@ body {
     overflow: visible !important;
   }
 }
+
+/* iPad roster grid: 3 cols portrait, 4 cols landscape, desktop uses xl/2xl Tailwind classes */
+@media (min-width: 640px) and (max-width: 1279px) and (orientation: portrait) {
+  .roster-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 640px) and (max-width: 1279px) and (orientation: landscape) {
+  .roster-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
