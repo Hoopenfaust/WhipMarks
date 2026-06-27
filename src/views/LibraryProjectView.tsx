@@ -176,7 +176,9 @@ export function LibraryProjectView() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
   const uploadRef = useRef<HTMLInputElement>(null)
+  const dragCounter = useRef(0)
 
   // Debounced updates
   const updateTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -294,7 +296,19 @@ export function LibraryProjectView() {
   const weightOk = Math.abs(totalWeight - criteria.length) < 0.01 || criteria.length === 0
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-gray-950">
+    <div
+      className="flex-1 flex flex-col min-h-0 bg-gray-950 relative"
+      onDragEnter={e => { e.preventDefault(); dragCounter.current++; setDragOver(true) }}
+      onDragOver={e => e.preventDefault()}
+      onDragLeave={() => { dragCounter.current--; if (dragCounter.current === 0) setDragOver(false) }}
+      onDrop={e => { e.preventDefault(); dragCounter.current = 0; setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleUpload(f) }}
+    >
+      {dragOver && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-gray-950/90 border-2 border-dashed border-indigo-500 rounded-none pointer-events-none">
+          <Upload size={32} className="text-indigo-400" />
+          <span className="text-sm font-medium text-indigo-300">Drop brief to upload</span>
+        </div>
+      )}
       {/* Header */}
       <div className="h-16 flex items-center gap-4 px-8 border-b border-gray-800 shrink-0">
         <button
