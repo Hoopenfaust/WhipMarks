@@ -35,17 +35,33 @@ export async function deleteClass(id: string) {
     ? await db.criteria.where('projectId').anyOf(projectIds).toArray()
     : []
   const criterionIds = criteria.map(c => c.id)
+  const studentIds = students.map(s => s.id)
 
   await db.transaction('rw', [
     db.classes, db.students, db.projects, db.criteria,
     db.marks, db.projectSheets, db.descriptors, db.scheduleWeeks,
+    db.taMarks, db.taAssignments, db.competencies, db.criterionCompetencies,
+    db.snippets, db.improvementNotes, db.studentSubmissions, db.submissionAnnotations,
   ], async () => {
-    if (criterionIds.length) await db.descriptors.where('criterionId').anyOf(criterionIds).delete()
-    await db.marks.where('projectId').anyOf(projectIds).delete()
-    await db.criteria.where('id').anyOf(criterionIds).delete()
-    await db.projectSheets.where('projectId').anyOf(projectIds).delete()
-    await db.projects.where('id').anyOf(projectIds).delete()
-    await db.students.where('id').anyOf(students.map(s => s.id)).delete()
+    if (criterionIds.length) {
+      await db.descriptors.where('criterionId').anyOf(criterionIds).delete()
+      await db.criterionCompetencies.where('criterionId').anyOf(criterionIds).delete()
+    }
+    if (projectIds.length) {
+      const projectIdSet = new Set(projectIds)
+      await db.marks.where('projectId').anyOf(projectIds).delete()
+      await db.taMarks.where('projectId').anyOf(projectIds).delete()
+      await db.taAssignments.bulkDelete(projectIds)
+      await db.criteria.where('projectId').anyOf(projectIds).delete()
+      await db.projectSheets.where('projectId').anyOf(projectIds).delete()
+      await db.competencies.where('projectId').anyOf(projectIds).delete()
+      await db.snippets.where('projectId').anyOf(projectIds).delete()
+      await db.improvementNotes.where('projectId').anyOf(projectIds).delete()
+      await db.studentSubmissions.where('projectId').anyOf(projectIds).delete()
+      await db.submissionAnnotations.filter(a => projectIdSet.has(a.projectId)).delete()
+      await db.projects.where('id').anyOf(projectIds).delete()
+    }
+    if (studentIds.length) await db.students.where('id').anyOf(studentIds).delete()
     await db.scheduleWeeks.where('classId').equals(id).delete()
     await db.classes.delete(id)
   })

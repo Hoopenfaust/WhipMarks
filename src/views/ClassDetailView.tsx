@@ -820,6 +820,7 @@ export function ClassDetailView() {
   const [editingClass, setEditingClass] = useState(false)
   const [className, setClassName] = useState('')
   const [deletingClass, setDeletingClass] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [deleteStudentId, setDeleteStudentId] = useState<string | null>(null)
   const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null)
   const [editStudentId, setEditStudentId] = useState<string | null>(null)
@@ -1231,14 +1232,22 @@ export function ClassDetailView() {
         {classId && <ProjectForm classId={classId} onDone={() => setAddProjectOpen(false)} />}
       </SlideOver>
 
-      <Modal open={deletingClass} onClose={() => setDeletingClass(false)} title="Delete Class">
+      <Modal open={deletingClass} onClose={() => { setDeletingClass(false); setDeleteError(null) }} title="Delete Class">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-gray-400">
             This will permanently delete <span className="text-gray-100 font-medium">{classObj.name}</span>, all its students, projects, and marks. This cannot be undone.
           </p>
+          {deleteError && <p className="text-sm text-red-400 bg-red-950/30 border border-red-900/50 rounded-lg px-3 py-2">{deleteError}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setDeletingClass(false)}>Cancel</Button>
-            <Button variant="danger" onClick={async () => { await deleteClass(classId!); navigate('/classes') }}>Delete Class</Button>
+            <Button variant="ghost" onClick={() => { setDeletingClass(false); setDeleteError(null) }}>Cancel</Button>
+            <Button variant="danger" onClick={async () => {
+              try {
+                await deleteClass(classId!)
+                navigate('/classes')
+              } catch (err) {
+                setDeleteError(err instanceof Error ? err.message : 'Delete failed — please try again')
+              }
+            }}>Delete Class</Button>
           </div>
         </div>
       </Modal>
