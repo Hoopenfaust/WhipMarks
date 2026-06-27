@@ -37,6 +37,8 @@ const DELIVERABLES = [
   'Physical Model', 'Technical Drawings', 'Digital Renders',
   'Oral Presentation', 'Written Report', 'Working Prototype',
   'Portfolio', 'Process Journal', 'Video',
+  'Logo / Brand Identity', 'Poster / Print Layout', 'Typeface / Typography',
+  'Packaging Design', 'Illustration', 'Digital / Screen Design',
 ]
 
 const FOCUS_AREAS = [
@@ -44,6 +46,8 @@ const FOCUS_AREAS = [
   'Presentation Quality', 'Research & Process', 'Form & Aesthetics',
   'Innovation & Originality', 'Sustainability', 'User-Centred Design',
   'Communication', 'Craftsmanship', 'Problem Solving',
+  'Typography', 'Visual Hierarchy', 'Colour Theory',
+  'Layout & Composition', 'Brand Identity', 'Image Making',
 ]
 
 // ─── Shared UI pieces ─────────────────────────────────────────────────────────
