@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { LibraryProject, LibraryProjectCriterion } from '../../types'
+import type { LibraryProject, LibraryProjectCriterion, LibraryDescriptor, DescriptorLevel } from '../../types'
 import { newId } from '../../utils/id'
 
 export function useLibraryProjects() {
@@ -31,7 +31,12 @@ export async function updateLibraryProject(id: string, data: Partial<Omit<Librar
 }
 
 export async function deleteLibraryProject(id: string) {
-  await db.transaction('rw', [db.libraryProjects, db.libraryProjectCriteria], async () => {
+  await db.transaction('rw', [db.libraryProjects, db.libraryProjectCriteria, db.libraryDescriptors], async () => {
+    const criteria = await db.libraryProjectCriteria.where('libraryProjectId').equals(id).toArray()
+    const criterionIds = criteria.map(c => c.id)
+    if (criterionIds.length > 0) {
+      await db.libraryDescriptors.where('libraryCriterionId').anyOf(criterionIds).delete()
+    }
     await db.libraryProjectCriteria.where('libraryProjectId').equals(id).delete()
     await db.libraryProjects.delete(id)
   })
@@ -56,7 +61,38 @@ export async function updateLibraryProjectCriterion(id: string, data: Partial<Om
 }
 
 export async function deleteLibraryProjectCriterion(id: string) {
-  await db.libraryProjectCriteria.delete(id)
+  await db.transaction('rw', [db.libraryProjectCriteria, db.libraryDescriptors], async () => {
+    await db.libraryDescriptors.where('libraryCriterionId').equals(id).delete()
+    await db.libraryProjectCriteria.delete(id)
+  })
+}
+
+export function useLibraryProjectDescriptors(libraryProjectId: string | undefined) {
+  return useLiveQuery(async () => {
+    if (!libraryProjectId) return []
+    const criteria = await db.libraryProjectCriteria.where('libraryProjectId').equals(libraryProjectId).toArray()
+    const ids = criteria.map(c => c.id)
+    if (ids.length === 0) return []
+    return db.libraryDescriptors.where('libraryCriterionId').anyOf(ids).toArray()
+  }, [libraryProjectId]) ?? []
+}
+
+export async function setLibraryDescriptor(
+  libraryCriterionId: string,
+  level: DescriptorLevel,
+  text: string,
+  score?: number,
+) {
+  const existing = await db.libraryDescriptors.where('libraryCriterionId').equals(libraryCriterionId).toArray()
+  const match = existing.find(d => d.level === level)
+  const patch: Partial<LibraryDescriptor> = { text }
+  if (score !== undefined) patch.score = score
+  if (match) {
+    await db.libraryDescriptors.update(match.id, patch)
+  } else {
+    const d: LibraryDescriptor = { id: newId(), libraryCriterionId, level, text, ...(score !== undefined ? { score } : {}) }
+    await db.libraryDescriptors.add(d)
+  }
 }
 
 export async function reorderLibraryProjectCriteria(orderedIds: string[]) {

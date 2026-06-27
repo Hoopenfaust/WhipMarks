@@ -398,6 +398,7 @@ interface Props {
   projectName: string
   onDone: () => void
   onCancel: () => void
+  onImport?: (criteria: GeneratedCriterionWithDescriptors[]) => Promise<void>
 }
 
 const EMPTY_ANSWERS: GuidedRubricAnswers = {
@@ -411,7 +412,7 @@ const EMPTY_ANSWERS: GuidedRubricAnswers = {
   outcomeWeight: 60,
 }
 
-export function GuidedRubricBuilder({ projectId, projectName, onDone, onCancel }: Props) {
+export function GuidedRubricBuilder({ projectId, projectName, onDone, onCancel, onImport }: Props) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [answers, setAnswers] = useState<GuidedRubricAnswers>({ ...EMPTY_ANSWERS, projectName })
   const [generated, setGenerated] = useState<GeneratedCriterionWithDescriptors[]>([])
@@ -449,19 +450,23 @@ export function GuidedRubricBuilder({ projectId, projectName, onDone, onCancel }
     if (generated.length === 0) return
     setImporting(true)
     try {
-      const criteriaData = generated.map(c => ({
-        name: c.name, description: c.description, maxMarks: c.maxMarks, weight: c.weight,
-      }))
-      const saved = await bulkAddCriteria(projectId, criteriaData)
-      await updateProject(projectId, { totalMarks: generated.reduce((s, c) => s + c.maxMarks, 0) })
-      for (let i = 0; i < generated.length; i++) {
-        const { descriptors } = generated[i]
-        await Promise.all([
-          setDescriptor(saved[i].id, 'excellent',    descriptors.excellent.text,    descriptors.excellent.score),
-          setDescriptor(saved[i].id, 'good',         descriptors.good.text,         descriptors.good.score),
-          setDescriptor(saved[i].id, 'satisfactory', descriptors.satisfactory.text, descriptors.satisfactory.score),
-          setDescriptor(saved[i].id, 'poor',         descriptors.poor.text,         descriptors.poor.score),
-        ])
+      if (onImport) {
+        await onImport(generated)
+      } else {
+        const criteriaData = generated.map(c => ({
+          name: c.name, description: c.description, maxMarks: c.maxMarks, weight: c.weight,
+        }))
+        const saved = await bulkAddCriteria(projectId, criteriaData)
+        await updateProject(projectId, { totalMarks: generated.reduce((s, c) => s + c.maxMarks, 0) })
+        for (let i = 0; i < generated.length; i++) {
+          const { descriptors } = generated[i]
+          await Promise.all([
+            setDescriptor(saved[i].id, 'excellent',    descriptors.excellent.text,    descriptors.excellent.score),
+            setDescriptor(saved[i].id, 'good',         descriptors.good.text,         descriptors.good.score),
+            setDescriptor(saved[i].id, 'satisfactory', descriptors.satisfactory.text, descriptors.satisfactory.score),
+            setDescriptor(saved[i].id, 'poor',         descriptors.poor.text,         descriptors.poor.score),
+          ])
+        }
       }
       onDone()
     } catch (err) {

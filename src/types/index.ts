@@ -238,6 +238,14 @@ export interface LibraryProjectCriterion {
   sortIndex: number
 }
 
+export interface LibraryDescriptor {
+  id: string
+  libraryCriterionId: string
+  level: DescriptorLevel
+  text: string
+  score?: number
+}
+
 export interface RubricTemplate {
   id: string
   name: string

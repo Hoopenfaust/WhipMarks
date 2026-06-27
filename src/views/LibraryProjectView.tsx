@@ -1,18 +1,24 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen, Sparkles } from 'lucide-react'
 import {
   useLibraryProject,
   useLibraryProjectCriteria,
+  useLibraryProjectDescriptors,
   updateLibraryProject,
   addLibraryProjectCriterion,
   updateLibraryProjectCriterion,
   deleteLibraryProjectCriterion,
+  setLibraryDescriptor,
 } from '../db/hooks/useLibraryProjects'
 import { useClasses } from '../db/hooks/useClasses'
 import { createProject } from '../db/hooks/useProjects'
 import { bulkAddCriteria } from '../db/hooks/useCriteria'
-import type { LibraryProjectCriterion } from '../types'
+import { setDescriptor } from '../db/hooks/useDescriptors'
+import { GuidedRubricBuilder } from '../components/rubric/GuidedRubricBuilder'
+import type { LibraryProjectCriterion, LibraryDescriptor, DescriptorLevel } from '../types'
+import type { GeneratedCriterionWithDescriptors } from '../utils/claude'
+import { LEVELS } from '../utils/levels'
 import { Modal } from '../components/ui/Modal'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -52,12 +58,16 @@ function EditableHeading({ value, onChange, className }: { value: string; onChan
 
 function CriterionRow({
   c,
+  descriptors,
   onDelete,
   onUpdate,
+  onSetDescriptor,
 }: {
   c: LibraryProjectCriterion
+  descriptors: LibraryDescriptor[]
   onDelete: () => void
   onUpdate: (data: Partial<Pick<LibraryProjectCriterion, 'name' | 'description' | 'maxMarks' | 'weight'>>) => void
+  onSetDescriptor: (level: DescriptorLevel, text: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
 
@@ -98,7 +108,7 @@ function CriterionRow({
           <button
             className="p-1.5 rounded-lg text-gray-600 hover:text-gray-300 hover:bg-gray-700 transition-colors text-xs"
             onClick={() => setExpanded(x => !x)}
-            title="Description"
+            title="Descriptors"
           >
             {expanded ? '▲' : '▼'}
           </button>
@@ -111,14 +121,36 @@ function CriterionRow({
         </div>
       </div>
       {expanded && (
-        <div className="px-4 pb-3 border-t border-gray-700/60 pt-3">
-          <textarea
-            className="w-full bg-gray-750 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-indigo-500 resize-none"
-            rows={2}
-            placeholder="Description (optional)"
-            value={c.description}
-            onChange={e => onUpdate({ description: e.target.value })}
-          />
+        <div className="border-t border-gray-700/60">
+          <div className="px-4 py-3 border-b border-gray-700/40">
+            <textarea
+              className="w-full bg-gray-750 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-indigo-500 resize-none"
+              rows={2}
+              placeholder="Description (optional)"
+              value={c.description}
+              onChange={e => onUpdate({ description: e.target.value })}
+            />
+          </div>
+          <div className="divide-y divide-gray-700/40">
+            {LEVELS.map(level => {
+              const d = descriptors.find(x => x.level === level.id)
+              return (
+                <div key={level.id} className="flex gap-3 px-4 py-3">
+                  <div className={`mt-2.5 w-2 h-2 rounded-full shrink-0 ${level.dotColor}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-semibold mb-1.5 ${level.textColor}`}>{level.label}</p>
+                    <textarea
+                      className="w-full bg-gray-750 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-indigo-500 resize-none"
+                      rows={2}
+                      placeholder={`Describe ${level.shortLabel.toLowerCase()} performance…`}
+                      value={d?.text ?? ''}
+                      onChange={e => onSetDescriptor(level.id, e.target.value)}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -130,6 +162,7 @@ export function LibraryProjectView() {
   const navigate = useNavigate()
   const project = useLibraryProject(libraryProjectId)
   const criteria = useLibraryProjectCriteria(libraryProjectId)
+  const allDescriptors = useLibraryProjectDescriptors(libraryProjectId)
   const classes = useClasses()
 
   const [attachOpen, setAttachOpen] = useState(false)
@@ -138,6 +171,7 @@ export function LibraryProjectView() {
   const [attachWeight, setAttachWeight] = useState('20')
   const [attachStartDate, setAttachStartDate] = useState('')
   const [attaching, setAttaching] = useState(false)
+  const [showAiBuilder, setShowAiBuilder] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
 
   // Debounced updates
@@ -160,6 +194,26 @@ export function LibraryProjectView() {
     await addLibraryProjectCriterion(libraryProjectId, '', criteria.length)
   }
 
+  async function handleAiImport(generated: GeneratedCriterionWithDescriptors[]) {
+    if (!libraryProjectId) return
+    for (const c of generated) {
+      const criterion = await addLibraryProjectCriterion(libraryProjectId, c.name, criteria.length)
+      await updateLibraryProjectCriterion(criterion.id, {
+        description: c.description,
+        maxMarks: c.maxMarks,
+        weight: c.weight,
+      })
+      const { descriptors } = c
+      await Promise.all([
+        setLibraryDescriptor(criterion.id, 'excellent',    descriptors.excellent.text,    descriptors.excellent.score),
+        setLibraryDescriptor(criterion.id, 'good',         descriptors.good.text,         descriptors.good.score),
+        setLibraryDescriptor(criterion.id, 'satisfactory', descriptors.satisfactory.text, descriptors.satisfactory.score),
+        setLibraryDescriptor(criterion.id, 'poor',         descriptors.poor.text,         descriptors.poor.score),
+      ])
+    }
+    await updateLibraryProject(libraryProjectId, { totalMarks: generated.reduce((s, c) => s + c.maxMarks, 0) })
+  }
+
   async function handleAttach() {
     if (!libraryProjectId || !project || !attachClassId || !attachDueDate) return
     setAttaching(true)
@@ -174,18 +228,39 @@ export function LibraryProjectView() {
         totalMarks: project.totalMarks,
       })
       if (criteria.length > 0) {
-        await bulkAddCriteria(p.id, criteria.map(c => ({
+        const saved = await bulkAddCriteria(p.id, criteria.map(c => ({
           name: c.name,
           description: c.description,
           maxMarks: c.maxMarks,
           weight: c.weight,
         })))
+        // Copy descriptors
+        for (let i = 0; i < criteria.length; i++) {
+          const cDescriptors = allDescriptors.filter(d => d.libraryCriterionId === criteria[i].id)
+          for (const d of cDescriptors) {
+            await setDescriptor(saved[i].id, d.level, d.text, d.score)
+          }
+        }
       }
       setAttachOpen(false)
       navigate(`/classes/${attachClassId}/projects/${p.id}`)
     } finally {
       setAttaching(false)
     }
+  }
+
+  if (showAiBuilder && libraryProjectId && project) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 bg-gray-950">
+        <GuidedRubricBuilder
+          projectId={libraryProjectId}
+          projectName={project.name}
+          onImport={handleAiImport}
+          onDone={() => setShowAiBuilder(false)}
+          onCancel={() => setShowAiBuilder(false)}
+        />
+      </div>
+    )
   }
 
   if (!project) {
@@ -220,6 +295,10 @@ export function LibraryProjectView() {
             {saveState === 'saved' ? 'Saved' : 'Saving…'}
           </span>
         )}
+        <Button variant="ghost" onClick={() => setShowAiBuilder(true)}>
+          <Sparkles size={15} className="mr-1" />
+          Build with AI
+        </Button>
         <Button variant="primary" onClick={() => { setAttachClassId(classes[0]?.id ?? ''); setAttachOpen(true) }}>
           <BookOpen size={15} className="mr-1" />
           Add to Class
@@ -245,7 +324,7 @@ export function LibraryProjectView() {
                 }}
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1">
               <span className="text-sm text-gray-400">Description:</span>
               <input
                 className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-sm text-gray-300 placeholder:text-gray-600 outline-none focus:border-indigo-500"
@@ -274,8 +353,10 @@ export function LibraryProjectView() {
                 <CriterionRow
                   key={c.id}
                   c={c}
+                  descriptors={allDescriptors.filter(d => d.libraryCriterionId === c.id)}
                   onDelete={() => deleteLibraryProjectCriterion(c.id)}
                   onUpdate={data => updateLibraryProjectCriterion(c.id, data)}
+                  onSetDescriptor={(level, text) => setLibraryDescriptor(c.id, level, text)}
                 />
               ))}
             </div>

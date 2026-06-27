@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import dexieCloud from 'dexie-cloud-addon'
-import type { Class, Student, Project, RubricCriterion, Mark, ProjectSheet, RubricDescriptor, RubricTemplate, ScheduleWeek, TaMark, TaAssignment, Competency, CriterionCompetency, Snippet, ImprovementNote, LibraryProject, LibraryProjectCriterion, StudentSubmission, SubmissionAnnotation } from '../types'
+import type { Class, Student, Project, RubricCriterion, Mark, ProjectSheet, RubricDescriptor, RubricTemplate, ScheduleWeek, TaMark, TaAssignment, Competency, CriterionCompetency, Snippet, ImprovementNote, LibraryProject, LibraryProjectCriterion, LibraryDescriptor, StudentSubmission, SubmissionAnnotation } from '../types'
 
 class AppDatabase extends Dexie {
   classes!: Table<Class>
@@ -20,6 +20,7 @@ class AppDatabase extends Dexie {
   improvementNotes!: Table<ImprovementNote>
   libraryProjects!: Table<LibraryProject>
   libraryProjectCriteria!: Table<LibraryProjectCriterion>
+  libraryDescriptors!: Table<LibraryDescriptor>
   studentSubmissions!: Table<StudentSubmission>
   submissionAnnotations!: Table<SubmissionAnnotation>
 
@@ -137,6 +138,28 @@ class AppDatabase extends Dexie {
       improvementNotes: '&id, [studentId+projectId], projectId',
       libraryProjects: '&id, createdAt',
       libraryProjectCriteria: '&id, libraryProjectId, sortIndex',
+      studentSubmissions: '&id, [studentId+projectId], projectId',
+      submissionAnnotations: '&id, [studentId+projectId]',
+    })
+    this.version(11).stores({
+      classes: '&id, createdAt',
+      students: '&id, classId, sortIndex',
+      projects: '&id, classId, createdAt',
+      criteria: '&id, projectId, sortIndex',
+      marks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      projectSheets: '&id, projectId',
+      descriptors: '&id, criterionId',
+      rubricTemplates: '&id, createdAt',
+      scheduleWeeks: '&id, [classId+weekNumber], classId',
+      taMarks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      taAssignments: '&projectId',
+      competencies: '&id, projectId, sortIndex',
+      criterionCompetencies: '&id, criterionId, competencyId',
+      snippets: '&id, projectId, createdAt',
+      improvementNotes: '&id, [studentId+projectId], projectId',
+      libraryProjects: '&id, createdAt',
+      libraryProjectCriteria: '&id, libraryProjectId, sortIndex',
+      libraryDescriptors: '&id, libraryCriterionId',
       studentSubmissions: '&id, [studentId+projectId], projectId',
       submissionAnnotations: '&id, [studentId+projectId]',
     })
