@@ -88,7 +88,7 @@ export async function generateRubricFromAnswers(answers: GuidedRubricAnswers): P
 export async function generateRubricFromDocument(
   data: ArrayBuffer,
   mimeType: string,
-): Promise<GeneratedCriterion[]> {
+): Promise<GeneratedCriterionWithDescriptors[]> {
   const base64 = arrayBufferToBase64(data)
 
   const res = await fetch('/api/generate-rubric', {
@@ -107,5 +107,5 @@ export async function generateRubricFromDocument(
   const match = text.match(/\[[\s\S]*\]/)
   if (!match) throw new Error('No JSON found in response')
 
-  return JSON.parse(match[0]) as GeneratedCriterion[]
+  return JSON.parse(match[0]) as GeneratedCriterionWithDescriptors[]
 }

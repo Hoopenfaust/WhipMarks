@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen, Sparkles } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, GripVertical, BookOpen, Sparkles, Upload } from 'lucide-react'
 import {
   useLibraryProject,
   useLibraryProjectCriteria,
@@ -17,6 +17,7 @@ import { bulkAddCriteria } from '../db/hooks/useCriteria'
 import { setDescriptor } from '../db/hooks/useDescriptors'
 import { GuidedRubricBuilder } from '../components/rubric/GuidedRubricBuilder'
 import type { LibraryProjectCriterion, LibraryDescriptor, DescriptorLevel } from '../types'
+import { generateRubricFromDocument } from '../utils/claude'
 import type { GeneratedCriterionWithDescriptors } from '../utils/claude'
 import { LEVELS } from '../utils/levels'
 import { Modal } from '../components/ui/Modal'
@@ -173,6 +174,9 @@ export function LibraryProjectView() {
   const [attaching, setAttaching] = useState(false)
   const [showAiBuilder, setShowAiBuilder] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [extracting, setExtracting] = useState(false)
+  const [extractError, setExtractError] = useState<string | null>(null)
+  const uploadRef = useRef<HTMLInputElement>(null)
 
   // Debounced updates
   const updateTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -212,6 +216,21 @@ export function LibraryProjectView() {
       ])
     }
     await updateLibraryProject(libraryProjectId, { totalMarks: generated.reduce((s, c) => s + c.maxMarks, 0) })
+  }
+
+  async function handleUpload(file: File) {
+    if (!libraryProjectId) return
+    setExtracting(true)
+    setExtractError(null)
+    try {
+      const data = await file.arrayBuffer()
+      const generated = await generateRubricFromDocument(data, file.type)
+      await handleAiImport(generated)
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : 'Extraction failed')
+    } finally {
+      setExtracting(false)
+    }
   }
 
   async function handleAttach() {
@@ -295,6 +314,17 @@ export function LibraryProjectView() {
             {saveState === 'saved' ? 'Saved' : 'Saving…'}
           </span>
         )}
+        <input
+          ref={uploadRef}
+          type="file"
+          accept=".pdf,image/*"
+          className="hidden"
+          onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])}
+        />
+        <Button variant="ghost" onClick={() => uploadRef.current?.click()} disabled={extracting}>
+          <Upload size={15} className="mr-1" />
+          {extracting ? 'Reading brief…' : 'Upload brief'}
+        </Button>
         <Button variant="ghost" onClick={() => setShowAiBuilder(true)}>
           <Sparkles size={15} className="mr-1" />
           Build with AI
@@ -304,6 +334,13 @@ export function LibraryProjectView() {
           Add to Class
         </Button>
       </div>
+
+      {extractError && (
+        <div className="px-8 py-3 bg-red-950/40 border-b border-red-900/50 text-sm text-red-400 flex items-center justify-between">
+          <span>{extractError}</span>
+          <button onClick={() => setExtractError(null)} className="text-red-600 hover:text-red-300 ml-4">✕</button>
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-8">
