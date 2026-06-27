@@ -7,10 +7,17 @@ import { SemesterSummaryView } from './views/SemesterSummaryView'
 import { LibraryView } from './views/LibraryView'
 import { LibraryProjectView } from './views/LibraryProjectView'
 import { TutorialOverlay } from './components/tutorial/TutorialOverlay'
+import { useReapDeletedClasses } from './db/hooks/useClasses'
+
+function Reaper() {
+  useReapDeletedClasses()
+  return null
+}
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Reaper />
       <TutorialOverlay />
       <Routes>
         <Route element={<Layout />}>
