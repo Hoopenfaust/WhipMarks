@@ -38,14 +38,8 @@ export async function deleteClass(id: string) {
   const studentIds = students.map(s => s.id)
   const projectIdSet = new Set(projectIds)
 
-  // Delete the class record FIRST and push its tombstone before deleting children.
-  // Deleting many child records (50+ students, marks, etc.) triggers Dexie Cloud's
-  // auto-sync mid-cascade, which pulls the class back from the server before the
-  // class tombstone has been pushed. By pushing the class tombstone first, any
-  // subsequent background pull won't restore the class.
   await db.scheduleWeeks.where('classId').equals(id).delete()
   await db.classes.delete(id)
-  try { await db.cloud.sync({ wait: true, purpose: 'push' }) } catch { /* non-fatal if offline */ }
 
   if (criterionIds.length) {
     await db.descriptors.where('criterionId').anyOf(criterionIds).delete()
@@ -65,5 +59,17 @@ export async function deleteClass(id: string) {
     await db.projects.where('id').anyOf(projectIds).delete()
   }
   if (studentIds.length) await db.students.where('id').anyOf(studentIds).delete()
-  try { await db.cloud.sync({ wait: true, purpose: 'push' }) } catch { /* non-fatal if offline */ }
+
+  // Push all tombstones to the server, then pull to reconcile.
+  // If the server still sends the class back (tombstone not yet acknowledged),
+  // delete it again and push once more.
+  try {
+    await db.cloud.sync({ wait: true, purpose: 'push' })
+    await db.cloud.sync({ wait: true, purpose: 'pull' })
+    const restored = await db.classes.get(id)
+    if (restored) {
+      await db.classes.delete(id)
+      await db.cloud.sync({ wait: true, purpose: 'push' })
+    }
+  } catch { /* non-fatal if offline */ }
 }
