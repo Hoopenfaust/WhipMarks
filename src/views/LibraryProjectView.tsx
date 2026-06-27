@@ -138,13 +138,21 @@ export function LibraryProjectView() {
   const [attachWeight, setAttachWeight] = useState('20')
   const [attachStartDate, setAttachStartDate] = useState('')
   const [attaching, setAttaching] = useState(false)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
 
   // Debounced updates
   const updateTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   function scheduleSave(data: Parameters<typeof updateLibraryProject>[1]) {
     if (!libraryProjectId) return
+    setSaveState('saving')
     if (updateTimer.current) clearTimeout(updateTimer.current)
-    updateTimer.current = setTimeout(() => updateLibraryProject(libraryProjectId, data), 400)
+    updateTimer.current = setTimeout(async () => {
+      await updateLibraryProject(libraryProjectId, data)
+      setSaveState('saved')
+      if (savedTimer.current) clearTimeout(savedTimer.current)
+      savedTimer.current = setTimeout(() => setSaveState('idle'), 2000)
+    }, 400)
   }
 
   async function handleAddCriterion() {
@@ -207,6 +215,11 @@ export function LibraryProjectView() {
           className="text-lg font-semibold text-gray-100"
         />
         <div className="flex-1" />
+        {saveState !== 'idle' && (
+          <span className={`text-xs transition-colors ${saveState === 'saved' ? 'text-emerald-400' : 'text-gray-500'}`}>
+            {saveState === 'saved' ? 'Saved' : 'Saving…'}
+          </span>
+        )}
         <Button variant="primary" onClick={() => { setAttachClassId(classes[0]?.id ?? ''); setAttachOpen(true) }}>
           <BookOpen size={15} className="mr-1" />
           Add to Class
