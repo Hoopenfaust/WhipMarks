@@ -12,7 +12,10 @@ export default async function handler(req, res) {
 
   const answers = req.body
 
+  const hasBrief = !!(answers.briefData && answers.briefMimeType)
+
   const prompt = `You are an experienced university design educator helping a new teacher create an assessment rubric.
+${hasBrief ? '\nThe teacher has attached the project brief above. Use it to inform the criteria, marks, and descriptor language — especially any marking scheme shown in the brief.' : ''}
 
 Based on the teacher's answers below, generate a complete marking rubric with detailed level descriptors for each criterion.
 
@@ -51,6 +54,18 @@ Rules:
 - Reflect the teacher's own words about excellence and failure where possible
 - Use vocabulary appropriate for ${answers.discipline} education`
 
+  const messageContent = []
+
+  if (answers.briefData && answers.briefMimeType) {
+    const isPdf = answers.briefMimeType === 'application/pdf'
+    messageContent.push({
+      type: isPdf ? 'document' : 'image',
+      source: { type: 'base64', media_type: answers.briefMimeType, data: answers.briefData },
+    })
+  }
+
+  messageContent.push({ type: 'text', text: prompt })
+
   const upstream = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -61,7 +76,7 @@ Rules:
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: messageContent }],
     }),
   })
 

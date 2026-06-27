@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Sparkles, Check, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Sparkles, Check, AlertCircle, ChevronDown, ChevronUp, Upload, FileText, X } from 'lucide-react'
 import type { GuidedRubricAnswers, GeneratedCriterionWithDescriptors } from '../../utils/claude'
 import { generateRubricFromAnswers } from '../../utils/claude'
 import { bulkAddCriteria } from '../../db/hooks/useCriteria'
@@ -105,6 +105,9 @@ function Step1({ answers, onChange }: {
   answers: GuidedRubricAnswers
   onChange: (patch: Partial<GuidedRubricAnswers>) => void
 }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [dragging, setDragging] = useState(false)
+
   function toggleDeliverable(d: string) {
     const next = answers.deliverables.includes(d)
       ? answers.deliverables.filter(x => x !== d)
@@ -112,8 +115,49 @@ function Step1({ answers, onChange }: {
     onChange({ deliverables: next })
   }
 
+  async function handleFile(file: File) {
+    const buffer = await file.arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192))
+    }
+    onChange({ briefData: btoa(binary), briefMimeType: file.type, projectName: answers.projectName || file.name.replace(/\.[^.]+$/, '') })
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Brief upload */}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          Project brief <span className="text-gray-500 normal-case font-normal">(optional — helps the AI write better descriptors)</span>
+        </label>
+        {answers.briefData ? (
+          <div className="flex items-center gap-3 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl">
+            <FileText size={16} className="text-indigo-400 shrink-0" />
+            <span className="text-sm text-gray-200 flex-1">Brief uploaded</span>
+            <button onClick={() => onChange({ briefData: undefined, briefMimeType: undefined })} className="text-gray-500 hover:text-red-400 transition-colors">
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <div
+            onDragOver={e => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+            onClick={() => fileRef.current?.click()}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition-colors',
+              dragging ? 'border-indigo-500 bg-indigo-500/5' : 'border-gray-700 hover:border-gray-500'
+            )}
+          >
+            <Upload size={16} className="text-gray-500 shrink-0" />
+            <span className="text-sm text-gray-500">Upload project brief (PDF or image)</span>
+            <input ref={fileRef} type="file" accept=".pdf,image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Project name</label>
         <input

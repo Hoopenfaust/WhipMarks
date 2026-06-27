@@ -19,6 +19,8 @@ export interface GuidedRubricAnswers {
   failureDescription: string
   criteriaCount: number
   outcomeWeight: number   // 0–100
+  briefData?: string      // base64 encoded PDF or image
+  briefMimeType?: string
 }
 
 export interface GeneratedDescriptor {
