@@ -1,30 +1,27 @@
 @echo off
 :: WhipMarks Launcher
-:: Starts the Vite dev server (if not already running), then opens the desktop app
 
 set "ROOT=D:\Claude Code\student-marker"
-set "NODE=C:\Program Files\nodejs\node.exe"
-set "VITE=%ROOT%\node_modules\vite\bin\vite.js"
 set "APP=%ROOT%\src-tauri\target\debug\app.exe"
 
-:: Check if Vite is already running on 5173
+:: If Vite is already up, just open the app
 powershell -NoProfile -Command "try{Invoke-WebRequest http://localhost:5173 -TimeoutSec 1 -UseBasicParsing | Out-Null; exit 0}catch{exit 1}" >nul 2>&1
 if %errorlevel%==0 goto launch
 
-:: Kill any stale Vite on 5173
+:: Kill anything stale on 5173
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5173 " 2^>nul') do taskkill /PID %%a /F >nul 2>&1
 
-:: Start Vite in its own titled window so it survives and is identifiable
-start "WhipMarks-Vite" /min "%NODE%" "%VITE%" --port 5173
+:: Start Vite as a fully hidden detached process using a helper ps1
+powershell -NoProfile -Command "Start-Process powershell -ArgumentList '-NoProfile','-WindowStyle','Hidden','-Command','cd ''D:\Claude Code\student-marker''; & ''C:\Program Files\nodejs\node.exe'' ''D:\Claude Code\student-marker\node_modules\vite\bin\vite.js'' --port 5173' -WindowStyle Hidden"
 
-:: Wait until Vite is ready (up to 15s)
+:: Wait up to 20s for Vite to be ready
 set /a tries=0
 :wait
 ping -n 2 127.0.0.1 >nul
 powershell -NoProfile -Command "try{Invoke-WebRequest http://localhost:5173 -TimeoutSec 1 -UseBasicParsing | Out-Null; exit 0}catch{exit 1}" >nul 2>&1
 if %errorlevel%==0 goto launch
 set /a tries+=1
-if %tries% lss 15 goto wait
+if %tries% lss 20 goto wait
 
 :launch
 start "" "%APP%"
