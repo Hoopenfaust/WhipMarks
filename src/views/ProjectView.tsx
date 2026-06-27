@@ -8,7 +8,7 @@ import { useTaMarksForProject } from '../db/hooks/useTaMarks'
 import { useProjectSheet } from '../db/hooks/useProjectSheet'
 import { useStudents } from '../db/hooks/useStudents'
 import { useClass } from '../db/hooks/useClasses'
-import { useProjectDescriptors } from '../db/hooks/useDescriptors'
+import { useProjectDescriptors, setDescriptor } from '../db/hooks/useDescriptors'
 import { useCompetencies, useAllCriterionCompetenciesForProject } from '../db/hooks/useCompetencies'
 import { useSnippets } from '../db/hooks/useSnippets'
 import { useProjectImprovementNotes } from '../db/hooks/useImprovementNotes'
@@ -93,8 +93,17 @@ export function ProjectView() {
     setGenerating(true); setGenError(null)
     try {
       const generated = await generateRubricFromDocument(s.data, s.mimeType)
-      await bulkAddCriteria(projectId!, generated)
+      const saved = await bulkAddCriteria(projectId!, generated)
       await updateProject(projectId!, { totalMarks: generated.reduce((sum, c) => sum + c.maxMarks, 0) })
+      for (let i = 0; i < generated.length; i++) {
+        const { descriptors } = generated[i]
+        await Promise.all([
+          setDescriptor(saved[i].id, 'excellent',    descriptors.excellent.text,    descriptors.excellent.score),
+          setDescriptor(saved[i].id, 'good',         descriptors.good.text,         descriptors.good.score),
+          setDescriptor(saved[i].id, 'satisfactory', descriptors.satisfactory.text, descriptors.satisfactory.score),
+          setDescriptor(saved[i].id, 'poor',         descriptors.poor.text,         descriptors.poor.score),
+        ])
+      }
     } catch (err) {
       setGenError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
