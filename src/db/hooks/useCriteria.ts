@@ -40,6 +40,18 @@ export async function bulkAddCriteria(projectId: string, items: Omit<RubricCrite
   return criteria
 }
 
+export async function clearProjectCriteria(projectId: string) {
+  await db.transaction('rw', [db.criteria, db.marks, db.descriptors], async () => {
+    const criteria = await db.criteria.where('projectId').equals(projectId).toArray()
+    const ids = criteria.map(c => c.id)
+    if (ids.length > 0) {
+      await db.marks.filter(m => ids.includes(m.criterionId)).delete()
+      await db.descriptors.where('criterionId').anyOf(ids).delete()
+    }
+    await db.criteria.where('projectId').equals(projectId).delete()
+  })
+}
+
 export async function reorderCriteria(orderedIds: string[]) {
   await db.transaction('rw', db.criteria, async () => {
     for (let i = 0; i < orderedIds.length; i++) {

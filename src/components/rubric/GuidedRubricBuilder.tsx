@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { Sparkles, Check, AlertCircle, ChevronDown, ChevronUp, Upload, FileText, X } from 'lucide-react'
 import type { GuidedRubricAnswers, GeneratedCriterionWithDescriptors } from '../../utils/claude'
 import { generateRubricFromAnswers } from '../../utils/claude'
-import { bulkAddCriteria } from '../../db/hooks/useCriteria'
+import { bulkAddCriteria, clearProjectCriteria } from '../../db/hooks/useCriteria'
 import { setDescriptor } from '../../db/hooks/useDescriptors'
 import { updateProject } from '../../db/hooks/useProjects'
 import { cn } from '../../utils/cn'
@@ -501,6 +501,7 @@ export function GuidedRubricBuilder({ projectId, projectName, onDone, onCancel, 
       if (onImport) {
         await onImport(generated)
       } else {
+        await clearProjectCriteria(projectId)
         const criteriaData = generated.map(c => ({
           name: c.name, description: c.description, maxMarks: c.maxMarks, weight: c.weight,
         }))
