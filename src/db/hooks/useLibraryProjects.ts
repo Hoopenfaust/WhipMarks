@@ -67,6 +67,15 @@ export async function deleteLibraryProjectCriterion(id: string) {
   })
 }
 
+export async function clearLibraryProjectCriteria(libraryProjectId: string) {
+  await db.transaction('rw', [db.libraryProjectCriteria, db.libraryDescriptors], async () => {
+    const criteria = await db.libraryProjectCriteria.where('libraryProjectId').equals(libraryProjectId).toArray()
+    const ids = criteria.map(c => c.id)
+    if (ids.length > 0) await db.libraryDescriptors.where('libraryCriterionId').anyOf(ids).delete()
+    await db.libraryProjectCriteria.where('libraryProjectId').equals(libraryProjectId).delete()
+  })
+}
+
 export function useLibraryProjectDescriptors(libraryProjectId: string | undefined) {
   return useLiveQuery(async () => {
     if (!libraryProjectId) return []

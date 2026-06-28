@@ -10,6 +10,7 @@ import {
   updateLibraryProjectCriterion,
   deleteLibraryProjectCriterion,
   setLibraryDescriptor,
+  clearLibraryProjectCriteria,
 } from '../db/hooks/useLibraryProjects'
 import { useClasses } from '../db/hooks/useClasses'
 import { createProject } from '../db/hooks/useProjects'
@@ -202,8 +203,9 @@ export function LibraryProjectView() {
 
   async function handleAiImport(generated: GeneratedCriterionWithDescriptors[]) {
     if (!libraryProjectId) return
-    for (const c of generated) {
-      const criterion = await addLibraryProjectCriterion(libraryProjectId, c.name, criteria.length)
+    await clearLibraryProjectCriteria(libraryProjectId)
+    for (const [i, c] of generated.entries()) {
+      const criterion = await addLibraryProjectCriterion(libraryProjectId, c.name, i)
       await updateLibraryProjectCriterion(criterion.id, {
         description: c.description,
         maxMarks: c.maxMarks,
@@ -226,7 +228,9 @@ export function LibraryProjectView() {
     setExtractError(null)
     try {
       const data = await file.arrayBuffer()
-      const generated = await generateRubricFromDocument(data, file.type)
+      // file.type can be empty on Tauri drag-and-drop — fall back to extension
+      const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream')
+      const generated = await generateRubricFromDocument(data, mimeType)
       await handleAiImport(generated)
     } catch (err) {
       setExtractError(err instanceof Error ? err.message : 'Extraction failed')

@@ -5,7 +5,8 @@
       "name": "student-marker",
       "runtimeExecutable": "cmd.exe",
       "runtimeArgs": ["/c", "D:\\Claude Code\\student-marker\\start-dev.cmd"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": false
     }
   ]
 }
