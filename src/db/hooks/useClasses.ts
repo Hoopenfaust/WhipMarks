@@ -102,11 +102,8 @@ export async function deleteClass(id: string) {
 
   await purgeClassLocally(id)
 
-  // Best-effort push of the tombstone. If it fails, the reaper will
-  // re-delete on the next cloud pull and retry.
-  try {
-    await db.cloud.sync({ wait: true, purpose: 'push' })
-    // Only remove from graveyard once we've confirmed the push succeeded.
-    await db.deletedClassIds.delete(id)
-  } catch { /* reaper handles it */ }
+  // Best-effort push — don't remove from graveyard here.
+  // The graveyard entry stays until a subsequent pull confirms the class
+  // is gone from the server (handled passively by the reaper).
+  try { await db.cloud.sync({ wait: true, purpose: 'push' }) } catch { }
 }
