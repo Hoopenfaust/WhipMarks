@@ -55,6 +55,7 @@ Rules:
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
+      'anthropic-beta': 'pdfs-2024-09-25',
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
