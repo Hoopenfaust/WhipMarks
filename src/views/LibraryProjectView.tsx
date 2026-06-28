@@ -335,10 +335,6 @@ export function LibraryProjectView() {
           className="hidden"
           onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0])}
         />
-        <Button variant="ghost" onClick={() => uploadRef.current?.click()} disabled={extracting}>
-          <Upload size={15} className="mr-1" />
-          {extracting ? 'Reading brief…' : 'Upload brief'}
-        </Button>
         <Button variant="ghost" onClick={() => setShowAiBuilder(true)}>
           <Sparkles size={15} className="mr-1" />
           Build with AI
@@ -424,12 +420,15 @@ export function LibraryProjectView() {
           {/* Brief drop zone */}
           <div
             onClick={() => uploadRef.current?.click()}
-            className="flex items-center gap-3 px-4 py-3 border border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-gray-500 transition-colors group"
+            className="flex flex-col items-center justify-center gap-3 py-10 border-2 border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-indigo-500/5 transition-colors group"
           >
-            <Upload size={15} className="text-gray-600 group-hover:text-gray-400 transition-colors shrink-0" />
-            <span className="text-sm text-gray-600 group-hover:text-gray-400 transition-colors">
-              {extracting ? 'Reading brief…' : 'Drop project brief here to auto-build rubric (PDF or image)'}
-            </span>
+            <Upload size={28} className="text-gray-600 group-hover:text-indigo-400 transition-colors" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-400 group-hover:text-indigo-300 transition-colors">
+                {extracting ? 'Reading brief…' : 'Drop project brief here'}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">PDF or image · auto-builds the rubric with AI</p>
+            </div>
           </div>
         </div>
       </div>
