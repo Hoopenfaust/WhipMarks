@@ -420,6 +420,17 @@ export function LibraryProjectView() {
               Add criterion
             </button>
           </div>
+
+          {/* Brief drop zone */}
+          <div
+            onClick={() => uploadRef.current?.click()}
+            className="flex items-center gap-3 px-4 py-3 border border-dashed border-gray-700 rounded-xl cursor-pointer hover:border-gray-500 transition-colors group"
+          >
+            <Upload size={15} className="text-gray-600 group-hover:text-gray-400 transition-colors shrink-0" />
+            <span className="text-sm text-gray-600 group-hover:text-gray-400 transition-colors">
+              {extracting ? 'Reading brief…' : 'Drop project brief here to auto-build rubric (PDF or image)'}
+            </span>
+          </div>
         </div>
       </div>
 
