@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
+import { useClasses } from '../../db/hooks/useClasses'
 import { cn } from '../../utils/cn'
 
 interface Props {
@@ -18,7 +19,7 @@ export function GlobalSearch({ onSelectStudent }: Props) {
   const navigate = useNavigate()
 
   const students = useLiveQuery(() => db.students.toArray(), []) ?? []
-  const classes = useLiveQuery(() => db.classes.toArray(), []) ?? []
+  const classes = useClasses()
   const classMap = Object.fromEntries(classes.map(c => [c.id, c.name]))
 
   // Filter when query present, show all when empty
