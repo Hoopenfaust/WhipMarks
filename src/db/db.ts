@@ -23,6 +23,7 @@ class AppDatabase extends Dexie {
   libraryDescriptors!: Table<LibraryDescriptor>
   studentSubmissions!: Table<StudentSubmission>
   submissionAnnotations!: Table<SubmissionAnnotation>
+  deletedClassIds!: Table<{ id: string }>
 
   constructor() {
     super('GradeDesk', { addons: [dexieCloud] })
@@ -163,6 +164,29 @@ class AppDatabase extends Dexie {
       studentSubmissions: '&id, [studentId+projectId], projectId',
       submissionAnnotations: '&id, [studentId+projectId]',
     })
+    this.version(12).stores({
+      classes: '&id, createdAt',
+      students: '&id, classId, sortIndex',
+      projects: '&id, classId, createdAt',
+      criteria: '&id, projectId, sortIndex',
+      marks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      projectSheets: '&id, projectId',
+      descriptors: '&id, criterionId',
+      rubricTemplates: '&id, createdAt',
+      scheduleWeeks: '&id, [classId+weekNumber], classId',
+      taMarks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      taAssignments: '&projectId',
+      competencies: '&id, projectId, sortIndex',
+      criterionCompetencies: '&id, criterionId, competencyId',
+      snippets: '&id, projectId, createdAt',
+      improvementNotes: '&id, [studentId+projectId], projectId',
+      libraryProjects: '&id, createdAt',
+      libraryProjectCriteria: '&id, libraryProjectId, sortIndex',
+      libraryDescriptors: '&id, libraryCriterionId',
+      studentSubmissions: '&id, [studentId+projectId], projectId',
+      submissionAnnotations: '&id, [studentId+projectId]',
+      deletedClassIds: '&id',
+    })
   }
 }
 
@@ -183,6 +207,7 @@ if (cloudUrl) {
       'taAssignments',        // local TA workflow state
       'taMarks',              // local TA marks before import
       'studentSubmissions',   // raw PDF binary — too large to sync
+      'deletedClassIds',      // local-only graveyard — must never be synced or overwritten
     ],
   })
 }

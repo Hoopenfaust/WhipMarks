@@ -5,34 +5,18 @@ import type { Class } from '../../types'
 import { newId } from '../../utils/id'
 
 // ---------------------------------------------------------------------------
-// Graveyard — persists deleted class IDs across app restarts so the cloud
-// can't resurrect them via pull. IDs are removed only after a successful push.
-// ---------------------------------------------------------------------------
-
-const GRAVEYARD_KEY = 'whipmarks-class-graveyard'
-
-function graveyardGet(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(GRAVEYARD_KEY) ?? '[]')) }
-  catch { return new Set() }
-}
-function graveyardAdd(id: string) {
-  const g = graveyardGet(); g.add(id)
-  localStorage.setItem(GRAVEYARD_KEY, JSON.stringify([...g]))
-}
-function graveyardRemove(id: string) {
-  const g = graveyardGet(); g.delete(id)
-  localStorage.setItem(GRAVEYARD_KEY, JSON.stringify([...g]))
-}
-
-// ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
 
 export function useClasses() {
   return useLiveQuery(async () => {
-    const all = await db.classes.orderBy('createdAt').toArray()
-    const g = graveyardGet()
-    return g.size > 0 ? all.filter(c => !g.has(c.id)) : all
+    const [all, deleted] = await Promise.all([
+      db.classes.orderBy('createdAt').toArray(),
+      db.deletedClassIds.toArray(),
+    ])
+    if (deleted.length === 0) return all
+    const g = new Set(deleted.map(d => d.id))
+    return all.filter(c => !g.has(c.id))
   }, []) ?? []
 }
 
@@ -40,18 +24,20 @@ export function useClass(id: string | undefined) {
   return useLiveQuery(() => (id ? db.classes.get(id) : undefined), [id])
 }
 
-// Reaps any class the cloud restores that is still in the graveyard.
-// Runs whenever the classes table changes (e.g. after a cloud pull).
+// Watches db.classes live. When Dexie Cloud restores a deleted class,
+// this immediately re-purges it and pushes the tombstone again.
 export function useReapDeletedClasses() {
   const classes = useLiveQuery(() => db.classes.toArray(), []) ?? []
+  const deleted = useLiveQuery(() => db.deletedClassIds.toArray(), []) ?? []
+
   useEffect(() => {
-    const g = graveyardGet()
-    if (g.size === 0) return
+    if (deleted.length === 0) return
+    const g = new Set(deleted.map(d => d.id))
     const zombies = classes.filter(c => g.has(c.id))
     if (zombies.length === 0) return
     Promise.all(zombies.map(c => purgeClassLocally(c.id)))
       .then(() => db.cloud.sync({ wait: true, purpose: 'push' }).catch(() => {}))
-  }, [classes])
+  }, [classes, deleted])
 }
 
 // ---------------------------------------------------------------------------
@@ -74,7 +60,7 @@ export async function updateClassStartDate(id: string, startDate: string) {
   if (count === 0) throw new Error(`updateClassStartDate: class ${id} not found in DB`)
 }
 
-// Deletes all IndexedDB records for a class without touching the graveyard or syncing.
+// Deletes all IndexedDB records for a class — no graveyard, no sync.
 async function purgeClassLocally(id: string) {
   const students = await db.students.where('classId').equals(id).toArray()
   const projects = await db.projects.where('classId').equals(id).toArray()
@@ -110,16 +96,17 @@ async function purgeClassLocally(id: string) {
 }
 
 export async function deleteClass(id: string) {
-  // Add to graveyard first — this survives app restarts and prevents the
-  // cloud from ever showing this class in the UI again.
-  graveyardAdd(id)
+  // Write to the unsynced graveyard table first — this survives app restarts
+  // and cloud pulls because deletedClassIds is never synced.
+  await db.deletedClassIds.put({ id })
 
   await purgeClassLocally(id)
 
-  // Best-effort push. If it succeeds, remove from graveyard.
-  // If it fails, the reaper will re-delete on next pull and retry the push.
+  // Best-effort push of the tombstone. If it fails, the reaper will
+  // re-delete on the next cloud pull and retry.
   try {
     await db.cloud.sync({ wait: true, purpose: 'push' })
-    graveyardRemove(id)
-  } catch { /* reaper will handle it */ }
+    // Only remove from graveyard once we've confirmed the push succeeded.
+    await db.deletedClassIds.delete(id)
+  } catch { /* reaper handles it */ }
 }
