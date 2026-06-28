@@ -149,10 +149,14 @@ Rules:
           failureDescription: string
           criteriaCount: number
           outcomeWeight: number
+          briefData?: string
+          briefMimeType?: string
         }
 
-        const prompt = `You are an experienced university design educator helping a new teacher create an assessment rubric.
+        const hasBrief = !!answers.briefData && !!answers.briefMimeType
 
+        const prompt = `You are an experienced university design educator helping a new teacher create an assessment rubric.
+${hasBrief ? '\nThe project brief document is attached. Read it carefully and use the assessment criteria, marking scheme, and project requirements it describes to inform the rubric.\n' : ''}
 Based on the teacher's answers below, generate a complete marking rubric with detailed level descriptors for each criterion.
 
 PROJECT INFORMATION:
@@ -188,10 +192,12 @@ Rules:
 - Each descriptor must be specific to THIS criterion and project — no generic phrases
 - Write descriptors starting with "The student..." using observable, assessable language
 - Reflect the teacher's own words about excellence and failure where possible
-- Use vocabulary appropriate for ${answers.discipline} education`
+${hasBrief ? '- Use the marking scheme and criteria from the brief document as the primary source for criterion names and marks allocation\n' : ''}- Use vocabulary appropriate for ${answers.discipline} education`
 
         try {
-          const upstream = await callClaudeText(apiKey, prompt)
+          const upstream = hasBrief
+            ? await callClaude(apiKey, answers.briefData!, answers.briefMimeType!, prompt)
+            : await callClaudeText(apiKey, prompt)
           const result = await upstream.json()
           res.statusCode = upstream.status
           res.setHeader('Content-Type', 'application/json')
