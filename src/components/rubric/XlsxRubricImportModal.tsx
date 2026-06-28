@@ -82,7 +82,7 @@ export function XlsxRubricImportModal({ projectId, existingCount, onDone, onClos
 
   useEffect(() => {
     if (rawRows.length === 0) return
-    setEditRows(buildRows(rawRows, colName, colDesc, colMarks, colWeight))
+    setEditRows(buildRows(rawRows, colName, colDesc, colMarks, colWeight)) // eslint-disable-line react-hooks/set-state-in-effect
   }, [rawRows, colName, colDesc, colMarks, colWeight])
 
   function parseFile(file: File) {

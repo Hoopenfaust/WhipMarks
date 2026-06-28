@@ -355,7 +355,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
 
   // Sync if student prop changes (e.g. drawer opens for different student)
   useEffect(() => {
-    setNotes(student.notes ?? '')
+    setNotes(student.notes ?? '') // eslint-disable-line react-hooks/set-state-in-effect
     setNotesError(null)
     setChecklistError(null)
     try { setChecklistItems(student.checklistItems ? JSON.parse(student.checklistItems) : []) }
@@ -834,7 +834,7 @@ export function ClassDetailView() {
   useEffect(() => {
     const id = (location.state as { openStudentId?: string } | null)?.openStudentId
     if (id) {
-      setDetailStudentId(id)
+      setDetailStudentId(id) // eslint-disable-line react-hooks/set-state-in-effect
       navigate(location.pathname, { replace: true, state: {} })
     }
   }, [location.state])

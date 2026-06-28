@@ -35,7 +35,7 @@ export function TaModerationView({ students, criteria, teacherMarks, taMarks, pr
   function toggleExpand(studentId: string) {
     setExpanded(prev => {
       const next = new Set(prev)
-      next.has(studentId) ? next.delete(studentId) : next.add(studentId)
+      if (next.has(studentId)) { next.delete(studentId) } else { next.add(studentId) }
       return next
     })
   }

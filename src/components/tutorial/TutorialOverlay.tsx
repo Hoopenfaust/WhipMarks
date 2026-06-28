@@ -171,7 +171,7 @@ export function TutorialOverlay() {
     if (localStorage.getItem(STORAGE_DONE) === 'true') return
     const saved = parseInt(localStorage.getItem(STORAGE_STEP) ?? '0', 10)
     const idx = isNaN(saved) || saved >= TOTAL ? 0 : saved
-    setStepIdx(idx)
+    setStepIdx(idx) // eslint-disable-line react-hooks/set-state-in-effect
     setActive(true)
   }, [])
 
@@ -239,7 +239,7 @@ export function TutorialOverlay() {
   const vh = window.innerHeight
   const isCenter = step.placement === 'center' || !spotlight || targetMissing
 
-  let wrapStyle: React.CSSProperties = {}
+  let wrapStyle: React.CSSProperties
   let arrowDir: 'up' | 'right' | 'left' | null = null
 
   if (isCenter) {

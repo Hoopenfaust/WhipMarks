@@ -43,7 +43,7 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
       try {
         await upsertMark(student.id, projectId, criterion.id, Math.min(criterion.maxMarks, Math.max(0, num)), feedback)
         setSaveError(null)
-      } catch (err) {
+      } catch {
         setSaveError('Failed to save — please try again.')
         return
       }
@@ -77,12 +77,15 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
       setRecording(false)
       return
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
     if (!SR) return
     const r = new SR()
     r.continuous = true
     r.interimResults = false
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     r.onresult = (e: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
         e.results[e.resultIndex + i][0].transcript
       ).join(' ').trim()

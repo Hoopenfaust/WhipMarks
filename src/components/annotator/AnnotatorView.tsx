@@ -101,6 +101,7 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
     drawCanvas.width = viewport.width
     drawCanvas.height = viewport.height
     const ctx = canvas.getContext('2d')!
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await page.render({ canvasContext: ctx, viewport } as any).promise
     redrawAnnotations(drawCanvas, pageNum)
   }, [scale])
@@ -385,6 +386,7 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
         const ctx = offscreen.getContext('2d')!
 
         // Draw page
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await pdfJsPage.render({ canvasContext: ctx, viewport } as any).promise
 
         // Draw annotations on top

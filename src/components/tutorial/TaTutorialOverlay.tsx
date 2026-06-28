@@ -68,7 +68,7 @@ export function TaTutorialOverlay({ projectId, projectName, taName, studentCount
 
   useEffect(() => {
     if (localStorage.getItem(storageKey(projectId)) === 'true') return
-    setActive(true)
+    setActive(true) // eslint-disable-line react-hooks/set-state-in-effect
   }, [projectId])
 
   function finish() {

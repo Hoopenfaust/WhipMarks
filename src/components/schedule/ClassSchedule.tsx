@@ -52,7 +52,7 @@ function WeekRow({ weekNum, dateLabel, savedWeek, classId, dueProjects }: WeekRo
   // Sync state when DB record first loads (undefined → record)
   useEffect(() => {
     if (savedWeek) {
-      setTitle(savedWeek.title)
+      setTitle(savedWeek.title) // eslint-disable-line react-hooks/set-state-in-effect
       setNotes(savedWeek.notes)
       if (savedWeek.notes) setNotesOpen(true)
     }

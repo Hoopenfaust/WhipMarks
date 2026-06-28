@@ -30,9 +30,6 @@ export function GlobalSearch({ onSelectStudent }: Props) {
       }).slice(0, 10)
     : students.slice(0, 10)
 
-  // Reset selection when results change
-  useEffect(() => { setSelectedIndex(0) }, [results.length, query])
-
   // Scroll selected item into view
   useEffect(() => {
     const item = listRef.current?.children[selectedIndex] as HTMLElement | undefined
@@ -43,21 +40,20 @@ export function GlobalSearch({ onSelectStudent }: Props) {
     function onKey(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
-        setOpen(true)
+        setOpen(v => {
+          if (!v) {
+            setQuery('')
+            setSelectedIndex(0)
+            setTimeout(() => inputRef.current?.focus(), 50)
+          }
+          return true
+        })
       }
       if (e.key === 'Escape') setOpen(false)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-
-  useEffect(() => {
-    if (open) {
-      setQuery('')
-      setSelectedIndex(0)
-      setTimeout(() => inputRef.current?.focus(), 50)
-    }
-  }, [open])
 
   function handleSelect(classId: string, studentId: string) {
     setOpen(false)
@@ -90,7 +86,7 @@ export function GlobalSearch({ onSelectStudent }: Props) {
     <>
       {/* Trigger button — app bar compact style */}
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { setOpen(true); setQuery(''); setSelectedIndex(0); setTimeout(() => inputRef.current?.focus(), 50) }}
         className="flex items-center gap-2.5 bg-gray-800 border border-gray-700 rounded-full px-5 py-2 text-gray-400 hover:text-gray-100 hover:border-gray-600 transition-all group"
       >
         <Search size={16} />
@@ -110,7 +106,7 @@ export function GlobalSearch({ onSelectStudent }: Props) {
               <input
                 ref={inputRef}
                 value={query}
-                onChange={e => setQuery(e.target.value)}
+                onChange={e => { setQuery(e.target.value); setSelectedIndex(0) }}
                 onKeyDown={handleKeyDown}
                 placeholder="Search students across all classes…"
                 className="flex-1 bg-transparent text-xl text-gray-100 placeholder-chiffon-muted/50 focus:outline-none"

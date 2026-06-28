@@ -198,6 +198,7 @@ export async function parseCompetenciesFromFile(file: File): Promise<ParseResult
   const { type, name } = file
   const buf = await file.arrayBuffer()
 
+  // eslint-disable-next-line no-useless-assignment
   let text = ''
 
   try {

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import type { ProjectSheet } from '../../types'
 
 interface Props {
@@ -6,24 +6,21 @@ interface Props {
 }
 
 export function PdfViewer({ sheet }: Props) {
-  const urlRef = useRef<string | null>(null)
-
-  const blob = new Blob([sheet.data], { type: sheet.mimeType })
-  if (!urlRef.current) urlRef.current = URL.createObjectURL(blob)
+  const [url, setUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    return () => {
-      if (urlRef.current) {
-        URL.revokeObjectURL(urlRef.current)
-        urlRef.current = null
-      }
-    }
-  }, [])
+    const blob = new Blob([sheet.data], { type: sheet.mimeType })
+    const objectUrl = URL.createObjectURL(blob)
+    setUrl(objectUrl) // eslint-disable-line react-hooks/set-state-in-effect
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [sheet])
+
+  if (!url) return null
 
   if (sheet.mimeType.startsWith('image/')) {
     return (
       <img
-        src={urlRef.current!}
+        src={url}
         alt={sheet.filename}
         className="w-full h-full object-contain"
       />
@@ -32,7 +29,7 @@ export function PdfViewer({ sheet }: Props) {
 
   return (
     <iframe
-      src={urlRef.current!}
+      src={url}
       title={sheet.filename}
       className="w-full h-full border-0"
     />

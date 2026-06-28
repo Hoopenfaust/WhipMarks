@@ -93,7 +93,7 @@ export function QuickMarkModal({
   // Load improvement note when student changes
   useEffect(() => {
     recognitionRef.current?.stop()
-    setRecording(false)
+    setRecording(false) // eslint-disable-line react-hooks/set-state-in-effect
     db.improvementNotes.where('[studentId+projectId]').equals([student.id, projectId]).first()
       .then(note => setImprovementText(note?.text ?? ''))
       .catch(() => setImprovementText(''))
@@ -129,12 +129,15 @@ export function QuickMarkModal({
       setRecording(false)
       return
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
     if (!SR) return
     const r = new SR()
     r.continuous = true
     r.interimResults = false
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     r.onresult = (e: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
         e.results[e.resultIndex + i][0].transcript
       ).join(' ').trim()
@@ -153,12 +156,15 @@ export function QuickMarkModal({
       setFeedbackRecording(false)
       return
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
     if (!SR) return
     const r = new SR()
     r.continuous = true
     r.interimResults = false
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     r.onresult = (e: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
         e.results[e.resultIndex + i][0].transcript
       ).join(' ').trim()
@@ -259,6 +265,7 @@ export function QuickMarkModal({
       const subject = `Assessment Feedback: ${student.firstName ? `${student.firstName} ${student.name}` : student.name}`
 
       // Desktop (Tauri): open Outlook with attachment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const isTauri = typeof (window as any).__TAURI_INTERNALS__ !== 'undefined'
       if (isTauri) {
         const { invoke } = await import('@tauri-apps/api/core')
@@ -413,7 +420,7 @@ export function QuickMarkModal({
 
         {/* Criteria cards */}
         <div ref={scrollContainerRef} className={cn('overflow-y-auto flex flex-col', isTouch ? 'p-3 gap-3' : 'p-4 gap-3')}>
-          {criteria.map((c, _ci) => {
+          {criteria.map((c) => {
             const mark = marks.find(m => m.studentId === student.id && m.criterionId === c.id)
             const isSaving = saving === c.id
             const isEditingFeedback = feedbackOpen === c.id

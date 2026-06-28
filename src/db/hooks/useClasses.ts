@@ -105,5 +105,5 @@ export async function deleteClass(id: string) {
   // Best-effort push — don't remove from graveyard here.
   // The graveyard entry stays until a subsequent pull confirms the class
   // is gone from the server (handled passively by the reaper).
-  try { await db.cloud.sync({ wait: true, purpose: 'push' }) } catch { }
+  try { await db.cloud.sync({ wait: true, purpose: 'push' }) } catch { /* best-effort */ }
 }
