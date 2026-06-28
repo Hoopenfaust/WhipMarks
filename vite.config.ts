@@ -187,8 +187,9 @@ Generate exactly ${answers.criteriaCount} criteria. Return ONLY a valid JSON arr
 
 Rules:
 - All weights must sum to exactly 1.0
-- All maxMarks must sum to 100
-- Distribute weight according to the outcome/process emphasis
+${hasBrief
+  ? '- Extract maxMarks exactly as written in the brief — do not change or normalise them\n- weights must be proportional to maxMarks (weight = criterionMarks / totalMarks)'
+  : '- All maxMarks must sum to 100\n- Distribute weight according to the outcome/process emphasis'}
 - Each descriptor must be specific to THIS criterion and project — no generic phrases
 - Write descriptors starting with "The student..." using observable, assessable language
 - Reflect the teacher's own words about excellence and failure where possible
