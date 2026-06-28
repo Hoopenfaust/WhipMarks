@@ -39,7 +39,7 @@ async function callClaude(
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      max_tokens: 4096,
       messages: [{ role: 'user', content: [contentSource, { type: 'text', text: prompt }] }],
     }),
   })
@@ -83,21 +83,33 @@ function anthropicProxyPlugin(): Plugin {
         for await (const chunk of req) chunks.push(chunk as Buffer)
         const { data, mimeType } = JSON.parse(Buffer.concat(chunks).toString()) as { data: string; mimeType: string }
 
-        const prompt = `Analyze this assignment/project sheet and produce a marking rubric.
+        const prompt = `You are helping a design educator extract a marking scheme from a project brief.
 
-Return ONLY a valid JSON array — no markdown fences, no commentary. Each element:
-{
-  "name": "short criterion name",
-  "description": "one sentence: what is assessed and what earns full marks",
-  "maxMarks": <integer>,
-  "weight": <decimal 0–1>
-}
+The marking/assessment scheme is typically at the bottom of the document. Extract every criterion from it.
+
+Return ONLY a valid JSON array — no markdown, no commentary:
+[
+  {
+    "name": "Criterion name (2–5 words)",
+    "description": "One sentence describing what this criterion assesses.",
+    "maxMarks": <integer>,
+    "weight": <decimal 0–1, proportional to maxMarks>,
+    "descriptors": {
+      "excellent":    { "text": "Observable description of mastery-level work for this criterion.", "score": 1.0 },
+      "good":         { "text": "Observable description of proficient but not exceptional work.", "score": 0.75 },
+      "satisfactory": { "text": "Observable description of work that meets minimum expectations.", "score": 0.5 },
+      "poor":         { "text": "Observable description of work that does not meet expectations.", "score": 0.25 }
+    }
+  }
+]
 
 Rules:
-- weights must sum to exactly 1.0
-- 3–8 criteria based on assignment complexity
-- if the sheet shows a mark breakdown, use those exact marks and weights
-- descriptions should be concise enough to fit in a marking grid cell`
+- Extract criteria exactly as written — do not invent or omit any
+- maxMarks must match what is written in the document exactly
+- weights must be proportional to maxMarks and sum to exactly 1.0
+- If the document already has descriptors or grade descriptions, use them for the descriptor text
+- If the document has no descriptors, write plausible ones based on the criterion name, description, and discipline context
+- Write descriptors starting with "The student..." using assessable, observable language`
 
         try {
           const upstream = await callClaude(apiKey, data, mimeType, prompt)
