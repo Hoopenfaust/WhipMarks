@@ -243,7 +243,7 @@ export function LibraryProjectView() {
     if (!libraryProjectId || !project || !attachClassId || !attachDueDate) return
     setAttaching(true)
     try {
-      const weight = parseFloat(attachWeight) || 0
+      const weight = Math.max(0, Math.min(1, parseFloat(attachWeight) / 100 || 0))
       const p = await createProject({
         classId: attachClassId,
         name: project.name,
