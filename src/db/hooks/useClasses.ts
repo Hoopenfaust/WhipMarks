@@ -90,6 +90,8 @@ async function purgeClassLocally(id: string) {
     await db.improvementNotes.where('projectId').anyOf(projectIds).delete()
     await db.studentSubmissions.where('projectId').anyOf(projectIds).delete()
     await db.submissionAnnotations.filter(a => projectIdSet.has(a.projectId)).delete()
+    await db.categoryAssignments.where('projectId').anyOf(projectIds).delete()
+    await db.categoryDraws.where('id').anyOf(projectIds).delete()
     await db.projects.where('id').anyOf(projectIds).delete()
   }
   if (studentIds.length) await db.students.where('id').anyOf(studentIds).delete()

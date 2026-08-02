@@ -18,6 +18,7 @@ import { SlideOver } from '../components/ui/SlideOver'
 import { resizeImageToDataUrl } from '../utils/photo'
 import { ClassSchedule } from '../components/schedule/ClassSchedule'
 import { GanttChart } from '../components/schedule/GanttChart'
+import { CategoryDrawPanel } from '../components/categories/CategoryDrawPanel'
 import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../types'
 import { newId } from '../utils/id'
 import { cn } from '../utils/cn'
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'roster', label: 'Roster' },
   { id: 'projects', label: 'Projects' },
   { id: 'schedule', label: 'Schedule' },
+  { id: 'categories', label: 'Categories' },
 ]
 
 // Pastel accent palette — deterministic per student ID
@@ -1202,6 +1204,11 @@ export function ClassDetailView() {
               />
             )}
           </div>
+        )}
+
+        {/* CATEGORIES TAB */}
+        {tab === 'categories' && (
+          <CategoryDrawPanel projects={projects} students={students} />
         )}
       </div>
 

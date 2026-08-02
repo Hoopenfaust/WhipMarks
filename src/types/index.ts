@@ -259,3 +259,23 @@ export interface TemplateCriterion {
   maxMarks: number
   weight: number   // decimal 0–1
 }
+
+// ─── Category Draw ───────────────────────────────────────────────────────────
+
+export interface CategoryDraw {
+  id: string            // == projectId, one draw config per project
+  projectId: string
+  categories: string[]  // full uploaded category list
+  studentIds: string[]  // roster matched from the upload, eligible for this draw
+  pool: string[]        // categories remaining in the current cycle
+  unmatchedNames: string[]  // names from the upload that didn't match a roster student
+  createdAt: number
+}
+
+export interface CategoryAssignment {
+  id: string
+  projectId: string
+  studentId: string
+  category: string
+  createdAt: number
+}
