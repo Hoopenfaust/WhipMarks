@@ -170,13 +170,13 @@ export function CategoryDrawPanel({ projects, students }: Props) {
       // category's pop is bigger and longer — it's the result that matters.
       const studentDone = animateReel(
         reelStudentRef.current, student.filler, student.finalIndex,
-        'text-gray-100', 600, setStudentReveal,
+        'text-gray-100', 1600, setStudentReveal,
       )
       const categoryDone = new Promise<void>(resolve => {
         setTimeout(() => {
           animateReel(
             reelCategoryRef.current, category.filler, category.finalIndex,
-            'text-orange-400', 900, setCategoryReveal,
+            'text-orange-400', 2200, setCategoryReveal,
           ).then(resolve)
         }, 450)
       })

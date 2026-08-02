@@ -383,7 +383,7 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 .category-draw-reveal {
-  animation: category-draw-reveal 0.6s cubic-bezier(.16, .9, .28, 1);
+  animation: category-draw-reveal 0.6s cubic-bezier(.16, .9, .28, 1) forwards;
 }
 
 /* Category draw: category reveal starts even bigger, glows, and takes longer
@@ -395,7 +395,7 @@ body {
   100% { transform: scale(1); opacity: 1; text-shadow: 0 0 0 rgba(249, 115, 22, 0); }
 }
 .category-draw-reveal-featured {
-  animation: category-draw-reveal-featured 0.9s cubic-bezier(.16, .9, .28, 1);
+  animation: category-draw-reveal-featured 0.9s cubic-bezier(.16, .9, .28, 1) forwards;
 }
 
 /* Category draw: reel glows while spinning */
