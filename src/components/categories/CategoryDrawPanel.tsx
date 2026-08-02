@@ -18,22 +18,6 @@ function extractColumnValues(rows: Record<string, string>[], col: string): strin
   return rows.map(r => (r[col] ?? '').trim()).filter(Boolean)
 }
 
-function matchStudents(students: Student[], names: string[]): { matchedIds: string[]; unmatched: string[] } {
-  const byName = new Map(students.map(s => [s.name.trim().toLowerCase(), s.id]))
-  const matchedIds: string[] = []
-  const unmatched: string[] = []
-  const seen = new Set<string>()
-  for (const name of names) {
-    const id = byName.get(name.trim().toLowerCase())
-    if (id) {
-      if (!seen.has(id)) { matchedIds.push(id); seen.add(id) }
-    } else {
-      unmatched.push(name)
-    }
-  }
-  return { matchedIds, unmatched }
-}
-
 function buildReelFiller(finalValue: string, fillerSource: string[]): string[] {
   const filler: string[] = []
   for (let i = 0; i < 18; i++) {
@@ -72,7 +56,6 @@ export function CategoryDrawPanel({ projects, students }: Props) {
   const [replacing, setReplacing] = useState(false)
   const [headers, setHeaders] = useState<string[]>([])
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([])
-  const [colStudent, setColStudent] = useState('')
   const [colCategory, setColCategory] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -84,13 +67,14 @@ export function CategoryDrawPanel({ projects, students }: Props) {
 
   const project = projects.find(p => p.id === projectId)
   const studentName = (id: string) => students.find(s => s.id === id)?.name ?? 'Unknown student'
+  const rosterIds = students.map(s => s.id)
 
   const assignedStudentIds = new Set(assignments.map(a => a.studentId))
-  const remainingStudents = draw ? draw.studentIds.filter(id => !assignedStudentIds.has(id)) : []
+  const remainingStudents = rosterIds.filter(id => !assignedStudentIds.has(id))
   const remainingCategoryCount = draw ? (draw.pool.length === 0 && remainingStudents.length > 0 ? draw.categories.length : draw.pool.length) : 0
 
   function resetUploadState() {
-    setHeaders([]); setRawRows([]); setColStudent(''); setColCategory(''); setError(null)
+    setHeaders([]); setRawRows([]); setColCategory(''); setError(null)
   }
 
   function parseFile(file: File) {
@@ -113,8 +97,7 @@ export function CategoryDrawPanel({ projects, students }: Props) {
         )
         setHeaders(hdrs)
         setRawRows(rows)
-        setColStudent(hdrs.find(h => /student|name/i.test(h)) ?? '')
-        setColCategory(hdrs.find(h => /categor|criteri/i.test(h)) ?? '')
+        setColCategory(hdrs.find(h => /categor|criteri/i.test(h)) ?? hdrs[0] ?? '')
       } catch {
         setError('Could not parse the file. Make sure it is a valid spreadsheet.')
       }
@@ -129,13 +112,11 @@ export function CategoryDrawPanel({ projects, students }: Props) {
     if (file) parseFile(file)
   }
 
-  const parsedStudentNames = extractColumnValues(rawRows, colStudent)
   const parsedCategories = [...new Set(extractColumnValues(rawRows, colCategory))]
-  const { matchedIds, unmatched } = matchStudents(students, parsedStudentNames)
 
   async function handleStartDraw() {
-    if (!projectId || matchedIds.length === 0 || parsedCategories.length === 0) return
-    await setupCategoryDraw(projectId, parsedCategories, matchedIds, unmatched)
+    if (!projectId || parsedCategories.length === 0) return
+    await setupCategoryDraw(projectId, parsedCategories)
     setReplacing(false)
     resetUploadState()
   }
@@ -144,7 +125,7 @@ export function CategoryDrawPanel({ projects, students }: Props) {
     if (!projectId || spinning || remainingStudents.length === 0) return
     setSpinning(true)
     try {
-      const entry = await drawNextCategory(projectId)
+      const entry = await drawNextCategory(projectId, rosterIds)
       const studentFiller = buildReelFiller(studentName(entry.studentId), students.map(s => s.name))
       const categoryFiller = buildReelFiller(entry.category, draw?.categories ?? [entry.category])
       animateReel(reelStudentRef.current, studentFiller)
@@ -188,6 +169,10 @@ export function CategoryDrawPanel({ projects, students }: Props) {
     return <p className="text-sm text-gray-400/70 py-4">Add a project first to run a category draw.</p>
   }
 
+  if (students.length === 0) {
+    return <p className="text-sm text-gray-400/70 py-4">Add students to this class first to run a category draw.</p>
+  }
+
   return (
     <div className="flex flex-col gap-5 max-w-2xl">
       <div className="flex flex-col gap-1 max-w-xs">
@@ -204,7 +189,10 @@ export function CategoryDrawPanel({ projects, students }: Props) {
       {(!draw || replacing) && project && (
         <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-4 flex flex-col gap-4">
           <p className="text-sm text-gray-100 font-medium">
-            Upload a spreadsheet with a student list and a category list for <span className="text-orange-400">{project.name}</span>
+            Upload a spreadsheet with the category list for <span className="text-orange-400">{project.name}</span>
+          </p>
+          <p className="text-xs text-gray-400/70 -mt-2">
+            Students are pulled automatically from this class's roster ({students.length} student{students.length === 1 ? '' : 's'}) — just upload the categories.
           </p>
 
           {rawRows.length === 0 ? (
@@ -239,31 +227,16 @@ export function CategoryDrawPanel({ projects, students }: Props) {
                   <Upload size={11} /> Change file
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400">Student column *</label>
-                  <select value={colStudent} onChange={e => setColStudent(e.target.value)} className="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-100 focus:outline-none focus:border-gray-200">
-                    <option value="">— none —</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400">Category column *</label>
-                  <select value={colCategory} onChange={e => setColCategory(e.target.value)} className="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-100 focus:outline-none focus:border-gray-200">
-                    <option value="">— none —</option>
-                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                </div>
+              <div className="flex flex-col gap-1 max-w-xs">
+                <label className="text-xs text-gray-400">Category column *</label>
+                <select value={colCategory} onChange={e => setColCategory(e.target.value)} className="bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-100 focus:outline-none focus:border-gray-200">
+                  <option value="">— none —</option>
+                  {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
               </div>
 
-              {colStudent && colCategory && (
-                <div className="text-xs text-gray-400 flex flex-col gap-1">
-                  <span>{matchedIds.length} of {parsedStudentNames.length} names matched to students in this class</span>
-                  <span>{parsedCategories.length} categories found</span>
-                  {unmatched.length > 0 && (
-                    <span className="text-amber-400">Unmatched: {unmatched.join(', ')}</span>
-                  )}
-                </div>
+              {colCategory && (
+                <p className="text-xs text-gray-400">{parsedCategories.length} categories found</p>
               )}
             </>
           )}
@@ -275,7 +248,7 @@ export function CategoryDrawPanel({ projects, students }: Props) {
             <Button
               variant="primary"
               onClick={handleStartDraw}
-              disabled={matchedIds.length === 0 || parsedCategories.length === 0}
+              disabled={parsedCategories.length === 0}
             >
               Start Draw
             </Button>
@@ -285,12 +258,6 @@ export function CategoryDrawPanel({ projects, students }: Props) {
 
       {draw && !replacing && (
         <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-4 flex flex-col gap-4">
-          {draw.unmatchedNames.length > 0 && (
-            <p className="text-xs text-amber-400 bg-amber-950/30 border border-amber-900/50 rounded-lg px-3 py-2">
-              Not matched to a roster student: {draw.unmatchedNames.join(', ')}
-            </p>
-          )}
-
           <div className="flex gap-4">
             <Reel label="Student" containerRef={reelStudentRef} />
             <Reel label="Category" containerRef={reelCategoryRef} />

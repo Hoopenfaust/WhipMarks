@@ -14,34 +14,27 @@ export function useCategoryAssignments(projectId: string | undefined) {
   ) ?? []
 }
 
-export async function setupCategoryDraw(
-  projectId: string,
-  categories: string[],
-  studentIds: string[],
-  unmatchedNames: string[],
-) {
+export async function setupCategoryDraw(projectId: string, categories: string[]) {
   await db.transaction('rw', [db.categoryDraws, db.categoryAssignments], async () => {
     await db.categoryAssignments.where('projectId').equals(projectId).delete()
     await db.categoryDraws.put({
       id: projectId,
       projectId,
       categories,
-      studentIds,
       pool: [...categories],
-      unmatchedNames,
       createdAt: Date.now(),
     })
   })
 }
 
-export async function drawNextCategory(projectId: string): Promise<CategoryAssignment> {
+export async function drawNextCategory(projectId: string, rosterIds: string[]): Promise<CategoryAssignment> {
   return db.transaction('rw', [db.categoryDraws, db.categoryAssignments], async () => {
     const draw = await db.categoryDraws.get(projectId)
     if (!draw) throw new Error(`drawNextCategory: no draw configured for project ${projectId}`)
 
     const assigned = await db.categoryAssignments.where('projectId').equals(projectId).toArray()
     const assignedStudentIds = new Set(assigned.map(a => a.studentId))
-    const remainingStudents = draw.studentIds.filter(id => !assignedStudentIds.has(id))
+    const remainingStudents = rosterIds.filter(id => !assignedStudentIds.has(id))
     if (remainingStudents.length === 0) throw new Error('drawNextCategory: all students already drawn')
 
     let pool = draw.pool
