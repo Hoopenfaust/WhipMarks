@@ -374,3 +374,23 @@ body {
   .student-card .px-4 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
   .student-card .py-2 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
 }
+
+/* Category draw: winning reel item flash when it lands */
+@keyframes category-draw-flash {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 rgba(249, 115, 22, 0); }
+  35%  { transform: scale(1.1);  box-shadow: 0 0 20px rgba(249, 115, 22, 0.6); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 rgba(249, 115, 22, 0); }
+}
+.category-draw-winner {
+  animation: category-draw-flash 0.6s ease-out;
+  border-radius: 6px;
+}
+
+/* Category draw: reel glows while spinning */
+@keyframes category-draw-glow {
+  0%, 100% { border-color: rgb(63 63 70); }
+  50%      { border-color: rgba(249, 115, 22, 0.6); }
+}
+.category-draw-spinning {
+  animation: category-draw-glow 0.9s ease-in-out infinite;
+}

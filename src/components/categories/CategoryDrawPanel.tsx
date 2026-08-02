@@ -18,20 +18,29 @@ function extractColumnValues(rows: Record<string, string>[], col: string): strin
   return rows.map(r => (r[col] ?? '').trim()).filter(Boolean)
 }
 
-function buildReelFiller(finalValue: string, fillerSource: string[]): string[] {
-  const filler: string[] = []
-  for (let i = 0; i < 18; i++) {
-    filler.push(fillerSource.length > 0 ? fillerSource[Math.floor(Math.random() * fillerSource.length)] : '…')
-  }
-  filler.push(finalValue)
-  return filler
+function randomFrom(source: string[]): string {
+  return source.length > 0 ? source[Math.floor(Math.random() * source.length)] : '…'
 }
 
-function Reel({ label, containerRef }: { label: string; containerRef: React.RefObject<HTMLDivElement | null> }) {
+// Builds the reel's item list plus one extra "overshoot" item after the winner,
+// so the spin can fly past the result and bounce back into place for some tension.
+function buildReelFiller(finalValue: string, fillerSource: string[]): { filler: string[]; finalIndex: number } {
+  const filler: string[] = []
+  for (let i = 0; i < 22; i++) filler.push(randomFrom(fillerSource))
+  const finalIndex = filler.length
+  filler.push(finalValue)
+  filler.push(randomFrom(fillerSource))
+  return { filler, finalIndex }
+}
+
+function Reel({ label, containerRef, spinning }: { label: string; containerRef: React.RefObject<HTMLDivElement | null>; spinning: boolean }) {
   return (
     <div className="flex-1 min-w-0">
       <div className="text-[10.5px] uppercase tracking-wider text-gray-400 mb-1.5">{label}</div>
-      <div className="relative h-[110px] rounded-lg border border-gray-700 bg-gray-950 overflow-hidden">
+      <div className={cn(
+        'relative h-[110px] rounded-lg border bg-gray-950 overflow-hidden transition-colors',
+        spinning ? 'category-draw-spinning' : 'border-gray-700'
+      )}>
         <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-6 h-px bg-orange-500/60 z-10" />
         <div className="pointer-events-none absolute inset-x-0 top-1/2 translate-y-6 h-px bg-orange-500/60 z-10" />
         <div
@@ -130,34 +139,62 @@ export function CategoryDrawPanel({ projects, students }: Props) {
     setSpinning(true)
     try {
       const entry = await drawNextCategory(projectId, rosterIds)
-      const studentFiller = buildReelFiller(studentName(entry.studentId), students.map(s => s.name))
-      const categoryFiller = buildReelFiller(entry.category, draw?.categories ?? [entry.category])
-      animateReel(reelStudentRef.current, studentFiller)
-      animateReel(reelCategoryRef.current, categoryFiller)
-      await new Promise(r => setTimeout(r, 2700))
+      const student = buildReelFiller(studentName(entry.studentId), students.map(s => s.name))
+      const category = buildReelFiller(entry.category, draw?.categories ?? [entry.category])
+
+      // Student reel lands first; category reel is held back a beat so the
+      // reveal lands in two stages instead of both stopping at once.
+      const studentDone = animateReel(reelStudentRef.current, student.filler, student.finalIndex)
+      const categoryDone = new Promise<void>(resolve => {
+        setTimeout(() => { animateReel(reelCategoryRef.current, category.filler, category.finalIndex).then(resolve) }, 450)
+      })
+      await Promise.all([studentDone, categoryDone])
     } finally {
       setSpinning(false)
     }
   }
 
-  function animateReel(el: HTMLDivElement | null, filler: string[]) {
-    if (!el) return
-    el.style.transition = 'none'
-    el.style.transform = 'translateY(-50%)'
-    el.innerHTML = ''
-    filler.forEach((text, i) => {
-      const item = document.createElement('div')
-      item.className = cn(
-        'h-12 flex items-center justify-center text-sm font-semibold px-3 text-center whitespace-nowrap overflow-hidden text-ellipsis',
-        i === filler.length - 1 ? 'text-orange-400' : 'text-gray-100'
-      )
-      item.textContent = text
-      el.appendChild(item)
-    })
-    const totalHeight = filler.length * ITEM_HEIGHT
-    requestAnimationFrame(() => {
-      el.style.transform = `translateY(calc(-50% - ${totalHeight - ITEM_HEIGHT}px))`
-      el.style.transition = 'transform 2.6s cubic-bezier(.12,.82,.16,1)'
+  // Spins fast, overshoots one item past the result, then bounces back to land
+  // on it with a little flash — closer to a real slot-machine reel than a flat scroll.
+  function animateReel(el: HTMLDivElement | null, filler: string[], finalIndex: number): Promise<void> {
+    return new Promise(resolve => {
+      if (!el) { resolve(); return }
+      el.style.transition = 'none'
+      el.style.transform = 'translateY(-50%)'
+      el.innerHTML = ''
+      const itemEls: HTMLDivElement[] = []
+      filler.forEach((text, i) => {
+        const item = document.createElement('div')
+        item.className = cn(
+          'h-12 flex items-center justify-center text-sm font-semibold px-3 text-center whitespace-nowrap overflow-hidden text-ellipsis',
+          i === finalIndex ? 'text-orange-400' : 'text-gray-100'
+        )
+        item.textContent = text
+        el.appendChild(item)
+        itemEls.push(item)
+      })
+
+      const overshootOffset = (filler.length - 1) * ITEM_HEIGHT
+      const landOffset = finalIndex * ITEM_HEIGHT
+
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform 2.1s cubic-bezier(.11,.79,.15,1)'
+        el.style.transform = `translateY(calc(-50% - ${overshootOffset}px))`
+      })
+
+      setTimeout(() => {
+        el.style.transition = 'transform 0.32s cubic-bezier(.34,1.56,.64,1)'
+        el.style.transform = `translateY(calc(-50% - ${landOffset}px))`
+
+        setTimeout(() => {
+          const winner = itemEls[finalIndex]
+          winner.classList.add('category-draw-winner')
+          setTimeout(() => {
+            winner.classList.remove('category-draw-winner')
+            resolve()
+          }, 600)
+        }, 340)
+      }, 2100)
     })
   }
 
@@ -263,13 +300,13 @@ export function CategoryDrawPanel({ projects, students }: Props) {
       {draw && !replacing && (
         <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-4 flex flex-col gap-4">
           <div className="flex gap-4">
-            <Reel label="Student" containerRef={reelStudentRef} />
-            <Reel label="Category" containerRef={reelCategoryRef} />
+            <Reel label="Student" containerRef={reelStudentRef} spinning={spinning} />
+            <Reel label="Category" containerRef={reelCategoryRef} spinning={spinning} />
           </div>
 
           <div className="flex gap-2">
             <Button variant="primary" onClick={handleDrawNext} disabled={spinning || remainingStudents.length === 0}>
-              <Shuffle size={14} /> {spinning ? 'Drawing…' : 'Draw Next'}
+              <Shuffle size={14} className={spinning ? 'animate-spin' : ''} /> {spinning ? 'Drawing…' : 'Draw Next'}
             </Button>
             <Button variant="ghost" onClick={handleReset}><RotateCcw size={14} /> Reset All</Button>
             <Button variant="ghost" onClick={() => setReplacing(true)}>Upload new list</Button>
