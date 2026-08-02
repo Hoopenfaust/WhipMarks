@@ -66,7 +66,11 @@ export function CategoryDrawPanel({ projects, students }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const project = projects.find(p => p.id === projectId)
-  const studentName = (id: string) => students.find(s => s.id === id)?.name ?? 'Unknown student'
+  const studentName = (id: string) => {
+    const s = students.find(s => s.id === id)
+    if (!s) return 'Unknown student'
+    return s.firstName ? `${s.firstName} ${s.name}` : s.name
+  }
   const rosterIds = students.map(s => s.id)
 
   const assignedStudentIds = new Set(assignments.map(a => a.studentId))
@@ -264,7 +268,7 @@ export function CategoryDrawPanel({ projects, students }: Props) {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="primary" className="flex-1" onClick={handleDrawNext} disabled={spinning || remainingStudents.length === 0}>
+            <Button variant="primary" onClick={handleDrawNext} disabled={spinning || remainingStudents.length === 0}>
               <Shuffle size={14} /> {spinning ? 'Drawing…' : 'Draw Next'}
             </Button>
             <Button variant="ghost" onClick={handleReset}><RotateCcw size={14} /> Reset All</Button>
