@@ -375,30 +375,27 @@ body {
   .student-card .py-2 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
 }
 
-/* Category draw: winning student name pops in large, then shrinks to normal size */
-@keyframes category-draw-pop {
-  0%   { transform: scale(0.5); opacity: 0; }
-  45%  { transform: scale(1.6); opacity: 1; }
-  70%  { transform: scale(0.9); }
+/* Category draw: winning student name slams in oversized, then shrinks down
+   to the size it normally appears at (matching the reel item underneath) */
+@keyframes category-draw-reveal {
+  0%   { transform: scale(2.6); opacity: 0; }
+  18%  { opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
-.category-draw-winner {
-  animation: category-draw-pop 0.55s cubic-bezier(.34, 1.56, .64, 1);
-  position: relative;
-  z-index: 20;
+.category-draw-reveal {
+  animation: category-draw-reveal 0.6s cubic-bezier(.16, .9, .28, 1);
 }
 
-/* Category draw: winning category pops bigger and longer — it's the headline result */
-@keyframes category-draw-pop-featured {
-  0%   { transform: scale(0.4); opacity: 0; text-shadow: 0 0 0 rgba(249, 115, 22, 0); }
-  40%  { transform: scale(2.15); opacity: 1; text-shadow: 0 0 32px rgba(249, 115, 22, 0.9); }
-  70%  { transform: scale(0.88); text-shadow: 0 0 14px rgba(249, 115, 22, 0.5); }
-  100% { transform: scale(1); text-shadow: 0 0 0 rgba(249, 115, 22, 0); }
+/* Category draw: category reveal starts even bigger, glows, and takes longer
+   to settle — it's the headline result, meant to be noticed over the name */
+@keyframes category-draw-reveal-featured {
+  0%   { transform: scale(3.4); opacity: 0; text-shadow: 0 0 44px rgba(249, 115, 22, 1); }
+  18%  { opacity: 1; }
+  60%  { text-shadow: 0 0 20px rgba(249, 115, 22, 0.65); }
+  100% { transform: scale(1); opacity: 1; text-shadow: 0 0 0 rgba(249, 115, 22, 0); }
 }
-.category-draw-winner-featured {
-  animation: category-draw-pop-featured 0.8s cubic-bezier(.34, 1.56, .64, 1);
-  position: relative;
-  z-index: 20;
+.category-draw-reveal-featured {
+  animation: category-draw-reveal-featured 0.9s cubic-bezier(.16, .9, .28, 1);
 }
 
 /* Category draw: reel glows while spinning */

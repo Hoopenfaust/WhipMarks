@@ -33,26 +33,46 @@ function buildReelFiller(finalValue: string, fillerSource: string[]): { filler: 
   return { filler, finalIndex }
 }
 
-function Reel({ label, containerRef, spinning, popping }: { label: string; containerRef: React.RefObject<HTMLDivElement | null>; spinning: boolean; popping: boolean }) {
+function Reel({ label, containerRef, spinning, reveal, revealFeatured }: {
+  label: string
+  containerRef: React.RefObject<HTMLDivElement | null>
+  spinning: boolean
+  reveal: string | null
+  revealFeatured?: boolean
+}) {
   return (
     <div className="flex-1 min-w-0">
       <div className="text-[10.5px] uppercase tracking-wider text-gray-400 mb-1.5">{label}</div>
-      <div className={cn(
-        'relative h-[110px] rounded-lg border bg-gray-950 transition-colors',
-        popping ? 'overflow-visible' : 'overflow-hidden',
-        spinning ? 'category-draw-spinning' : 'border-gray-700'
-      )}>
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-6 h-px bg-orange-500/60 z-10" />
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 translate-y-6 h-px bg-orange-500/60 z-10" />
-        <div
-          ref={containerRef}
-          className="absolute left-0 right-0 top-1/2"
-          style={{ transform: 'translateY(-50%)' }}
-        >
-          <div className="h-12 flex items-center justify-center text-sm font-semibold text-gray-100 px-3 text-center">
-            READY
+      <div className="relative">
+        <div className={cn(
+          'relative h-[110px] rounded-lg border bg-gray-950 overflow-hidden transition-colors',
+          spinning ? 'category-draw-spinning' : 'border-gray-700'
+        )}>
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-6 h-px bg-orange-500/60 z-10" />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 translate-y-6 h-px bg-orange-500/60 z-10" />
+          <div
+            ref={containerRef}
+            className="absolute left-0 right-0 top-1/2"
+            style={{ transform: 'translateY(-50%)' }}
+          >
+            <div className="h-12 flex items-center justify-center text-sm font-semibold text-gray-100 px-3 text-center">
+              READY
+            </div>
           </div>
         </div>
+
+        {/* Slams in oversized on landing, then shrinks down to match the reel item beneath it —
+            rendered outside the reel's overflow-hidden box so nothing gets clipped. */}
+        {reveal && (
+          <div key={reveal} className="pointer-events-none absolute inset-0 flex items-center justify-center px-3 z-30">
+            <span className={cn(
+              'text-sm font-semibold text-center whitespace-nowrap overflow-hidden text-ellipsis max-w-full',
+              revealFeatured ? 'text-orange-400 category-draw-reveal-featured' : 'text-gray-100 category-draw-reveal'
+            )}>
+              {reveal}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -71,8 +91,8 @@ export function CategoryDrawPanel({ projects, students }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   const [spinning, setSpinning] = useState(false)
-  const [studentPopping, setStudentPopping] = useState(false)
-  const [categoryPopping, setCategoryPopping] = useState(false)
+  const [studentReveal, setStudentReveal] = useState<string | null>(null)
+  const [categoryReveal, setCategoryReveal] = useState<string | null>(null)
   const reelStudentRef = useRef<HTMLDivElement>(null)
   const reelCategoryRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -150,13 +170,13 @@ export function CategoryDrawPanel({ projects, students }: Props) {
       // category's pop is bigger and longer — it's the result that matters.
       const studentDone = animateReel(
         reelStudentRef.current, student.filler, student.finalIndex,
-        'text-gray-100', 'category-draw-winner', 550, setStudentPopping,
+        'text-gray-100', 600, setStudentReveal,
       )
       const categoryDone = new Promise<void>(resolve => {
         setTimeout(() => {
           animateReel(
             reelCategoryRef.current, category.filler, category.finalIndex,
-            'text-orange-400', 'category-draw-winner-featured', 800, setCategoryPopping,
+            'text-orange-400', 900, setCategoryReveal,
           ).then(resolve)
         }, 450)
       })
@@ -167,23 +187,23 @@ export function CategoryDrawPanel({ projects, students }: Props) {
   }
 
   // Spins fast, overshoots one item past the result, then bounces back to land
-  // on it, then pops the winning text large before it shrinks to its resting
-  // size — closer to a real slot-machine reel than a flat scroll.
+  // on it. Once landed, the winning text slams in oversized as an overlay
+  // (so it's never clipped by the reel's own box) and shrinks back down to
+  // match the item underneath — closer to a real slot-machine reel than a
+  // flat scroll.
   function animateReel(
     el: HTMLDivElement | null,
     filler: string[],
     finalIndex: number,
     winnerColorClass: string,
-    popClass: string,
-    popDurationMs: number,
-    onPopChange: (popping: boolean) => void,
+    revealDurationMs: number,
+    onReveal: (text: string | null) => void,
   ): Promise<void> {
     return new Promise(resolve => {
       if (!el) { resolve(); return }
       el.style.transition = 'none'
       el.style.transform = 'translateY(-50%)'
       el.innerHTML = ''
-      const itemEls: HTMLDivElement[] = []
       filler.forEach((text, i) => {
         const item = document.createElement('div')
         item.className = cn(
@@ -192,7 +212,6 @@ export function CategoryDrawPanel({ projects, students }: Props) {
         )
         item.textContent = text
         el.appendChild(item)
-        itemEls.push(item)
       })
 
       const overshootOffset = (filler.length - 1) * ITEM_HEIGHT
@@ -208,14 +227,11 @@ export function CategoryDrawPanel({ projects, students }: Props) {
         el.style.transform = `translateY(calc(-50% - ${landOffset}px))`
 
         setTimeout(() => {
-          const winner = itemEls[finalIndex]
-          onPopChange(true)
-          winner.classList.add(popClass)
+          onReveal(filler[finalIndex])
           setTimeout(() => {
-            winner.classList.remove(popClass)
-            onPopChange(false)
+            onReveal(null)
             resolve()
-          }, popDurationMs)
+          }, revealDurationMs)
         }, 340)
       }, 2100)
     })
@@ -323,8 +339,8 @@ export function CategoryDrawPanel({ projects, students }: Props) {
       {draw && !replacing && (
         <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-4 flex flex-col gap-4">
           <div className="flex gap-4">
-            <Reel label="Student" containerRef={reelStudentRef} spinning={spinning} popping={studentPopping} />
-            <Reel label="Category" containerRef={reelCategoryRef} spinning={spinning} popping={categoryPopping} />
+            <Reel label="Student" containerRef={reelStudentRef} spinning={spinning} reveal={studentReveal} />
+            <Reel label="Category" containerRef={reelCategoryRef} spinning={spinning} reveal={categoryReveal} revealFeatured />
           </div>
 
           <div className="flex gap-2">
@@ -345,7 +361,7 @@ export function CategoryDrawPanel({ projects, students }: Props) {
             {assignments.length === 0 ? (
               <p className="text-sm text-gray-400/50 italic py-2">No assignments yet.</p>
             ) : (
-              <ul className="max-h-80 overflow-y-auto divide-y divide-gray-800">
+              <ul className="max-h-80 overflow-y-auto divide-y divide-gray-800 pr-3">
                 {assignments.slice().reverse().map(a => (
                   <li key={a.id} className="flex justify-between gap-3 py-2 text-sm">
                     <span className="text-gray-100 font-medium">{studentName(a.studentId)}</span>
