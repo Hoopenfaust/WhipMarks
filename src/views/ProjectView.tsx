@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
-import { ChevronRight, UserCheck, Pencil, Check } from 'lucide-react'
+import { ChevronRight, UserCheck, Pencil, Check, FileOutput } from 'lucide-react'
 import { useProject, updateProject } from '../db/hooks/useProjects'
 import { useCriteria, bulkAddCriteria } from '../db/hooks/useCriteria'
 import { useProjectMarks } from '../db/hooks/useMarks'
@@ -21,6 +21,7 @@ import { CriteriaEditor } from '../components/rubric/CriteriaEditor'
 import { RubricBuilder } from '../components/rubric/RubricBuilder'
 import { MarkingGrid } from '../components/marking/MarkingGrid'
 import { StudentReportModal } from '../components/marking/StudentReportModal'
+import { RubricExportModal } from '../components/rubric/RubricExportModal'
 import { TaAssignModal } from '../components/marking/TaAssignModal'
 import { TaModerationView } from '../components/marking/TaModerationView'
 import { projectMarkingProgress } from '../utils/marks'
@@ -52,6 +53,7 @@ export function ProjectView() {
   const [genError, setGenError]           = useState<string | null>(null)
   const [reportStudent, setReportStudent] = useState<Student | null>(null)
   const [showAssign, setShowAssign]       = useState(false)
+  const [showRubricExport, setShowRubricExport] = useState(false)
   const [taRefresh, setTaRefresh]         = useState(0)
 
   // Inline editing state
@@ -216,6 +218,13 @@ export function ProjectView() {
           {/* Right: TA button + progress */}
           <div className="flex items-center gap-3 shrink-0">
             <button
+              onClick={() => setShowRubricExport(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-500 transition-colors"
+            >
+              <FileOutput size={13} />
+              Export Rubric
+            </button>
+            <button
               onClick={() => setShowAssign(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-500 transition-colors"
             >
@@ -333,6 +342,17 @@ export function ProjectView() {
           criteria={criteria}
           descriptors={descriptors}
           onClose={() => setShowAssign(false)}
+        />
+      )}
+
+      {/* Rubric export modal */}
+      {showRubricExport && (
+        <RubricExportModal
+          project={project}
+          className={classObj.name}
+          criteria={criteria}
+          descriptors={descriptors}
+          onClose={() => setShowRubricExport(false)}
         />
       )}
     </div>
