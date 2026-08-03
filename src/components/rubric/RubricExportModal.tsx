@@ -18,7 +18,7 @@ function today() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const S: Record<string, React.CSSProperties> = {
-  page:          { fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111', background: 'white' },
+  page:          { fontFamily: "'Georgia Pro', Georgia, serif", color: '#111', background: 'white' },
   header:        { background: '#111', padding: '18px 28px' },
   headerRow:     { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' },
   headerLabel:   { color: 'rgba(255,255,255,0.45)', fontSize: 8, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 5px' },
