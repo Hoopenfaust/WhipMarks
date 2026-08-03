@@ -25,7 +25,8 @@ const S: Record<string, React.CSSProperties> = {
   critMeta:      { fontSize: 11, margin: '2px 0 0' },
   critDesc:      { fontSize: 11, fontStyle: 'italic', margin: '4px 0 0' },
   grid:          { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginTop: 10, paddingTop: 8, borderTop: '1px solid #000' },
-  levelLabel:    { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 4px' },
+  levelLabel:    { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 2px' },
+  levelMarks:    { fontSize: 9.5, margin: '0 0 4px' },
   levelText:     { fontSize: 10.5, lineHeight: 1.4, margin: 0 },
   footer:        { borderTop: '1px solid #000', paddingTop: 6, marginTop: 24, display: 'flex', justifyContent: 'space-between' },
   footerText:    { fontSize: 9, margin: 0 },
@@ -75,9 +76,11 @@ function RubricDocument({ project, className, criteria, descriptors }: DocProps)
                 {LEVELS.map(level => {
                   const d = byLevel.find(x => x.level === level.id)
                   const text = d?.text.trim()
+                  const marks = Math.round((d?.score ?? level.defaultScore) * c.maxMarks)
                   return (
                     <div key={level.id}>
                       <p style={S.levelLabel}>{level.shortLabel}</p>
+                      <p style={S.levelMarks}>{marks} marks</p>
                       <p style={S.levelText}>{text || 'No descriptor set'}</p>
                     </div>
                   )
