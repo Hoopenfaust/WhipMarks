@@ -152,12 +152,16 @@ function GroupCard({ group, memberIds, students }: { group: Group; memberIds: st
       <div className="flex flex-col gap-1.5">
         {members.map(s => (
           <div key={s.id} className="flex items-center gap-2.5 bg-gray-900/40 rounded-lg px-3 py-2">
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-              style={{ background: hexToRgba(group.color, 0.22), color: group.color }}
-            >
-              {initialsFor(s)}
-            </div>
+            {s.photo ? (
+              <img src={s.photo} alt={studentName(s)} className="w-7 h-7 rounded-full object-cover shrink-0" />
+            ) : (
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                style={{ background: hexToRgba(group.color, 0.22), color: group.color }}
+              >
+                {initialsFor(s)}
+              </div>
+            )}
             <span className="text-sm text-gray-100 truncate">{studentName(s)}</span>
           </div>
         ))}
