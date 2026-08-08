@@ -84,9 +84,13 @@ function looksLikeSectionHeading(line: string): boolean {
   if (line.length > 60) return false
   if (BULLET_RE.test(line)) return false
   if (CODE_RE.test(line)) return false
-  // All caps or Title Case short line = heading
-  const isAllCaps  = line === line.toUpperCase() && /[A-Z]/.test(line)
-  const isTitleish = /^[A-Z][^a-z]{0,3}/.test(line) && line.split(' ').length <= 6
+  if (/[.!?]\s*$/.test(line)) return false // sentences end with terminal punctuation; headings don't
+  const words = line.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return false
+  // All caps, or most words capitalized (Title Case) short line = heading
+  const isAllCaps = line === line.toUpperCase() && /[A-Z]/.test(line)
+  const capRatio  = words.filter(w => /^[A-Z]/.test(w)).length / words.length
+  const isTitleish = capRatio >= 0.7 && words.length <= 6
   return isAllCaps || isTitleish
 }
 
@@ -172,16 +176,21 @@ function parseCompetenciesFromText(text: string): ExtractedCompetency[] {
 
     // ── Collect item ─────────────────────────────────────────────────────
 
-    const isItem = CODE_RE.test(line) || BULLET_RE.test(line)
+    const isMarkedItem = CODE_RE.test(line) || BULLET_RE.test(line)
+    // A wrapped continuation of the line above (typical of PDF text reflowed by
+    // page width): the previous line didn't end a sentence and this one starts
+    // lowercase. Plain-paragraph outcomes (e.g. Word docs with list formatting
+    // stripped on export) are one full sentence per line, so this rarely fires
+    // for them — each such line becomes its own item below instead of being
+    // silently dropped.
+    const isWrappedContinuation = !isMarkedItem && !!buffer && !/[.!?:;]\s*$/.test(buffer) && /^[a-z]/.test(line)
 
-    if (isItem) {
+    if (isWrappedContinuation) {
+      buffer += ' ' + line
+    } else {
       flush()
       buffer = line
-    } else if (buffer) {
-      // Continuation / wrapped text
-      buffer += ' ' + line
     }
-    // Non-item, non-buffer lines (intro sentences etc.) are silently skipped
   }
   flush()
 
