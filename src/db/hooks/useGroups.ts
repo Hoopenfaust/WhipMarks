@@ -75,6 +75,19 @@ export async function renameGroup(groupId: string, name: string) {
   await db.groups.update(groupId, { name })
 }
 
+// Moves a student to another existing group, deleting the source group if it's left empty.
+export async function moveStudentToGroup(studentId: string, fromGroupId: string, toGroupId: string) {
+  if (fromGroupId === toGroupId) return
+  await db.transaction('rw', [db.groups, db.groupMembers], async () => {
+    const member = await db.groupMembers.where('groupId').equals(fromGroupId).and(m => m.studentId === studentId).first()
+    if (member) await db.groupMembers.update(member.id, { groupId: toGroupId })
+    else await db.groupMembers.add({ id: newId(), groupId: toGroupId, studentId })
+
+    const remaining = await db.groupMembers.where('groupId').equals(fromGroupId).count()
+    if (remaining === 0) await db.groups.delete(fromGroupId)
+  })
+}
+
 export async function clearGroups(projectId: string) {
   await db.transaction('rw', [db.groups, db.groupMembers], async () => {
     const groupIds = (await db.groups.where('projectId').equals(projectId).toArray()).map(g => g.id)

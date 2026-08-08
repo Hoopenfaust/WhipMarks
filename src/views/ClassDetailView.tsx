@@ -8,7 +8,7 @@ import { useStudents, addStudent, deleteStudent, updateStudentName, updateStuden
 import { useProjects, createProject, updateProject, deleteProject } from '../db/hooks/useProjects'
 import { useAllMarksForClass, upsertMark } from '../db/hooks/useMarks'
 import { db } from '../db/db'
-import { calcProjectPercentage, calcSemesterMark, gradeColor } from '../utils/marks'
+import { calcProjectPercentage, calcSemesterMark, calcStudentSemesterMark, gradeColor } from '../utils/marks'
 import { TabBar } from '../components/ui/TabBar'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -864,20 +864,7 @@ export function ClassDetailView() {
   }
 
   function getSemesterMark(studentId: string): number | null {
-    const active = projects.filter(p => p.semesterWeight > 0)
-    if (active.length === 0) return null
-    const anyMarked = active.some(p => {
-      const criteria = allCriteria.filter(c => c.projectId === p.id)
-      return criteria.some(c => allMarks.some(m => m.studentId === studentId && m.criterionId === c.id))
-    })
-    if (!anyMarked) return null
-    return calcSemesterMark(active.map(p => ({
-      weight: p.semesterWeight,
-      percentage: calcProjectPercentage(
-        allMarks.filter(m => m.studentId === studentId && m.projectId === p.id),
-        allCriteria.filter(c => c.projectId === p.id)
-      ),
-    })))
+    return calcStudentSemesterMark(studentId, projects, allMarks, allCriteria)
   }
 
 

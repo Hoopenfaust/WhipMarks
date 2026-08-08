@@ -55,3 +55,25 @@ export function gradeBg(pct: number): string {
 export function weightTotal(projects: Project[]): number {
   return projects.filter(p => p.semesterWeight > 0).reduce((s, p) => s + p.semesterWeight, 0)
 }
+
+export function calcStudentSemesterMark(
+  studentId: string,
+  projects: Project[],
+  allMarks: Mark[],
+  allCriteria: RubricCriterion[]
+): number | null {
+  const active = projects.filter(p => p.semesterWeight > 0)
+  if (active.length === 0) return null
+  const anyMarked = active.some(p => {
+    const criteria = allCriteria.filter(c => c.projectId === p.id)
+    return criteria.some(c => allMarks.some(m => m.studentId === studentId && m.criterionId === c.id))
+  })
+  if (!anyMarked) return null
+  return calcSemesterMark(active.map(p => ({
+    weight: p.semesterWeight,
+    percentage: calcProjectPercentage(
+      allMarks.filter(m => m.studentId === studentId && m.projectId === p.id),
+      allCriteria.filter(c => c.projectId === p.id)
+    ),
+  })))
+}

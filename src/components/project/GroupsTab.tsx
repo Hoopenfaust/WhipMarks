@@ -1,9 +1,13 @@
 import { useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Shuffle, RotateCcw, Pencil, Users } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
-import { useGroups, useGroupMembers, generateGroups, renameGroup, clearGroups } from '../../db/hooks/useGroups'
-import { updateProject } from '../../db/hooks/useProjects'
+import { db } from '../../db/db'
+import { useGroups, useGroupMembers, generateGroups, renameGroup, clearGroups, moveStudentToGroup } from '../../db/hooks/useGroups'
+import { useProjects, updateProject } from '../../db/hooks/useProjects'
+import { useAllMarksForClass } from '../../db/hooks/useMarks'
+import { calcStudentSemesterMark, gradeColor } from '../../utils/marks'
 import type { Project, Student, Group } from '../../types'
 
 interface Props {
@@ -108,7 +112,15 @@ function GenerateGroupsModal({ open, onClose, projectId, students }: { open: boo
   )
 }
 
-function GroupCard({ group, memberIds, students }: { group: Group; memberIds: string[]; students: Student[] }) {
+interface GroupCardProps {
+  group: Group
+  memberIds: string[]
+  students: Student[]
+  allGroups: Group[]
+  semesterMarkFor: (studentId: string) => number | null
+}
+
+function GroupCard({ group, memberIds, students, allGroups, semesterMarkFor }: GroupCardProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(group.name)
 
@@ -150,21 +162,37 @@ function GroupCard({ group, memberIds, students }: { group: Group; memberIds: st
       </div>
 
       <div className="flex flex-col gap-1.5">
-        {members.map(s => (
-          <div key={s.id} className="flex items-center gap-2.5 bg-gray-900/40 rounded-lg px-3 py-2">
-            {s.photo ? (
-              <img src={s.photo} alt={studentName(s)} className="w-7 h-7 rounded-full object-cover shrink-0" />
-            ) : (
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-                style={{ background: hexToRgba(group.color, 0.22), color: group.color }}
-              >
-                {initialsFor(s)}
-              </div>
-            )}
-            <span className="text-sm text-gray-100 truncate">{studentName(s)}</span>
-          </div>
-        ))}
+        {members.map(s => {
+          const mark = semesterMarkFor(s.id)
+          return (
+            <div key={s.id} className="flex items-center gap-2.5 bg-gray-900/40 rounded-lg px-3 py-2">
+              {s.photo ? (
+                <img src={s.photo} alt={studentName(s)} className="w-7 h-7 rounded-full object-cover shrink-0" />
+              ) : (
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                  style={{ background: hexToRgba(group.color, 0.22), color: group.color }}
+                >
+                  {initialsFor(s)}
+                </div>
+              )}
+              <span className="text-sm text-gray-100 truncate flex-1 min-w-0">{studentName(s)}</span>
+              <span className={`text-xs font-medium shrink-0 ${mark !== null ? gradeColor(mark) : 'text-gray-400/50'}`}>
+                {mark !== null ? `${mark.toFixed(0)}%` : '—'}
+              </span>
+              {allGroups.length > 1 && (
+                <select
+                  value={group.id}
+                  onChange={e => moveStudentToGroup(s.id, group.id, e.target.value)}
+                  title="Move to another group"
+                  className="bg-gray-800 border border-gray-700 rounded px-1.5 py-1 text-xs text-gray-100 focus:outline-none focus:border-gray-200 shrink-0"
+                >
+                  {allGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -175,6 +203,16 @@ export function GroupsTab({ project, students }: Props) {
   const groupIds = groups.map(g => g.id)
   const allMembers = useGroupMembers(groupIds)
   const [showGenerate, setShowGenerate] = useState(false)
+
+  // Class-wide data needed to show each member's semester mark so far.
+  const classProjects = useProjects(project.classId)
+  const classProjectIds = classProjects.map(p => p.id)
+  const allMarks = useAllMarksForClass(classProjectIds)
+  const allCriteria = useLiveQuery(
+    () => classProjectIds.length > 0 ? db.criteria.where('projectId').anyOf(classProjectIds).toArray() : [],
+    [classProjectIds.join(',')]
+  ) ?? []
+  const semesterMarkFor = (studentId: string) => calcStudentSemesterMark(studentId, classProjects, allMarks, allCriteria)
 
   if (!project.isGroupProject) {
     return (
@@ -223,6 +261,8 @@ export function GroupsTab({ project, students }: Props) {
               group={g}
               memberIds={allMembers.filter(m => m.groupId === g.id).map(m => m.studentId)}
               students={students}
+              allGroups={groups}
+              semesterMarkFor={semesterMarkFor}
             />
           ))}
         </div>
