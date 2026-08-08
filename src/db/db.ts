@@ -243,6 +243,43 @@ class AppDatabase extends Dexie {
       groups: '&id, projectId, sortIndex',
       groupMembers: '&id, groupId, studentId',
     })
+    this.version(15).stores({
+      classes: '&id, createdAt',
+      students: '&id, classId, sortIndex',
+      projects: '&id, classId, createdAt',
+      criteria: '&id, projectId, sortIndex',
+      marks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      projectSheets: '&id, projectId',
+      descriptors: '&id, criterionId',
+      rubricTemplates: '&id, createdAt',
+      scheduleWeeks: '&id, [classId+weekNumber], classId',
+      taMarks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      taAssignments: '&projectId',
+      competencies: '&id, classId, sortIndex',
+      criterionCompetencies: '&id, criterionId, competencyId',
+      snippets: '&id, projectId, createdAt',
+      improvementNotes: '&id, [studentId+projectId], projectId',
+      libraryProjects: '&id, createdAt',
+      libraryProjectCriteria: '&id, libraryProjectId, sortIndex',
+      libraryDescriptors: '&id, libraryCriterionId',
+      studentSubmissions: '&id, [studentId+projectId], projectId',
+      submissionAnnotations: '&id, [studentId+projectId]',
+      deletedClassIds: '&id',
+      categoryDraws: '&id, projectId',
+      categoryAssignments: '&id, projectId, studentId, createdAt',
+      groups: '&id, projectId, sortIndex',
+      groupMembers: '&id, groupId, studentId',
+    }).upgrade(async tx => {
+      // Competencies move from per-project to per-class scope. Resolve each
+      // existing row's old project to that project's class rather than
+      // dropping the data.
+      const projects = await tx.table('projects').toArray()
+      const projectToClass = new Map<string, string>(projects.map((p: { id: string; classId: string }) => [p.id, p.classId]))
+      await tx.table('competencies').toCollection().modify((comp: { projectId?: string; classId?: string }) => {
+        comp.classId = comp.projectId ? projectToClass.get(comp.projectId) : undefined
+        delete comp.projectId
+      })
+    })
   }
 }
 

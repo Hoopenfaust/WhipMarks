@@ -3,10 +3,10 @@ import { db } from '../db'
 import type { Competency, CriterionCompetency } from '../../types'
 import { newId } from '../../utils/id'
 
-export function useCompetencies(projectId: string | undefined) {
+export function useCompetencies(classId: string | undefined) {
   return useLiveQuery(
-    () => projectId ? db.competencies.where('projectId').equals(projectId).sortBy('sortIndex') : [],
-    [projectId]
+    () => classId ? db.competencies.where('classId').equals(classId).sortBy('sortIndex') : [],
+    [classId]
   ) ?? []
 }
 
@@ -24,8 +24,8 @@ export function useAllCriterionCompetenciesForProject(criteriaIds: string[]) {
   ) ?? []
 }
 
-export async function addCompetency(projectId: string, name: string, description: string, sortIndex: number) {
-  const c: Competency = { id: newId(), projectId, name, description, sortIndex }
+export async function addCompetency(classId: string, name: string, description: string, sortIndex: number) {
+  const c: Competency = { id: newId(), classId, name, description, sortIndex }
   await db.competencies.add(c)
   return c
 }
@@ -41,8 +41,8 @@ export async function deleteCompetency(id: string) {
   })
 }
 
-export async function bulkAddCompetencies(projectId: string, items: { name: string; description: string }[]) {
-  const records: Competency[] = items.map((c, i) => ({ id: newId(), projectId, name: c.name, description: c.description, sortIndex: i }))
+export async function bulkAddCompetencies(classId: string, items: { name: string; description: string }[]) {
+  const records: Competency[] = items.map((c, i) => ({ id: newId(), classId, name: c.name, description: c.description, sortIndex: i }))
   await db.competencies.bulkAdd(records)
   return records
 }

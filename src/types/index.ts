@@ -129,7 +129,7 @@ export interface TaResultsFile {
 
 export interface Competency {
   id: string
-  projectId: string
+  classId: string
   name: string
   description: string
   sortIndex: number

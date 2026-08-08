@@ -41,7 +41,7 @@ export function ProjectView() {
   const sheet       = useProjectSheet(projectId)
   const descriptors = useProjectDescriptors(projectId)
 
-  const competencies   = useCompetencies(projectId)
+  const competencies   = useCompetencies(project?.classId)
   const criterionComps = useAllCriterionCompetenciesForProject(criteria.map(c => c.id))
   const snippets            = useSnippets(projectId)
   const improvementNotes    = useProjectImprovementNotes(projectId)
@@ -308,7 +308,7 @@ export function ProjectView() {
       {/* COMPETENCIES TAB */}
       {tab === 'competencies' && (
         <div className="flex-1 overflow-y-auto">
-          <CompetencyTab projectId={projectId!} criteria={criteria} />
+          <CompetencyTab classId={project.classId} criteria={criteria} />
         </div>
       )}
 

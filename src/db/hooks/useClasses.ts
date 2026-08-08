@@ -73,6 +73,7 @@ async function purgeClassLocally(id: string) {
   const projectIdSet = new Set(projectIds)
 
   await db.scheduleWeeks.where('classId').equals(id).delete()
+  await db.competencies.where('classId').equals(id).delete()
   await db.classes.delete(id)
 
   if (criterionIds.length) {
@@ -85,13 +86,15 @@ async function purgeClassLocally(id: string) {
     await db.taAssignments.bulkDelete(projectIds)
     await db.criteria.where('projectId').anyOf(projectIds).delete()
     await db.projectSheets.where('projectId').anyOf(projectIds).delete()
-    await db.competencies.where('projectId').anyOf(projectIds).delete()
     await db.snippets.where('projectId').anyOf(projectIds).delete()
     await db.improvementNotes.where('projectId').anyOf(projectIds).delete()
     await db.studentSubmissions.where('projectId').anyOf(projectIds).delete()
     await db.submissionAnnotations.filter(a => projectIdSet.has(a.projectId)).delete()
     await db.categoryAssignments.where('projectId').anyOf(projectIds).delete()
     await db.categoryDraws.where('id').anyOf(projectIds).delete()
+    const groupIds = (await db.groups.where('projectId').anyOf(projectIds).toArray()).map(g => g.id)
+    if (groupIds.length) await db.groupMembers.where('groupId').anyOf(groupIds).delete()
+    await db.groups.where('projectId').anyOf(projectIds).delete()
     await db.projects.where('id').anyOf(projectIds).delete()
   }
   if (studentIds.length) await db.students.where('id').anyOf(studentIds).delete()
