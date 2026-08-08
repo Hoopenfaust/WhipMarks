@@ -40,6 +40,7 @@ export interface Project {
   semesterWeight: number
   totalMarks: number
   createdAt: number
+  isGroupProject?: boolean
 }
 
 export interface RubricCriterion {
@@ -276,4 +277,21 @@ export interface CategoryAssignment {
   studentId: string
   category: string
   createdAt: number
+}
+
+// ─── Groups ──────────────────────────────────────────────────────────────────
+
+export interface Group {
+  id: string
+  projectId: string   // groups are generated per group-project
+  name: string
+  color: string       // hex color, shared by the group's card and its members' chips
+  sortIndex: number
+  createdAt: number
+}
+
+export interface GroupMember {
+  id: string
+  groupId: string
+  studentId: string
 }

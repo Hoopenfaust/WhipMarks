@@ -14,6 +14,7 @@ import { useSnippets } from '../db/hooks/useSnippets'
 import { useProjectImprovementNotes } from '../db/hooks/useImprovementNotes'
 import { AnalyticsTab } from '../components/project/AnalyticsTab'
 import { CompetencyTab } from '../components/project/CompetencyTab'
+import { GroupsTab } from '../components/project/GroupsTab'
 import { TabBar } from '../components/ui/TabBar'
 import { FileUploadZone } from '../components/rubric/FileUploadZone'
 import { PdfViewer } from '../components/rubric/PdfViewer'
@@ -83,6 +84,7 @@ export function ProjectView() {
     { id: 'builder',     label: 'Build Rubric' },
     { id: 'rubric',      label: 'Rubric' },
     { id: 'marking',     label: 'Marking Grid' },
+    { id: 'groups',      label: 'Groups' },
     { id: 'analytics',   label: 'Analytics' },
     { id: 'competencies',label: 'Competencies' },
     { id: 'moderation',  label: 'Moderation' },
@@ -286,6 +288,13 @@ export function ProjectView() {
             projectId={projectId!} descriptors={descriptors} snippets={snippets}
             onExportStudent={setReportStudent}
           />
+        </div>
+      )}
+
+      {/* GROUPS TAB */}
+      {tab === 'groups' && (
+        <div className="flex-1 overflow-y-auto p-6">
+          <GroupsTab project={project} students={students} />
         </div>
       )}
 

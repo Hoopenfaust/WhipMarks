@@ -755,6 +755,7 @@ function ProjectForm({ classId, onDone }: { classId: string; onDone: () => void 
   const [startDate, setStartDate] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [weight, setWeight] = useState('1')
+  const [isGroupProject, setIsGroupProject] = useState(false)
   const navigate = useNavigate()
 
   async function submit() {
@@ -766,6 +767,7 @@ function ProjectForm({ classId, onDone }: { classId: string; onDone: () => void 
       dueDate,
       semesterWeight: Math.max(0, Math.min(1, parseFloat(weight) / 100 || 0)),
       totalMarks: 0,
+      isGroupProject,
     })
     onDone()
     navigate(`/classes/${classId}/projects/${project.id}?tab=builder`)
@@ -791,6 +793,15 @@ function ProjectForm({ classId, onDone }: { classId: string; onDone: () => void 
           <span className="text-sm text-gray-400">% of final semester mark</span>
         </div>
       </div>
+      <label className="flex items-center gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isGroupProject}
+          onChange={e => setIsGroupProject(e.target.checked)}
+          className="accent-indigo-400"
+        />
+        <span className="text-sm text-gray-100">This is a group project</span>
+      </label>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="primary" onClick={submit} disabled={!name.trim()}>Create Project</Button>
       </div>
