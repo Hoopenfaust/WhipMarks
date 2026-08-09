@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useObservable } from 'dexie-react-hooks'
 import { Cloud, CloudOff, RefreshCw, LogOut, AlertTriangle, WifiOff } from 'lucide-react'
 import { db } from '../../db/db'
@@ -21,15 +21,6 @@ export function SyncStatus({ onLoginClick }: { onLoginClick: () => void }) {
   const syncState = useObservable(db.cloud.syncState)
   const [retrying, setRetrying] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
-
-  // Temporary diagnostic logging — the badge only ever shows a simplified
-  // label, never the raw phase/status/error Dexie Cloud actually reports.
-  useEffect(() => {
-    console.log('[WhipMarks sync] syncState:', syncState)
-  }, [syncState])
-  useEffect(() => {
-    console.log('[WhipMarks sync] currentUser:', currentUser)
-  }, [currentUser])
 
   if (!CLOUD_URL) return null
 
