@@ -4,6 +4,7 @@ import { Cloud, CloudOff, RefreshCw, LogOut, AlertTriangle, WifiOff } from 'luci
 import { db } from '../../db/db'
 
 const CLOUD_URL = import.meta.env.VITE_DEXIE_CLOUD_URL as string | undefined
+const RETRY_TIMEOUT_MS = 10000
 
 /**
  * Shows in the app header. When cloud is not configured, renders nothing.
@@ -19,6 +20,7 @@ export function SyncStatus({ onLoginClick }: { onLoginClick: () => void }) {
   const currentUser = useObservable(db.cloud.currentUser)
   const syncState = useObservable(db.cloud.syncState)
   const [retrying, setRetrying] = useState(false)
+  const [timedOut, setTimedOut] = useState(false)
 
   if (!CLOUD_URL) return null
 
@@ -45,7 +47,14 @@ export function SyncStatus({ onLoginClick }: { onLoginClick: () => void }) {
 
   let pill: { icon: ReactNode; label: string; classes: string; hint: string }
 
-  if (hasError) {
+  if (timedOut && !isSyncing) {
+    pill = {
+      icon: <WifiOff size={13} />,
+      label: "Can't connect",
+      classes: 'text-amber-600 dark:text-amber-400 border-amber-500/50 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30',
+      hint: `Timed out reaching the sync server after ${RETRY_TIMEOUT_MS / 1000}s — check your network connection`,
+    }
+  } else if (hasError) {
     pill = {
       icon: <AlertTriangle size={13} />,
       label: 'Sync error',
@@ -78,8 +87,12 @@ export function SyncStatus({ onLoginClick }: { onLoginClick: () => void }) {
   async function retrySync() {
     if (isSyncing) return
     setRetrying(true)
+    setTimedOut(false)
     try {
-      await db.cloud.sync({ wait: true, purpose: 'pull' })
+      const timeout = new Promise<'timeout'>(resolve => setTimeout(() => resolve('timeout'), RETRY_TIMEOUT_MS))
+      const attempt = db.cloud.sync({ wait: true, purpose: 'pull' }).then(() => 'done' as const)
+      const result = await Promise.race([attempt, timeout])
+      if (result === 'timeout') setTimedOut(true)
     } catch {
       // Surfaced through syncState.error on the next render — nothing else to do here.
     } finally {

@@ -5,6 +5,8 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 
+const LOGIN_TIMEOUT_MS = 8000
+
 /**
  * Only rendered when the user explicitly taps "Sign in to sync".
  * Handles the full Dexie Cloud OTP login flow in-app — no browser popup.
@@ -15,6 +17,7 @@ export function SyncLoginModal({ onDone }: { onDone: () => void }) {
   const currentUser = useObservable(db.cloud.currentUser)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
+  const [timedOut, setTimedOut] = useState(false)
 
   // Trigger the login flow as soon as this component mounts
   useEffect(() => {
@@ -26,8 +29,31 @@ export function SyncLoginModal({ onDone }: { onDone: () => void }) {
     if (currentUser?.isLoggedIn) onDone()
   }, [currentUser?.isLoggedIn, onDone])
 
-  // Nothing to show yet (waiting for Dexie Cloud to emit the first prompt)
-  if (!interaction) return null
+  // If Dexie Cloud never reaches the server (no network path to it), don't
+  // leave the user staring at a click that visibly did nothing with no way
+  // to back out — surface it and let them close the dialog.
+  useEffect(() => {
+    if (interaction) return
+    const t = setTimeout(() => setTimedOut(true), LOGIN_TIMEOUT_MS)
+    return () => clearTimeout(t)
+  }, [interaction])
+
+  if (!interaction) {
+    if (!timedOut) return null
+    return (
+      <Modal open onClose={onDone} title="Sign in to sync">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-red-400">
+            Can't reach the sync server after {LOGIN_TIMEOUT_MS / 1000}s. Check your internet connection — some
+            networks (school/office WiFi in particular) block the connection sync needs — then try again.
+          </p>
+          <div className="flex justify-end">
+            <Button variant="ghost" onClick={onDone}>Close</Button>
+          </div>
+        </div>
+      </Modal>
+    )
+  }
 
   function cancel() { interaction!.onCancel(); onDone() }
 
