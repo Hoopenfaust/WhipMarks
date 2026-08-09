@@ -21,7 +21,7 @@ export function SyncLoginModal({ onDone }: { onDone: () => void }) {
 
   // Trigger the login flow as soon as this component mounts
   useEffect(() => {
-    db.cloud.login()
+    db.cloud.login().catch(err => console.error('[WhipMarks sync] login() failed:', err))
   }, [])
 
   // Close automatically once logged in
