@@ -41,6 +41,7 @@ export interface Project {
   totalMarks: number
   createdAt: number
   isGroupProject?: boolean
+  isProfessionalMark?: boolean
 }
 
 export interface RubricCriterion {

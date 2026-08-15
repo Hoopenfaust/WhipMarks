@@ -6,6 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useClass, updateClass, deleteClass } from '../db/hooks/useClasses'
 import { useStudents, addStudent, deleteStudent, updateStudentName, updateStudentPhoto, updateStudentNames, updateStudentNotes, updateStudentChecklist, updateStudentEmail } from '../db/hooks/useStudents'
 import { useProjects, createProject, updateProject, deleteProject } from '../db/hooks/useProjects'
+import { bulkAddCriteria } from '../db/hooks/useCriteria'
 import { useAllMarksForClass, upsertMark } from '../db/hooks/useMarks'
 import { db } from '../db/db'
 import { calcProjectPercentage, calcSemesterMark, calcStudentSemesterMark, gradeColor } from '../utils/marks'
@@ -32,6 +33,14 @@ const TABS = [
   { id: 'schedule', label: 'Schedule' },
   { id: 'categories', label: 'Categories' },
   { id: 'competencies', label: 'Competencies' },
+]
+
+const PROFESSIONAL_MARK_CRITERIA = [
+  { name: 'Participation', description: 'Attends class and participates.', maxMarks: 10, weight: 0.2 },
+  { name: 'Openness to Feedback', description: 'Is open to criticism and open to changing ideas.', maxMarks: 10, weight: 0.2 },
+  { name: 'Attitude', description: "Student's attitude towards the professor and classmates.", maxMarks: 10, weight: 0.2 },
+  { name: 'Timeliness', description: 'Hands work in on time.', maxMarks: 10, weight: 0.2 },
+  { name: 'Improvement', description: 'Shows improvement over the semester.', maxMarks: 10, weight: 0.2 },
 ]
 
 // Pastel accent palette — deterministic per student ID
@@ -605,6 +614,11 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                 {project.name}
                 <ChevronRight size={16} className="text-gray-400/70" />
               </Link>
+              {project.isProfessionalMark && (
+                <span className="inline-flex items-center gap-1 text-xs bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded px-1.5 py-0.5">
+                  <Star size={11} /> Professional
+                </span>
+              )}
               {project.semesterWeight > 0 && (
                 <span className="text-xs bg-gray-800 text-gray-100 border border-gray-700/50 rounded px-1.5 py-0.5">
                   {Math.round(project.semesterWeight * 100)}% of semester
@@ -869,6 +883,20 @@ export function ClassDetailView() {
     return calcStudentSemesterMark(studentId, projects, allMarks, allCriteria)
   }
 
+  async function addProfessionalMark() {
+    if (!classId) return
+    const project = await createProject({
+      classId,
+      name: 'Professional Mark',
+      dueDate: '',
+      semesterWeight: 0.1,
+      totalMarks: PROFESSIONAL_MARK_CRITERIA.reduce((s, c) => s + c.maxMarks, 0),
+      isProfessionalMark: true,
+    })
+    await bulkAddCriteria(project.id, PROFESSIONAL_MARK_CRITERIA)
+    navigate(`/classes/${classId}/projects/${project.id}?tab=marking`)
+  }
+
 
   async function handleAddStudent(e: React.FormEvent) {
     e.preventDefault()
@@ -1074,19 +1102,100 @@ export function ClassDetailView() {
         )}
 
         {/* PROJECTS TAB */}
-        {tab === 'projects' && (
+        {tab === 'projects' && (() => {
+          const professionalMarkProject = projects.find(p => p.isProfessionalMark)
+          const regularProjects = projects.filter(p => !p.isProfessionalMark)
+
+          return (
           <div>
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end gap-2 mb-4">
+              {!professionalMarkProject && (
+                <Button variant="secondary" size="sm" onClick={addProfessionalMark}>
+                  <Star size={15} /> Add Professional Mark
+                </Button>
+              )}
               <Button variant="primary" size="sm" onClick={() => setAddProjectOpen(true)} data-tutorial="new-project-btn">
                 <Plus size={15} /> New Project
               </Button>
             </div>
 
-            {projects.length === 0 ? (
+            {professionalMarkProject && (() => {
+              const p = professionalMarkProject
+              const pCriteria = allCriteria.filter(c => c.projectId === p.id)
+              const pMarks = allMarks.filter(m => m.projectId === p.id)
+              const markedStudents = students.filter(s =>
+                pCriteria.some(c => pMarks.some(m => m.studentId === s.id && m.criterionId === c.id))
+              ).length
+              const totalStudents = students.length
+              const progressPct = totalStudents > 0 ? (markedStudents / totalStudents) * 100 : 0
+              const allDone = markedStudents === totalStudents && totalStudents > 0
+
+              return (
+                <div
+                  className="bg-gray-850 border border-amber-500/30 rounded-2xl p-7 mb-4 group relative cursor-pointer select-none hover:border-amber-500/50 hover:bg-gray-800 transition-all duration-200 shadow-sm shadow-black/20"
+                  onClick={() => navigate(`/classes/${classId}/projects/${p.id}`)}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400">
+                      <Star size={13} /> Professional Mark
+                    </span>
+                    <button
+                      onClick={e => { e.stopPropagation(); setDeleteProjectId(p.id) }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-red-400 transition-all relative z-10"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-100 mb-3 leading-tight">{p.name}</h3>
+
+                  {/* Weight — inline editable */}
+                  <div className="flex flex-wrap gap-3 mt-1" onClick={e => e.stopPropagation()}>
+                    <label className="flex items-center gap-2.5 px-5 py-2.5 bg-gray-900 border border-gray-700 rounded-lg cursor-text hover:border-gray-600 transition-colors">
+                      <span className="text-xs font-semibold uppercase tracking-wider shrink-0 text-amber-400">Worth</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        defaultValue={Math.round(p.semesterWeight * 100)}
+                        onBlur={async e => {
+                          const pct = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0))
+                          await updateProject(p.id, { semesterWeight: pct / 100 })
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                        className="w-14 bg-transparent text-sm text-gray-300 focus:text-gray-100 focus:outline-none"
+                      />
+                      <span className="text-sm text-gray-400">% of semester</span>
+                    </label>
+                  </div>
+                  {/* Marking progress */}
+                  <div className="mt-4 pt-3 border-t border-gray-700/60">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-gray-400/70">
+                        {markedStudents === 0 ? 'Not started' : allDone ? 'All marked ✓' : `${markedStudents} / ${totalStudents} marked`}
+                      </span>
+                      {markedStudents > 0 && (
+                        <span className={`text-xs font-medium ${allDone ? 'text-emerald-500' : 'text-gray-400'}`}>
+                          {Math.round(progressPct)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {regularProjects.length === 0 ? (
               <p className="text-sm text-gray-400/70">No projects yet.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map(p => {
+                {regularProjects.map(p => {
                   const pCriteria = allCriteria.filter(c => c.projectId === p.id)
                   const pMarks = allMarks.filter(m => m.projectId === p.id)
                   const markedStudents = students.filter(s =>
@@ -1165,7 +1274,8 @@ export function ClassDetailView() {
               </div>
             )}
           </div>
-        )}
+          )
+        })()}
 
         {/* SCHEDULE TAB */}
         {tab === 'schedule' && classId && (

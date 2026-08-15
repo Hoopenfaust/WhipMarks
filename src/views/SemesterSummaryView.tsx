@@ -1,5 +1,5 @@
 ﻿import { useParams, Link } from 'react-router-dom'
-import { Download, ChevronRight } from 'lucide-react'
+import { Download, ChevronRight, Star } from 'lucide-react'
 import { useClass } from '../db/hooks/useClasses'
 import { useStudents } from '../db/hooks/useStudents'
 import { useProjects } from '../db/hooks/useProjects'
@@ -110,7 +110,10 @@ export function SemesterSummaryView() {
                 {activeProjects.map(p => (
                   <th key={p.id} className="sticky top-0 z-10 bg-gray-850 border-b border-r border-gray-700 px-4 py-3 text-left whitespace-nowrap">
                     <Link to={`/classes/${classId}/projects/${p.id}`} className="hover:text-gray-100 transition-colors">
-                      <div className="text-xs font-semibold text-gray-100">{p.name}</div>
+                      <div className="text-xs font-semibold text-gray-100 flex items-center gap-1">
+                        {p.isProfessionalMark && <Star size={11} className="text-amber-400 shrink-0" />}
+                        {p.name}
+                      </div>
                       <div className="text-xs text-gray-400/70">{Math.round(p.semesterWeight * 100)}% of semester</div>
                     </Link>
                   </th>
