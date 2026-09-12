@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { FileSpreadsheet, Upload, Shuffle, RotateCcw } from 'lucide-react'
 import { Button } from '../ui/Button'
-import { useCategoryDraw, useCategoryAssignments, setupCategoryDraw, drawNextCategory, resetCategoryDraw } from '../../db/hooks/useCategoryDraws'
+import { useCategoryDraw, useCategoryAssignments, setupCategoryDraw, drawNextCategory, recordCategoryAssignment, resetCategoryDraw } from '../../db/hooks/useCategoryDraws'
 import type { Project, Student } from '../../types'
 import { cn } from '../../utils/cn'
 
@@ -181,6 +181,7 @@ export function CategoryDrawPanel({ projects, students }: Props) {
         }, 450)
       })
       await Promise.all([studentDone, categoryDone])
+      await recordCategoryAssignment(entry)
     } finally {
       setSpinning(false)
     }

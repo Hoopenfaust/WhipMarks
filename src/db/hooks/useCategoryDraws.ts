@@ -27,6 +27,10 @@ export async function setupCategoryDraw(projectId: string, categories: string[])
   })
 }
 
+// Picks the next student/category and consumes it from the pool immediately (so a second
+// draw can't repeat it), but does NOT write to the assignment log yet — the caller commits
+// that with recordCategoryAssignment once the reel animation has finished revealing it, so
+// the log doesn't show the result before the UI does.
 export async function drawNextCategory(projectId: string, rosterIds: string[]): Promise<CategoryAssignment> {
   return db.transaction('rw', [db.categoryDraws, db.categoryAssignments], async () => {
     const draw = await db.categoryDraws.get(projectId)
@@ -45,11 +49,13 @@ export async function drawNextCategory(projectId: string, rosterIds: string[]): 
     const category = pool[catIdx]
     const nextPool = pool.slice(0, catIdx).concat(pool.slice(catIdx + 1))
 
-    const entry: CategoryAssignment = { id: newId(), projectId, studentId, category, createdAt: Date.now() }
-    await db.categoryAssignments.add(entry)
     await db.categoryDraws.update(projectId, { pool: nextPool })
-    return entry
+    return { id: newId(), projectId, studentId, category, createdAt: Date.now() }
   })
+}
+
+export async function recordCategoryAssignment(entry: CategoryAssignment) {
+  await db.categoryAssignments.add(entry)
 }
 
 export async function resetCategoryDraw(projectId: string) {
