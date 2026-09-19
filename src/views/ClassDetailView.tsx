@@ -25,7 +25,7 @@ import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../
 import { newId } from '../utils/id'
 import { cn } from '../utils/cn'
 
-type SortMode = 'default' | 'name' | 'mark-high' | 'mark-low'
+type SortMode = 'default' | 'name' | 'name-last' | 'mark-high' | 'mark-low'
 
 const TABS = [
   { id: 'roster', label: 'Roster' },
@@ -1016,6 +1016,7 @@ export function ClassDetailView() {
                   {([
                     { id: 'default', label: 'Default' },
                     { id: 'name',    label: 'A → Z' },
+                    { id: 'name-last', label: 'Last Name' },
                     { id: 'mark-high', label: 'Mark ↓' },
                     { id: 'mark-low',  label: 'Mark ↑' },
                   ] as { id: SortMode; label: string }[]).map(opt => (
@@ -1044,6 +1045,11 @@ export function ClassDetailView() {
                         const nb = b.firstName ? `${b.firstName} ${b.name}` : b.name
                         return na.localeCompare(nb)
                       })
+                    }
+                    if (sortMode === 'name-last') {
+                      const lastNameOf = (s: typeof students[number]) =>
+                        s.firstName ? s.name : (s.name.trim().split(/\s+/).pop() ?? s.name)
+                      return [...students].sort((a, b) => lastNameOf(a).localeCompare(lastNameOf(b)))
                     }
                     if (sortMode === 'mark-high' || sortMode === 'mark-low') {
                       return [...students].sort((a, b) => {
