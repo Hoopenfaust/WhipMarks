@@ -46,6 +46,7 @@ export function QuickMarkModal({
   const [snippetLabel, setSnippetLabel] = useState('')
   const [markError, setMarkError] = useState<string | null>(null)
   const [improvementText, setImprovementText] = useState('')
+  const [savedImprovementText, setSavedImprovementText] = useState('')
   const [recording, setRecording] = useState(false)       // Room for Improvement
   const [feedbackRecording, setFeedbackRecording] = useState(false) // per-criterion feedback
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,8 +96,8 @@ export function QuickMarkModal({
     recognitionRef.current?.stop()
     setRecording(false) // eslint-disable-line react-hooks/set-state-in-effect
     db.improvementNotes.where('[studentId+projectId]').equals([student.id, projectId]).first()
-      .then(note => setImprovementText(note?.text ?? ''))
-      .catch(() => setImprovementText(''))
+      .then(note => { setImprovementText(note?.text ?? ''); setSavedImprovementText(note?.text ?? '') })
+      .catch(() => { setImprovementText(''); setSavedImprovementText('') })
   }, [student.id, projectId])
 
   // Scroll to initial criterion on first open
@@ -178,7 +179,9 @@ export function QuickMarkModal({
   }
 
   async function saveImprovement() {
+    if (improvementText === savedImprovementText) return
     await upsertImprovementNote(student.id, projectId, improvementText)
+    setSavedImprovementText(improvementText)
   }
 
   async function applyLevel(criterion: RubricCriterion, levelId: string) {
@@ -685,13 +688,16 @@ export function QuickMarkModal({
             />
             <button
               onClick={saveImprovement}
+              disabled={improvementText === savedImprovementText}
               className={cn(
                 'mt-2 w-full font-medium rounded-xl transition-colors',
                 isTouch ? 'py-3 text-sm' : 'py-1.5 text-xs',
-                'bg-gray-100 hover:bg-gray-100/90 text-gray-900'
+                improvementText === savedImprovementText
+                  ? 'bg-gray-800 text-gray-500 cursor-default'
+                  : 'bg-gray-100 hover:bg-gray-100/90 text-gray-900'
               )}
             >
-              Save
+              {improvementText === savedImprovementText ? 'Saved' : 'Save'}
             </button>
           </div>
         </div>
