@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
-import { upsertMark } from '../../db/hooks/useMarks'
+import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { upsertImprovementNote } from '../../db/hooks/useImprovementNotes'
 import { useSubmission, useSubmissionAnnotation, saveSubmission, parseAnnotations } from '../../db/hooks/useSubmissions'
 import { db } from '../../db/db'
@@ -194,6 +194,18 @@ export function QuickMarkModal({
       setMarkError(null)
     } catch {
       setMarkError('Failed to save mark — please try again.')
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  async function clearMark(criterion: RubricCriterion) {
+    setSaving(criterion.id)
+    try {
+      await deleteMark(student.id, projectId, criterion.id)
+      setMarkError(null)
+    } catch {
+      setMarkError('Failed to clear mark — please try again.')
     } finally {
       setSaving(null)
     }
@@ -445,18 +457,31 @@ export function QuickMarkModal({
                       <p className={cn('text-gray-400 mt-0.5 leading-snug', isTouch ? 'text-sm' : 'text-xs')}>{c.description}</p>
                     )}
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="shrink-0 flex items-start gap-2">
                     {mark !== undefined ? (
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className={cn('font-bold tabular-nums', scorePct !== null ? gradeColor(scorePct) : 'text-gray-400', isTouch ? 'text-base' : 'text-sm')}>
-                          {mark.score} / {c.maxMarks}
-                        </span>
-                        {scorePct !== null && (
-                          <span className={cn('text-gray-400/70', isTouch ? 'text-sm' : 'text-xs')}>{scorePct.toFixed(0)}%</span>
-                        )}
-                      </div>
+                      <>
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className={cn('font-bold tabular-nums', scorePct !== null ? gradeColor(scorePct) : 'text-gray-400', isTouch ? 'text-base' : 'text-sm')}>
+                            {mark.score} / {c.maxMarks}
+                          </span>
+                          {scorePct !== null && (
+                            <span className={cn('text-gray-400/70', isTouch ? 'text-sm' : 'text-xs')}>{scorePct.toFixed(0)}%</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => clearMark(c)}
+                          disabled={isSaving}
+                          title="Clear this mark"
+                          className={cn(
+                            'p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/40 transition-colors',
+                            isSaving && 'opacity-50 cursor-wait'
+                          )}
+                        >
+                          <X size={isTouch ? 16 : 14} />
+                        </button>
+                      </>
                     ) : (
-                      <span className={cn('text-gray-400/50', isTouch ? 'text-sm' : 'text-xs')}>not marked</span>
+                      <span className={cn('text-gray-400/50 mt-0.5', isTouch ? 'text-sm' : 'text-xs')}>not marked</span>
                     )}
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 ﻿import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, FileDown, Zap } from 'lucide-react'
+import { Mic, Square, FileDown, Zap, X } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
-import { upsertMark } from '../../db/hooks/useMarks'
+import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
 import { LEVELS } from '../../utils/levels'
 import { cn } from '../../utils/cn'
@@ -47,6 +47,18 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
         setSaveError('Failed to save — please try again.')
         return
       }
+    }
+    onClose()
+  }
+
+  async function clearMark() {
+    recognitionRef.current?.stop()
+    try {
+      await deleteMark(student.id, projectId, criterion.id)
+      setSaveError(null)
+    } catch {
+      setSaveError('Failed to clear mark — please try again.')
+      return
     }
     onClose()
   }
@@ -195,6 +207,16 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
       )}
 
       <div className="flex gap-2">
+        {mark !== undefined && (
+          <button
+            onClick={clearMark}
+            title="Clear this mark"
+            className="flex items-center gap-1 text-xs text-red-400/80 hover:text-red-400 py-1.5 px-2"
+          >
+            <X size={13} />
+            Clear
+          </button>
+        )}
         <button onClick={onClose} className="flex-1 text-xs text-gray-400 hover:text-gray-100 py-1.5">Cancel</button>
         <button
           onClick={() => { save(); onNavigate('next') }}
