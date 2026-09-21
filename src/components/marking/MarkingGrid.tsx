@@ -313,7 +313,10 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                       <button
                         onClick={() => onExportStudent(s)}
                         title="Export assessment report"
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-500 hover:text-indigo-300 hover:bg-indigo-950/50 transition-all hover:scale-110"
+                        className={cn(
+                          'p-1.5 rounded-lg text-gray-500 hover:text-indigo-300 hover:bg-indigo-950/50 transition-all hover:scale-110',
+                          isTouch ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        )}
                       >
                         <FileDown size={16} />
                       </button>
