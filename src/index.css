@@ -352,7 +352,16 @@ body {
     box-shadow: none !important;
     overflow: visible !important;
   }
+
+  /* A report portalled to <body> prints on its own, in normal flow, so it can run onto
+     more than one page (the fixed-position approach above clips to a single page). */
+  body:has(> .print-portal) { visibility: visible; }
+  body:has(> .print-portal) > *:not(.print-portal) { display: none !important; }
+  .print-portal { display: block !important; }
+  .print-portal .print-report { position: static !important; }
 }
+
+.print-portal { display: none; }
 
 /* iPad roster grid: 3 cols portrait, 4 cols landscape, desktop uses xl/2xl Tailwind classes */
 @media (min-width: 640px) and (max-width: 1279px) and (orientation: portrait) {

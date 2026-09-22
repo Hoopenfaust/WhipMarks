@@ -31,6 +31,67 @@ fn save_pdf(filename: String, data: Vec<u8>) -> Result<Option<String>, String> {
     }
 }
 
+/// Show a native save dialog, then write the current page straight to PDF with WebView2's
+/// PrintToPdf (uses the page's print CSS, no print dialog or printer driver).
+/// Returns the path if saved, or None if the user cancelled.
+#[command]
+async fn save_page_pdf(window: tauri::WebviewWindow, filename: String) -> Result<Option<String>, String> {
+    let Some(path) = FileDialog::new()
+        .set_file_name(&filename)
+        .add_filter("PDF", &["pdf"])
+        .save_file()
+    else {
+        return Ok(None);
+    };
+    let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+    let target = path.clone();
+    window
+        .with_webview(move |wv| {
+            #[cfg(windows)]
+            if let Err(e) = print_to_pdf(&wv.controller(), &target, tx.clone()) {
+                let _ = tx.send(Err(e.message().to_string()));
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || rx.recv())
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|_| "PDF export didn't finish".to_string())??;
+    Ok(Some(path.to_string_lossy().to_string()))
+}
+
+#[cfg(windows)]
+fn print_to_pdf(
+    controller: &webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Controller,
+    path: &std::path::Path,
+    tx: std::sync::mpsc::Sender<Result<(), String>>,
+) -> windows::core::Result<()> {
+    use webview2_com::Microsoft::Web::WebView2::Win32::*;
+    use windows::core::{Interface, HSTRING};
+    unsafe {
+        let webview = controller.CoreWebView2()?;
+        let env: ICoreWebView2Environment6 = webview.cast::<ICoreWebView2_2>()?.Environment()?.cast()?;
+        let settings = env.CreatePrintSettings()?;
+        settings.SetShouldPrintHeaderAndFooter(false)?;
+        settings.SetShouldPrintBackgrounds(true)?;
+        settings.SetPageWidth(8.5)?; // letter, matching @page in index.css
+        settings.SetPageHeight(11.0)?;
+        for set in [ICoreWebView2PrintSettings::SetMarginTop, ICoreWebView2PrintSettings::SetMarginBottom,
+                    ICoreWebView2PrintSettings::SetMarginLeft, ICoreWebView2PrintSettings::SetMarginRight] {
+            set(&settings, 0.5)?;
+        }
+        let handler = webview2_com::PrintToPdfCompletedHandler::create(Box::new(move |result, ok| {
+            let _ = tx.send(match result {
+                Err(e) => Err(e.message().to_string()),
+                Ok(()) if !ok => Err("WebView2 couldn't write the PDF".to_string()),
+                Ok(()) => Ok(()),
+            });
+            Ok(())
+        }));
+        webview.cast::<ICoreWebView2_7>()?.PrintToPdf(&HSTRING::from(path.as_os_str()), &settings, &handler)
+    }
+}
+
 /// Open the default mail client (new Outlook, classic Outlook, etc.) with a
 /// pre-filled email. Creates a standards-compliant .eml file and opens it via
 /// the Windows shell, so whichever app handles .eml is used — no COM needed.
@@ -148,7 +209,7 @@ async fn transcribe(app: AppHandle, wav: Vec<u8>) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf, transcribe])
+        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf, save_page_pdf, transcribe])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

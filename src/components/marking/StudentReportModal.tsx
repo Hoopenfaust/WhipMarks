@@ -1,6 +1,12 @@
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Printer, X } from 'lucide-react'
+import { invoke } from '@tauri-apps/api/core'
 import type { Student, Project, RubricCriterion, Mark, TaMark } from '../../types'
 import { calcProjectPercentage } from '../../utils/marks'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isTauri = typeof (window as any).__TAURI_INTERNALS__ !== 'undefined'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -227,6 +233,20 @@ export function StudentReportModal({ onClose, ...reportProps }: StudentReportMod
   const displayName = reportProps.student.firstName
     ? `${reportProps.student.firstName} ${reportProps.student.name}`
     : reportProps.student.name
+  const [saving, setSaving] = useState(false)
+
+  // Desktop: write the PDF directly (no print dialog). Browser: fall back to the print dialog.
+  async function savePdf() {
+    if (!isTauri) { window.print(); return }
+    setSaving(true)
+    try {
+      await invoke('save_page_pdf', { filename: `Marking Sheet_${displayName}_${reportProps.project.name}.pdf` })
+    } catch (err) {
+      alert(`Couldn't save the PDF: ${err}`)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-start justify-center overflow-y-auto py-8 px-4">
@@ -239,11 +259,12 @@ export function StudentReportModal({ onClose, ...reportProps }: StudentReportMod
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-100/80 text-gray-900 text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-lg"
+              onClick={savePdf}
+              disabled={saving}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-100/80 text-gray-900 text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-lg disabled:opacity-50"
             >
               <Printer size={15} />
-              Save as PDF
+              {saving ? 'Saving…' : 'Save as PDF'}
             </button>
             <button
               onClick={onClose}
@@ -258,10 +279,15 @@ export function StudentReportModal({ onClose, ...reportProps }: StudentReportMod
           <StudentReport {...reportProps} />
         </div>
 
-        <p className="print:hidden text-center text-xs text-gray-400/70 mt-3">
-          "Save as PDF" → select Microsoft Print to PDF in the dialog
-        </p>
+        {!isTauri && (
+          <p className="print:hidden text-center text-xs text-gray-400/70 mt-3">
+            "Save as PDF" → select Microsoft Print to PDF in the dialog
+          </p>
+        )}
       </div>
+
+      {/* Print/PDF copy: a direct child of <body> so it paginates (see .print-portal in index.css) */}
+      {createPortal(<div className="print-portal"><StudentReport {...reportProps} /></div>, document.body)}
     </div>
   )
 }
