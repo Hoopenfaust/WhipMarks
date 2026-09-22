@@ -36,23 +36,13 @@ fn friendly(e: &Error) -> String {
 fn stop_current(state: &Dictation) {
     let current = state.0.lock().unwrap().take();
     if let Some((_, r)) = current {
-        // StopAsync waits for the speech service to finalise the last phrase, which can take a
-        // long time on a slow connection — don't block the caller on it.
-        std::thread::spawn(move || {
-            if let Ok(op) = r.ContinuousRecognitionSession().and_then(|s| s.StopAsync()) { let _ = op.get(); }
-            let _ = r.Close();
-        });
+        if let Ok(op) = r.ContinuousRecognitionSession().and_then(|s| s.StopAsync()) { let _ = op.get(); }
+        let _ = r.Close();
     }
 }
 
-const ONE_DAY: TimeSpan = TimeSpan { Duration: 24 * 60 * 60 * 10_000_000 };
-
 fn start_recognizer(app: &AppHandle, id: u32) -> windows::core::Result<SpeechRecognizer> {
     let r = SpeechRecognizer::new()?;
-    // Defaults end the session if nothing is said in the first 5 seconds.
-    let timeouts = r.Timeouts()?;
-    timeouts.SetInitialSilenceTimeout(ONE_DAY)?;
-    timeouts.SetBabbleTimeout(ONE_DAY)?;
     // No constraints added = the default free-form dictation grammar.
     let compiled = r.CompileConstraintsAsync()?.get()?;
     if compiled.Status()? != SpeechRecognitionResultStatus::Success {
@@ -60,7 +50,7 @@ fn start_recognizer(app: &AppHandle, id: u32) -> windows::core::Result<SpeechRec
     }
     let session = r.ContinuousRecognitionSession()?;
     // Default is to stop after a few seconds of silence; keep listening until the user presses Stop.
-    session.SetAutoStopSilenceTimeout(ONE_DAY)?;
+    session.SetAutoStopSilenceTimeout(TimeSpan { Duration: 24 * 60 * 60 * 10_000_000 })?;
 
     let a = app.clone();
     session.ResultGenerated(&TypedEventHandler::new(
@@ -76,21 +66,14 @@ fn start_recognizer(app: &AppHandle, id: u32) -> windows::core::Result<SpeechRec
 
     let a = app.clone();
     session.Completed(&TypedEventHandler::new(
-        move |session: Ref<SpeechContinuousRecognitionSession>, args: Ref<SpeechContinuousRecognitionCompletedEventArgs>| {
+        move |_: Ref<SpeechContinuousRecognitionSession>, args: Ref<SpeechContinuousRecognitionCompletedEventArgs>| {
             let status = args.ok()?.Status()?;
-            let state = a.state::<Dictation>();
-            let still_wanted = matches!(*state.0.lock().unwrap(), Some((cur, _)) if cur == id);
-            // Silence/pause limits can still end the session; keep going until the user presses Stop.
-            if still_wanted && matches!(status, SpeechRecognitionResultStatus::TimeoutExceeded | SpeechRecognitionResultStatus::PauseLimitExceeded) {
-                if let Ok(s) = session.ok() { if s.StartAsync().is_ok() { return Ok(()); } }
-            }
             let error = match status {
                 SpeechRecognitionResultStatus::Success | SpeechRecognitionResultStatus::UserCanceled => None,
                 SpeechRecognitionResultStatus::MicrophoneUnavailable => Some("No microphone found.".to_string()),
-                SpeechRecognitionResultStatus::NetworkFailure => Some("Couldn't reach Microsoft's speech service. Check your internet connection — a VPN can block it.".to_string()),
-                SpeechRecognitionResultStatus::AudioQualityFailure => Some("The microphone audio was too quiet or noisy to recognise.".to_string()),
                 other => Some(format!("Dictation stopped ({other:?}).")),
             };
+            let state = a.state::<Dictation>();
             let mut current = state.0.lock().unwrap();
             if matches!(*current, Some((cur, _)) if cur == id) { *current = None; }
             drop(current);
