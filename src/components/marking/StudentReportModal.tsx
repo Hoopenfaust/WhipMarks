@@ -1,5 +1,5 @@
 import { Printer, X } from 'lucide-react'
-import type { Student, Project, RubricCriterion, Mark, TaMark, Competency, CriterionCompetency } from '../../types'
+import type { Student, Project, RubricCriterion, Mark, TaMark } from '../../types'
 import { calcProjectPercentage } from '../../utils/marks'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -68,12 +68,10 @@ interface ReportProps {
   marks: Mark[]
   taMarks?: TaMark[]
   taName?: string
-  competencies?: Competency[]
-  criterionCompetencies?: CriterionCompetency[]
   improvementNote?: string
 }
 
-function StudentReport({ student, project, className, criteria, marks, taMarks = [], taName, competencies = [], criterionCompetencies = [], improvementNote }: ReportProps) {
+function StudentReport({ student, project, className, criteria, marks, taMarks = [], taName, improvementNote }: ReportProps) {
   const displayName  = student.firstName ? `${student.firstName} ${student.name}` : student.name
   const overallPct   = calcProjectPercentage(marks, criteria)
   const taOverallPct = taMarks.length > 0 ? calcProjectPercentage(taMarks, criteria) : null
@@ -177,53 +175,6 @@ function StudentReport({ student, project, className, criteria, marks, taMarks =
           </div>
         </div>
       </div>
-
-      {/* Competency summary */}
-      {competencies.length > 0 && (
-        <div style={{ padding: '0 28px 18px' }}>
-          <div style={{ borderTop: '2px solid #111', paddingTop: 14, marginTop: 4 }}>
-            <p style={{ fontSize: 9, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 10px' }}>
-              Program Competencies
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {competencies.map(comp => {
-                const mappedCriteriaIds = criterionCompetencies
-                  .filter(r => r.competencyId === comp.id)
-                  .map(r => r.criterionId)
-                const mappedCriteria = criteria.filter(c => mappedCriteriaIds.includes(c.id))
-                if (mappedCriteria.length === 0) return null
-
-                const totalWeight = mappedCriteria.reduce((s, c) => s + c.weight, 0)
-                const weightedPct = mappedCriteria.reduce((s, c) => {
-                  const m = marks.find(mk => mk.criterionId === c.id)
-                  if (!m) return s
-                  return s + (m.score / c.maxMarks) * 100 * (c.weight / totalWeight)
-                }, 0)
-                const hasAllMarks = mappedCriteria.every(c => marks.some(m => m.criterionId === c.id))
-                const achievement = !hasAllMarks ? 'Not assessed'
-                  : weightedPct >= 65 ? 'Achieved'
-                  : weightedPct >= 45 ? 'Partially Achieved'
-                  : 'Not Demonstrated'
-                const achColor = achievement === 'Achieved' ? '#166534'
-                  : achievement === 'Partially Achieved' ? '#92400e'
-                  : achievement === 'Not assessed' ? '#888' : '#991b1b'
-
-                return (
-                  <div key={comp.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#f9f9f9', borderRadius: 4, border: '1px solid #e8e8e8' }}>
-                    <div>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: '#222', margin: 0 }}>{comp.name}</p>
-                      {comp.description && <p style={{ fontSize: 10, color: '#888', margin: '2px 0 0' }}>{comp.description}</p>}
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: achColor, whiteSpace: 'nowrap', marginLeft: 12 }}>
-                      {achievement}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Room for Improvement */}
       <div style={S.improvement}>

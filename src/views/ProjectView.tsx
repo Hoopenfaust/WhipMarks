@@ -9,7 +9,6 @@ import { useProjectSheet } from '../db/hooks/useProjectSheet'
 import { useStudents } from '../db/hooks/useStudents'
 import { useClass } from '../db/hooks/useClasses'
 import { useProjectDescriptors, setDescriptor } from '../db/hooks/useDescriptors'
-import { useCompetencies, useAllCriterionCompetenciesForProject } from '../db/hooks/useCompetencies'
 import { useSnippets } from '../db/hooks/useSnippets'
 import { useProjectImprovementNotes } from '../db/hooks/useImprovementNotes'
 import { AnalyticsTab } from '../components/project/AnalyticsTab'
@@ -41,8 +40,6 @@ export function ProjectView() {
   const sheet       = useProjectSheet(projectId)
   const descriptors = useProjectDescriptors(projectId)
 
-  const competencies   = useCompetencies(project?.classId)
-  const criterionComps = useAllCriterionCompetenciesForProject(criteria.map(c => c.id))
   const snippets            = useSnippets(projectId)
   const improvementNotes    = useProjectImprovementNotes(projectId)
 
@@ -335,8 +332,6 @@ export function ProjectView() {
           marks={marks.filter(m => m.studentId === reportStudent.id)}
           taMarks={taMarks.filter(m => m.studentId === reportStudent.id)}
           taName={taMarks[0]?.taName}
-          competencies={competencies}
-          criterionCompetencies={criterionComps}
           improvementNote={improvementNotes.find(n => n.studentId === reportStudent.id)?.text}
           onClose={() => setReportStudent(null)}
         />
