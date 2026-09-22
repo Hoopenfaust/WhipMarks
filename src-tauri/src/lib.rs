@@ -4,6 +4,8 @@ use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use rfd::FileDialog;
 
+mod dictation;
+
 /// Write bytes to a temp file. Returns the absolute path.
 #[command]
 fn write_temp_file(filename: String, data: Vec<u8>) -> Result<String, String> {
@@ -118,7 +120,11 @@ fn open_outlook(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf])
+        .manage(dictation::Dictation::default())
+        .invoke_handler(tauri::generate_handler![
+            write_temp_file, open_outlook, save_pdf,
+            dictation::dictation_start, dictation::dictation_stop
+        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
