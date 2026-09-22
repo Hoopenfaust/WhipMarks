@@ -1,5 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, FileDown, Zap, X } from 'lucide-react'
+import { Mic, Square, FileDown, Zap, X, Minus, Plus } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
@@ -71,6 +71,19 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
     }
   }
 
+  // +/- buttons save straight away, so the change sticks even if the popover is closed without Save.
+  async function adjustScore(delta: number) {
+    const current = parseFloat(score)
+    const next = Math.min(criterion.maxMarks, Math.max(0, (isNaN(current) ? 0 : current) + delta))
+    setScore(next.toString())
+    try {
+      await upsertMark(student.id, projectId, criterion.id, next, feedback)
+      setSaveError(null)
+    } catch {
+      setSaveError('Failed to save — please try again.')
+    }
+  }
+
   function applyLevel(levelId: string) {
     const level = LEVELS.find(l => l.id === levelId)
     if (!level) return
@@ -120,6 +133,14 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
 
       {/* Score row */}
       <div className="flex items-center gap-3 mb-4">
+        <button
+          onClick={() => adjustScore(-1)}
+          disabled={score === '' || parseFloat(score) <= 0}
+          title="Subtract a point"
+          className="p-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <Minus size={14} />
+        </button>
         <input
           ref={scoreRef}
           type="number"
@@ -132,6 +153,14 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
           placeholder="0"
           className="w-24 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-200"
         />
+        <button
+          onClick={() => adjustScore(1)}
+          disabled={parseFloat(score) >= criterion.maxMarks}
+          title="Add a point"
+          className="p-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <Plus size={14} />
+        </button>
         <span className="text-sm text-gray-400">/ {criterion.maxMarks} marks</span>
       </div>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail, Minus, Plus } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { upsertImprovementNote } from '../../db/hooks/useImprovementNotes'
@@ -135,6 +135,20 @@ export function QuickMarkModal({
     const fraction = descriptor?.score ?? level.defaultScore
     const score = Math.round(criterion.maxMarks * fraction)
     const existingMark = marks.find(m => m.studentId === student.id && m.criterionId === criterion.id)
+    setSaving(criterion.id)
+    try {
+      await upsertMark(student.id, projectId, criterion.id, score, existingMark?.feedback ?? '')
+      setMarkError(null)
+    } catch {
+      setMarkError('Failed to save mark — please try again.')
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  async function adjustMark(criterion: RubricCriterion, delta: number) {
+    const existingMark = marks.find(m => m.studentId === student.id && m.criterionId === criterion.id)
+    const score = Math.min(criterion.maxMarks, Math.max(0, (existingMark?.score ?? 0) + delta))
     setSaving(criterion.id)
     try {
       await upsertMark(student.id, projectId, criterion.id, score, existingMark?.feedback ?? '')
@@ -407,6 +421,14 @@ export function QuickMarkModal({
                   <div className="shrink-0 flex items-start gap-2">
                     {mark !== undefined ? (
                       <>
+                        <button
+                          onClick={() => adjustMark(c, -1)}
+                          disabled={isSaving || mark.score <= 0}
+                          title="Subtract a point"
+                          className="p-1 rounded-lg text-gray-400 hover:text-gray-100 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Minus size={isTouch ? 16 : 14} />
+                        </button>
                         <div className="flex flex-col items-end gap-0.5">
                           <span className={cn('font-bold tabular-nums', scorePct !== null ? gradeColor(scorePct) : 'text-gray-400', isTouch ? 'text-base' : 'text-sm')}>
                             {mark.score} / {c.maxMarks}
@@ -415,6 +437,14 @@ export function QuickMarkModal({
                             <span className={cn('text-gray-400/70', isTouch ? 'text-sm' : 'text-xs')}>{scorePct.toFixed(0)}%</span>
                           )}
                         </div>
+                        <button
+                          onClick={() => adjustMark(c, 1)}
+                          disabled={isSaving || mark.score >= c.maxMarks}
+                          title="Add a point"
+                          className="p-1 rounded-lg text-gray-400 hover:text-gray-100 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Plus size={isTouch ? 16 : 14} />
+                        </button>
                         <button
                           onClick={() => clearMark(c)}
                           disabled={isSaving}
