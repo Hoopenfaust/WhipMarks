@@ -8,6 +8,13 @@ type Recognition = any
 // Errors that won't fix themselves by restarting — give up instead of looping.
 const FATAL_ERRORS = new Set(['not-allowed', 'service-not-allowed', 'audio-capture', 'network', 'language-not-supported'])
 
+// Filler words (um, umm, uh, er, erm, hmm, mm) plus any comma the recogniser attached to them.
+const FILLERS = /\b(?:u+m+|u+h+|e+r+m*|h+m+|m{2,})\b[,.]?/gi
+
+function stripFillers(text: string) {
+  return text.replace(FILLERS, '').replace(/\s{2,}/g, ' ').replace(/\s+([,.!?])/g, '$1').trim()
+}
+
 export function useDictation(onText: (text: string) => void) {
   const [recording, setRecording] = useState(false)
   const wantedRef = useRef(false)
@@ -32,9 +39,9 @@ export function useDictation(onText: (text: string) => void) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     r.onresult = (e: any) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
+      const transcript = stripFillers(Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
         e.results[e.resultIndex + i][0].transcript
-      ).join(' ').trim()
+      ).join(' '))
       if (transcript) onTextRef.current(transcript)
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
