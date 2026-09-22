@@ -1,5 +1,6 @@
 use std::fs;
-use tauri::command;
+use std::sync::atomic::{AtomicU32, Ordering};
+use tauri::{command, AppHandle, Manager};
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use rfd::FileDialog;
@@ -115,10 +116,39 @@ fn open_outlook(
     Ok(())
 }
 
+/// Transcribe a 16 kHz mono WAV with a local whisper.cpp install:
+/// <app local data>/whisper/Release/whisper-cli.exe and <app local data>/whisper/ggml-base.en.bin.
+#[command]
+async fn transcribe(app: AppHandle, wav: Vec<u8>) -> Result<String, String> {
+    static NEXT: AtomicU32 = AtomicU32::new(0);
+    let dir = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("whisper");
+    let cli = dir.join("Release").join("whisper-cli.exe");
+    let model = dir.join("ggml-base.en.bin");
+    if !cli.exists() || !model.exists() {
+        return Err(format!("Whisper isn't installed — expected {} and {}", cli.display(), model.display()));
+    }
+    let wav_path = std::env::temp_dir().join(format!("whipmarks-dictation-{}.wav", NEXT.fetch_add(1, Ordering::Relaxed)));
+    fs::write(&wav_path, &wav).map_err(|e| e.to_string())?;
+    let mut cmd = std::process::Command::new(&cli);
+    cmd.arg("-m").arg(&model).arg("-f").arg(&wav_path).args(["-l", "en", "-nt", "-np"]);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    }
+    let out = cmd.output();
+    let _ = fs::remove_file(&wav_path);
+    let out = out.map_err(|e| format!("Couldn't run Whisper: {e}"))?;
+    if !out.status.success() {
+        return Err(format!("Whisper failed: {}", String::from_utf8_lossy(&out.stderr).lines().last().unwrap_or("")));
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf])
+        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf, transcribe])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
