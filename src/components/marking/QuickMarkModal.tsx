@@ -11,6 +11,7 @@ import { cn } from '../../utils/cn'
 import { SnippetPicker } from './SnippetPicker'
 import { addSnippet } from '../../db/hooks/useSnippets'
 import { useIsTouch } from '../../utils/useIsTouch'
+import { useDictation } from '../../utils/useDictation'
 import { AnnotatorView } from '../annotator/AnnotatorView'
 
 interface Props {
@@ -47,12 +48,10 @@ export function QuickMarkModal({
   const [markError, setMarkError] = useState<string | null>(null)
   const [improvementText, setImprovementText] = useState('')
   const [savedImprovementText, setSavedImprovementText] = useState('')
-  const [recording, setRecording] = useState(false)       // Room for Improvement
-  const [feedbackRecording, setFeedbackRecording] = useState(false) // per-criterion feedback
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const feedbackRecognitionRef = useRef<any>(null)
+  const { recording, toggle: toggleRecording, stop: stopRecording } =  // Room for Improvement
+    useDictation(t => setImprovementText(prev => prev ? prev + ' ' + t : t))
+  const { recording: feedbackRecording, toggle: toggleFeedbackRecording, stop: stopFeedbackRecording } =  // per-criterion feedback
+    useDictation(t => setFeedbackText(prev => prev ? prev + ' ' + t : t))
   const criterionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -93,12 +92,11 @@ export function QuickMarkModal({
 
   // Load improvement note when student changes
   useEffect(() => {
-    recognitionRef.current?.stop()
-    setRecording(false) // eslint-disable-line react-hooks/set-state-in-effect
+    stopRecording()
     db.improvementNotes.where('[studentId+projectId]').equals([student.id, projectId]).first()
       .then(note => { setImprovementText(note?.text ?? ''); setSavedImprovementText(note?.text ?? '') })
       .catch(() => { setImprovementText(''); setSavedImprovementText('') })
-  }, [student.id, projectId])
+  }, [student.id, projectId, stopRecording])
 
   // Scroll to initial criterion on first open
   useEffect(() => {
@@ -122,60 +120,6 @@ export function QuickMarkModal({
       if (dx < 0) next()
       else prev()
     }
-  }
-
-  function toggleRecording() {
-    if (recording) {
-      recognitionRef.current?.stop()
-      setRecording(false)
-      return
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
-    if (!SR) return
-    const r = new SR()
-    r.continuous = true
-    r.interimResults = false
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    r.onresult = (e: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
-        e.results[e.resultIndex + i][0].transcript
-      ).join(' ').trim()
-      setImprovementText((prev: string) => prev ? prev + ' ' + transcript : transcript)
-    }
-    r.onend = () => setRecording(false)
-    r.onerror = () => setRecording(false)
-    recognitionRef.current = r
-    r.start()
-    setRecording(true)
-  }
-
-  function toggleFeedbackRecording() {
-    if (feedbackRecording) {
-      feedbackRecognitionRef.current?.stop()
-      setFeedbackRecording(false)
-      return
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
-    if (!SR) return
-    const r = new SR()
-    r.continuous = true
-    r.interimResults = false
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    r.onresult = (e: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
-        e.results[e.resultIndex + i][0].transcript
-      ).join(' ').trim()
-      setFeedbackText((prev: string) => prev ? prev + ' ' + transcript : transcript)
-    }
-    r.onend = () => setFeedbackRecording(false)
-    r.onerror = () => setFeedbackRecording(false)
-    feedbackRecognitionRef.current = r
-    r.start()
-    setFeedbackRecording(true)
   }
 
   async function saveImprovement() {
@@ -540,7 +484,7 @@ export function QuickMarkModal({
                       value={feedbackText}
                       onChange={e => setFeedbackText(e.target.value)}
                       onKeyDown={e => {
-                        if (e.key === 'Escape') { feedbackRecognitionRef.current?.stop(); setFeedbackRecording(false); setFeedbackOpen(null) }
+                        if (e.key === 'Escape') { stopFeedbackRecording(); setFeedbackOpen(null) }
                         if (e.key === 'Enter' && e.metaKey) saveFeedback(c)
                       }}
                       rows={isTouch ? 4 : 2}
@@ -595,7 +539,7 @@ export function QuickMarkModal({
                           Save
                         </button>
                         <button
-                          onClick={() => { feedbackRecognitionRef.current?.stop(); setFeedbackRecording(false); setFeedbackOpen(null) }}
+                          onClick={() => { stopFeedbackRecording(); setFeedbackOpen(null) }}
                           className={cn(
                             'text-gray-400 hover:text-gray-100 rounded-xl transition-colors',
                             isTouch ? 'px-4 py-3 text-sm' : 'px-3 py-1 text-xs'

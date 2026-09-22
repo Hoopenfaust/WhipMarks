@@ -7,25 +7,7 @@ import { calcProjectPercentage } from '../../utils/marks'
 import { LEVELS } from '../../utils/levels'
 import { cn } from '../../utils/cn'
 import { downloadTaResults } from '../../utils/taExport'
-
-// ─── Speech types (same as MarkingGrid) ──────────────────────────────────────
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean; interimResults: boolean
-  onresult: ((e: SpeechRecognitionEvent) => void) | null
-  onend: (() => void) | null; onerror: (() => void) | null
-  start(): void; stop(): void
-}
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number; results: SpeechRecognitionResultList
-}
-interface SpeechRecognitionResultList {
-  length: number; item(i: number): SpeechRecognitionResult; [i: number]: SpeechRecognitionResult
-}
-interface SpeechRecognitionResult {
-  length: number; item(i: number): SpeechRecognitionAlternative; [i: number]: SpeechRecognitionAlternative
-}
-interface SpeechRecognitionAlternative { transcript: string }
-declare global { interface Window { SpeechRecognition: new () => SpeechRecognition; webkitSpeechRecognition: new () => SpeechRecognition } }
+import { useDictation } from '../../utils/useDictation'
 
 // ─── Cell popover ─────────────────────────────────────────────────────────────
 
@@ -43,14 +25,13 @@ interface PopoverProps {
 function CellPopover({ studentName, criterion, initialScore, initialFeedback, descriptors, onSave, onClose, onNavigate }: PopoverProps) {
   const [score, setScore]       = useState(initialScore)
   const [feedback, setFeedback] = useState(initialFeedback)
-  const [recording, setRecording] = useState(false)
+  const { recording, toggle: toggleRecording, stop: stopRecording } = useDictation(t => setFeedback(prev => prev ? prev + ' ' + t : t))
   const scoreRef = useRef<HTMLInputElement>(null)
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
 
-  useEffect(() => { scoreRef.current?.focus(); scoreRef.current?.select(); return () => { recognitionRef.current?.stop() } }, [])
+  useEffect(() => { scoreRef.current?.focus(); scoreRef.current?.select() }, [])
 
   function save() {
-    recognitionRef.current?.stop()
+    stopRecording()
     const num = parseFloat(score)
     if (!isNaN(num)) onSave(Math.min(criterion.maxMarks, Math.max(0, num)), feedback)
     onClose()
@@ -68,20 +49,6 @@ function CellPopover({ studentName, criterion, initialScore, initialFeedback, de
     const d = descriptors.find(d => d.level === levelId)
     setScore(String(Math.round(criterion.maxMarks * (d?.score ?? level.defaultScore))))
     scoreRef.current?.focus()
-  }
-
-  function toggleRecording() {
-    if (recording) { recognitionRef.current?.stop(); setRecording(false); return }
-    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition
-    if (!SR) return
-    const r = new SR()
-    r.continuous = true; r.interimResults = false
-    r.onresult = (e: SpeechRecognitionEvent) => {
-      const t = Array.from({ length: e.results.length - e.resultIndex }, (_, i) => e.results[e.resultIndex + i][0].transcript).join(' ').trim()
-      setFeedback(prev => prev ? prev + ' ' + t : t)
-    }
-    r.onend = () => setRecording(false); r.onerror = () => setRecording(false)
-    recognitionRef.current = r; r.start(); setRecording(true)
   }
 
   return (

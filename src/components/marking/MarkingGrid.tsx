@@ -8,6 +8,7 @@ import { cn } from '../../utils/cn'
 import { QuickMarkModal } from './QuickMarkModal'
 import { SnippetPicker } from './SnippetPicker'
 import { useIsTouch } from '../../utils/useIsTouch'
+import { useDictation } from '../../utils/useDictation'
 
 
 interface CellPopoverProps {
@@ -24,20 +25,17 @@ interface CellPopoverProps {
 function CellPopover({ student, criterion, mark, criterionDescriptors, projectId, snippets, onClose, onNavigate }: CellPopoverProps) {
   const [score, setScore] = useState(mark?.score?.toString() ?? '')
   const [feedback, setFeedback] = useState(mark?.feedback ?? '')
-  const [recording, setRecording] = useState(false)
+  const { recording, toggle: toggleRecording, stop: stopRecording } = useDictation(t => setFeedback(prev => prev ? prev + ' ' + t : t))
   const [saveError, setSaveError] = useState<string | null>(null)
   const scoreRef = useRef<HTMLInputElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
     scoreRef.current?.focus()
     scoreRef.current?.select()
-    return () => { recognitionRef.current?.stop() }
   }, [])
 
   async function save() {
-    recognitionRef.current?.stop()
+    stopRecording()
     const num = parseFloat(score)
     if (!isNaN(num)) {
       try {
@@ -52,7 +50,7 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
   }
 
   async function clearMark() {
-    recognitionRef.current?.stop()
+    stopRecording()
     try {
       await deleteMark(student.id, projectId, criterion.id)
       setSaveError(null)
@@ -81,33 +79,6 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
     const pts = Math.round(criterion.maxMarks * fraction)
     setScore(pts.toString())
     scoreRef.current?.focus()
-  }
-
-  function toggleRecording() {
-    if (recording) {
-      recognitionRef.current?.stop()
-      setRecording(false)
-      return
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition
-    if (!SR) return
-    const r = new SR()
-    r.continuous = true
-    r.interimResults = false
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    r.onresult = (e: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transcript = Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
-        e.results[e.resultIndex + i][0].transcript
-      ).join(' ').trim()
-      setFeedback(prev => prev ? prev + ' ' + transcript : transcript)
-    }
-    r.onend = () => setRecording(false)
-    r.onerror = () => setRecording(false)
-    recognitionRef.current = r
-    r.start()
-    setRecording(true)
   }
 
   return (
