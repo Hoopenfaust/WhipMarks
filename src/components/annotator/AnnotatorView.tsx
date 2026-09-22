@@ -77,6 +77,7 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
   const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null)
   const pdfBytesRef = useRef<Uint8Array | null>(null)
   const historyRef = useRef<PageAnnotations[][]>([])
+  const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null)
 
   // ─── Load PDF ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -96,13 +97,25 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
     const canvas = pdfCanvasRef.current
     const drawCanvas = drawCanvasRef.current
     if (!canvas || !drawCanvas) return
+    // pdf.js can't run two renders on one canvas — cancel any render still in flight
+    // (initial load + page/zoom changes can overlap), otherwise the page comes out blank.
+    renderTaskRef.current?.cancel()
     canvas.width = viewport.width
     canvas.height = viewport.height
     drawCanvas.width = viewport.width
     drawCanvas.height = viewport.height
     const ctx = canvas.getContext('2d')!
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await page.render({ canvasContext: ctx, viewport } as any).promise
+    const task = page.render({ canvasContext: ctx, viewport } as any)
+    renderTaskRef.current = task
+    try {
+      await task.promise
+    } catch (err) {
+      if ((err as Error)?.name === 'RenderingCancelledException') return
+      throw err
+    } finally {
+      if (renderTaskRef.current === task) renderTaskRef.current = null
+    }
     redrawAnnotations(drawCanvas, pageNum)
   }, [scale])
 
@@ -618,7 +631,7 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
             style={{ background: '#FFB59C', color: '#5F1500' }}
           >
             <Download size={15} />
-            {exporting ? 'Exporting…' : 'Export PDF'}
+            {exporting ? 'Saving…' : 'Save PDF'}
           </button>
 
           {saving && <span className="text-xs text-gray-500">Saving…</span>}

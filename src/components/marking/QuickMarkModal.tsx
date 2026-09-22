@@ -72,7 +72,8 @@ export function QuickMarkModal({
     if (!file || file.type !== 'application/pdf') return
     const data = await file.arrayBuffer()
     const base = file.name.replace(/\.pdf$/i, '')
-    const filename = [base, student.name, project?.name].filter(Boolean).join('_') + '.pdf'
+    const fullName = student.firstName ? `${student.firstName} ${student.name}` : student.name
+    const filename = [base, fullName, project?.name].filter(Boolean).join('_') + '.pdf'
     await saveSubmission(student.id, projectId, data, filename)
     setAnnotating(true)
     if (fileInputRef.current) fileInputRef.current.value = ''
