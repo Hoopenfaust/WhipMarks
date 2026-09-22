@@ -240,7 +240,7 @@ export function StudentReportModal({ onClose, ...reportProps }: StudentReportMod
     if (!isTauri) { window.print(); return }
     setSaving(true)
     try {
-      await invoke('save_page_pdf', { filename: `Marking Sheet_${displayName}_${reportProps.project.name}.pdf` })
+      await invoke('save_page_pdf', { filename: `${displayName}_${reportProps.project.name}.pdf` })
     } catch (err) {
       alert(`Couldn't save the PDF: ${err}`)
     } finally {
