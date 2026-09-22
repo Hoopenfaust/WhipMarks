@@ -4,6 +4,7 @@ import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { upsertImprovementNote } from '../../db/hooks/useImprovementNotes'
 import { useSubmission, useSubmissionAnnotation, saveSubmission, parseAnnotations } from '../../db/hooks/useSubmissions'
+import { useProject } from '../../db/hooks/useProjects'
 import { db } from '../../db/db'
 import { LEVELS } from '../../utils/levels'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
@@ -64,12 +65,15 @@ export function QuickMarkModal({
   const submission = useSubmission(student.id, projectId)
   const submissionAnnotation = useSubmissionAnnotation(student.id, projectId)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const project = useProject(projectId)
 
   async function handleUploadSubmission(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || file.type !== 'application/pdf') return
     const data = await file.arrayBuffer()
-    await saveSubmission(student.id, projectId, data, file.name)
+    const base = file.name.replace(/\.pdf$/i, '')
+    const filename = [base, student.name, project?.name].filter(Boolean).join('_') + '.pdf'
+    await saveSubmission(student.id, projectId, data, filename)
     setAnnotating(true)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }

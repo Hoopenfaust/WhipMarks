@@ -449,7 +449,8 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
 
       const pdfBytes = await pdfDoc.save()
       await invoke('save_pdf', {
-        filename: `${student.name}_${filename}_annotated.pdf`,
+        // Uploads now carry the student's name; older ones don't, so prefix it for those.
+        filename: `${filename.includes(student.name) ? '' : `${student.name}_`}${filename.replace(/\.pdf$/i, '')}_annotated.pdf`,
         data: Array.from(pdfBytes),
       })
     } catch (err) {
