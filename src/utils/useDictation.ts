@@ -27,6 +27,7 @@ export function useDictation(onText: (text: string) => void) {
   const wantedRef = useRef(false)
   const recognitionRef = useRef<Recognition>(null)   // web path
   const sessionRef = useRef<number | null>(null)     // native path
+  const stoppingRef = useRef<number | null>(null)    // stopped session still delivering its last phrase
   const onTextRef = useRef(onText)
   useEffect(() => { onTextRef.current = onText })
 
@@ -40,9 +41,10 @@ export function useDictation(onText: (text: string) => void) {
     if (!isTauri) return
     const unlisteners = [
       listen<{ id: number; text: string }>('dictation-text', e => {
-        if (e.payload.id === sessionRef.current) emit(e.payload.text)
+        if (e.payload.id === sessionRef.current || e.payload.id === stoppingRef.current) emit(e.payload.text)
       }),
       listen<{ id: number; error: string | null }>('dictation-ended', e => {
+        if (e.payload.id === stoppingRef.current) stoppingRef.current = null
         if (e.payload.id !== sessionRef.current) return
         sessionRef.current = null
         wantedRef.current = false
@@ -55,7 +57,7 @@ export function useDictation(onText: (text: string) => void) {
 
   const stop = useCallback(() => {
     wantedRef.current = false
-    if (sessionRef.current !== null) { sessionRef.current = null; invoke('dictation_stop') }
+    if (sessionRef.current !== null) { stoppingRef.current = sessionRef.current; sessionRef.current = null; invoke('dictation_stop') }
     recognitionRef.current?.stop()
     recognitionRef.current = null
     setRecording(false)
