@@ -1,5 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, FileDown, Zap, X, Minus, Plus } from 'lucide-react'
+import { Mic, Square, FileDown, Mail, Zap, X, Minus, Plus } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
@@ -9,6 +9,7 @@ import { QuickMarkModal } from './QuickMarkModal'
 import { SnippetPicker } from './SnippetPicker'
 import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
+import { emailStudentMark } from '../../utils/emailStudent'
 
 
 interface CellPopoverProps {
@@ -245,6 +246,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
   const isTouch = useIsTouch()
   const [activeCell, setActiveCell] = useState<{ studentIdx: number; criterionIdx: number } | null>(null)
   const [quickMarkIdx, setQuickMarkIdx] = useState<number | null>(null)
+  const [emailingId, setEmailingId] = useState<string | null>(null)
   const [quickMarkCriterionIdx, setQuickMarkCriterionIdx] = useState<number | undefined>(undefined)
 
   function getMark(studentId: string, criterionId: string) {
@@ -343,6 +345,22 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                         <FileDown size={16} />
                       </button>
                     )}
+                    <button
+                      onClick={async () => {
+                        setEmailingId(s.id)
+                        try { await emailStudentMark(s, projectId, criteria, marks) } finally { setEmailingId(null) }
+                      }}
+                      disabled={!s.email || emailingId !== null}
+                      title={s.email ? `Email mark and marking sheet to ${s.email}` : 'Add an email address for this student on the class page to email their mark'}
+                      className={cn(
+                        'p-1.5 rounded-lg text-gray-500 hover:text-indigo-300 hover:bg-indigo-950/50 transition-all hover:scale-110 disabled:hover:scale-100 disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:cursor-not-allowed',
+                        emailingId === s.id ? 'opacity-100 animate-pulse'
+                          : !s.email ? (isTouch ? 'opacity-40' : 'opacity-0 group-hover:opacity-40')
+                          : isTouch ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      )}
+                    >
+                      <Mail size={16} />
+                    </button>
                   </div>
                 </td>
                 {criteria.map((c, ci) => {
