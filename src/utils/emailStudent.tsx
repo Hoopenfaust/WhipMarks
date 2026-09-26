@@ -2,7 +2,6 @@ import { createRoot } from 'react-dom/client'
 import { flushSync } from 'react-dom'
 import type { Student, RubricCriterion, Mark } from '../types'
 import { db } from '../db/db'
-import { calcProjectPercentage } from './marks'
 import { StudentReport } from '../components/marking/StudentReportModal'
 
 /**
@@ -17,8 +16,6 @@ export async function emailStudentMark(student: Student, projectId: string, crit
   const firstName = student.firstName || student.name.split(' ')[0]
   const displayName = student.firstName ? `${student.firstName} ${student.name}` : student.name
   const studentMarks = marks.filter(m => m.studentId === student.id)
-  const pct = calcProjectPercentage(studentMarks, criteria)
-  const isComplete = criteria.every(c => studentMarks.some(m => m.criterionId === c.id))
 
   const [project, improvement, submission] = await Promise.all([
     db.projects.get(projectId),
@@ -26,31 +23,7 @@ export async function emailStudentMark(student: Student, projectId: string, crit
     db.studentSubmissions.where('[studentId+projectId]').equals([student.id, projectId]).first(),
   ])
 
-  // Build mark breakdown lines
-  const lines = criteria.map(c => {
-    const mark = studentMarks.find(m => m.criterionId === c.id)
-    const scoreLine = mark
-      ? `${c.name.padEnd(30)} ${String(mark.score).padStart(3)} / ${c.maxMarks}  (${((mark.score / c.maxMarks) * 100).toFixed(0)}%)`
-      : `${c.name.padEnd(30)} not marked`
-    const feedback = mark?.feedback ? `   > ${mark.feedback}` : ''
-    return [scoreLine, feedback].filter(Boolean).join('\n')
-  }).join('\n')
-
-  const body = [
-    `Dear ${firstName},`,
-    '',
-    'Please find your assessment feedback below.',
-    '',
-    '─'.repeat(50),
-    isComplete ? `OVERALL MARK: ${pct.toFixed(1)}%` : 'MARKING IN PROGRESS',
-    '─'.repeat(50),
-    '',
-    lines,
-    '',
-    ...(improvement?.text ? ['─'.repeat(50), 'ROOM FOR IMPROVEMENT:', improvement.text, ''] : []),
-    ...(isTauri ? [submission ? 'Your marking sheet and annotated submission are attached.' : 'Your marking sheet is attached.', ''] : []),
-    'Kind regards',
-  ].join('\n')
+  const body = `Hello ${firstName}\n\nPlease find your ${project?.name ?? 'project'} assessment attached to this email.`
 
   const subject = `Assessment Feedback: ${displayName}`
 
