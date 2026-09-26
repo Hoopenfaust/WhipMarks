@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal, flushSync } from 'react-dom'
 import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail, Minus, Plus } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
@@ -14,6 +15,8 @@ import { addSnippet } from '../../db/hooks/useSnippets'
 import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
 import { AnnotatorView } from '../annotator/AnnotatorView'
+import { StudentReport } from './StudentReportModal'
+import type { ReportProps } from './StudentReportModal'
 
 interface Props {
   students: Student[]
@@ -62,6 +65,7 @@ export function QuickMarkModal({
 
   const student = students[studentIdx]
   const [emailing, setEmailing] = useState(false)
+  const [emailReport, setEmailReport] = useState<ReportProps | null>(null) // marking sheet being printed for an email
   const submission = useSubmission(student.id, projectId)
   const submissionAnnotation = useSubmissionAnnotation(student.id, projectId)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -206,6 +210,8 @@ export function QuickMarkModal({
     if (!student.email) return
     setEmailing(true)
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isTauri = typeof (window as any).__TAURI_INTERNALS__ !== 'undefined'
       const firstName = student.firstName || student.name.split(' ')[0]
       const studentMarksLocal = marks.filter(m => m.studentId === student.id)
       const pct = calcProjectPercentage(studentMarksLocal, criteria)
@@ -236,31 +242,46 @@ export function QuickMarkModal({
         lines,
         '',
         ...(improvement?.text ? ['─'.repeat(50), 'ROOM FOR IMPROVEMENT:', improvement.text, ''] : []),
-        ...(submission ? ['Your annotated submission is attached.', ''] : []),
+        ...(isTauri ? [submission ? 'Your marking sheet and annotated submission are attached.' : 'Your marking sheet is attached.', ''] : []),
         'Kind regards',
       ].join('\n')
 
       const subject = `Assessment Feedback: ${student.firstName ? `${student.firstName} ${student.name}` : student.name}`
 
-      // Desktop (Tauri): open Outlook with attachment
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const isTauri = typeof (window as any).__TAURI_INTERNALS__ !== 'undefined'
+      // Desktop (Tauri): open Outlook with attachments
       if (isTauri) {
         const { invoke } = await import('@tauri-apps/api/core')
-        let attachmentPath: string | undefined
+        const attachmentPaths: string[] = []
+
+        // Marking sheet: render the same report as Project → Save as PDF, then print it to a temp PDF
+        if (project) {
+          const cls = await db.classes.get(project.classId)
+          const taMarks = await db.taMarks.where('studentId').equals(student.id).filter(m => m.projectId === projectId).toArray()
+          const displayName = student.firstName ? `${student.firstName} ${student.name}` : student.name
+          flushSync(() => setEmailReport({
+            student, project, className: cls?.name ?? '', criteria,
+            marks: studentMarksLocal, taMarks, taName: taMarks[0]?.taName, improvementNote: improvement?.text,
+          }))
+          try {
+            await document.fonts.ready
+            attachmentPaths.push(await invoke<string>('page_pdf_to_temp', { filename: `${displayName}_${project.name}.pdf` }))
+          } finally {
+            setEmailReport(null)
+          }
+        }
 
         if (submission) {
           // Export annotated PDF if annotations exist, otherwise use raw submission
           const pdfBytes = new Uint8Array(submission.data)
           const safeName = `${student.name.replace(/[^a-z0-9]/gi, '_')}_submission.pdf`
-          attachmentPath = await invoke<string>('write_temp_file', { filename: safeName, data: Array.from(pdfBytes) })
+          attachmentPaths.push(await invoke<string>('write_temp_file', { filename: safeName, data: Array.from(pdfBytes) }))
         }
 
         await invoke('open_outlook', {
           to: student.email,
           subject,
           body,
-          attachmentPath: attachmentPath ?? null,
+          attachmentPaths,
         })
       } else {
         // PWA / iPad fallback: mailto link (no attachment)
@@ -726,6 +747,9 @@ export function QuickMarkModal({
         </div>
       </div>
     </div>
+
+    {/* Marking sheet for the email attachment: print-only, a direct child of <body> (see .print-portal in index.css) */}
+    {emailReport && createPortal(<div className="print-portal"><StudentReport {...emailReport} /></div>, document.body)}
 
     {/* Full-screen annotator — shown when submission exists and annotate is clicked */}
     {annotating && submission && (

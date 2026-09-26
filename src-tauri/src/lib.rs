@@ -43,8 +43,21 @@ async fn save_page_pdf(window: tauri::WebviewWindow, filename: String) -> Result
     else {
         return Ok(None);
     };
+    write_page_pdf(window, path.clone()).await?;
+    Ok(Some(path.to_string_lossy().to_string()))
+}
+
+/// Write the current page to a PDF in the temp folder (no dialog). Returns the path.
+#[command]
+async fn page_pdf_to_temp(window: tauri::WebviewWindow, filename: String) -> Result<String, String> {
+    let path = std::env::temp_dir().join(filename);
+    write_page_pdf(window, path.clone()).await?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+async fn write_page_pdf(window: tauri::WebviewWindow, path: std::path::PathBuf) -> Result<(), String> {
     let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
-    let target = path.clone();
+    let target = path;
     window
         .with_webview(move |wv| {
             #[cfg(windows)]
@@ -56,8 +69,7 @@ async fn save_page_pdf(window: tauri::WebviewWindow, filename: String) -> Result
     tauri::async_runtime::spawn_blocking(move || rx.recv())
         .await
         .map_err(|e| e.to_string())?
-        .map_err(|_| "PDF export didn't finish".to_string())??;
-    Ok(Some(path.to_string_lossy().to_string()))
+        .map_err(|_| "PDF export didn't finish".to_string())?
 }
 
 #[cfg(windows)]
@@ -100,28 +112,38 @@ fn open_outlook(
     to: String,
     subject: String,
     body: String,
-    attachment_path: Option<String>,
+    attachment_paths: Vec<String>,
 ) -> Result<(), String> {
     let boundary = "WhipMarksMIMEBoundary20250101";
 
-    let eml = if let Some(ref path) = attachment_path {
-        // Multipart/mixed with PDF attachment
-        let attachment_bytes = fs::read(path).map_err(|e| e.to_string())?;
-        let encoded = BASE64.encode(&attachment_bytes);
+    // One base64 PDF part per attachment, chunked into 76-char lines (RFC 2045)
+    let mut parts = String::new();
+    for path in &attachment_paths {
+        let encoded = BASE64.encode(fs::read(path).map_err(|e| e.to_string())?);
         let filename = std::path::Path::new(path)
             .file_name()
             .unwrap_or_default()
             .to_string_lossy()
             .to_string();
-
-        // Chunk base64 into 76-char lines (RFC 2045)
         let chunked: String = encoded
             .as_bytes()
             .chunks(76)
             .map(|c| std::str::from_utf8(c).unwrap_or(""))
             .collect::<Vec<_>>()
             .join("\r\n");
+        parts.push_str(&format!(
+            "--{boundary}\r\n\
+             Content-Type: application/pdf; name=\"{filename}\"\r\n\
+             Content-Transfer-Encoding: base64\r\n\
+             Content-Disposition: attachment; filename=\"{filename}\"\r\n\
+             \r\n\
+             {chunked}\r\n\
+             \r\n"
+        ));
+    }
 
+    let eml = if !parts.is_empty() {
+        // Multipart/mixed with PDF attachments
         format!(
             "To: {to}\r\n\
              Subject: {subject}\r\n\
@@ -133,20 +155,13 @@ fn open_outlook(
              \r\n\
              {body}\r\n\
              \r\n\
-             --{boundary}\r\n\
-             Content-Type: application/pdf; name=\"{filename}\"\r\n\
-             Content-Transfer-Encoding: base64\r\n\
-             Content-Disposition: attachment; filename=\"{filename}\"\r\n\
-             \r\n\
-             {chunked}\r\n\
-             \r\n\
+             {parts}\
              --{boundary}--\r\n",
             to = to,
             subject = subject,
             boundary = boundary,
             body = body,
-            filename = filename,
-            chunked = chunked,
+            parts = parts,
         )
     } else {
         // Plain text only
@@ -209,7 +224,7 @@ async fn transcribe(app: AppHandle, wav: Vec<u8>) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf, save_page_pdf, transcribe])
+        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf, save_page_pdf, page_pdf_to_temp, transcribe])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

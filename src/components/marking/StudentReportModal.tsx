@@ -66,7 +66,7 @@ const S: Record<string, React.CSSProperties> = {
 
 // ─── Report document ──────────────────────────────────────────────────────────
 
-interface ReportProps {
+export interface ReportProps {
   student: Student
   project: Project
   className: string
@@ -77,7 +77,7 @@ interface ReportProps {
   improvementNote?: string
 }
 
-function StudentReport({ student, project, className, criteria, marks, taMarks = [], taName, improvementNote }: ReportProps) {
+export function StudentReport({ student, project, className, criteria, marks, taMarks = [], taName, improvementNote }: ReportProps) {
   const displayName  = student.firstName ? `${student.firstName} ${student.name}` : student.name
   const overallPct   = calcProjectPercentage(marks, criteria)
   const taOverallPct = taMarks.length > 0 ? calcProjectPercentage(taMarks, criteria) : null
