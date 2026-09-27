@@ -159,6 +159,16 @@ export interface ImprovementNote {
   updatedAt: number
 }
 
+/** Last time a student was emailed their mark for a project. `snapshot` fingerprints the
+ *  marks, feedback and improvement note that were sent, to spot changes made afterwards. */
+export interface EmailLog {
+  id: string
+  studentId: string
+  projectId: string
+  emailedAt: number
+  snapshot: string
+}
+
 // ─── Student Submissions & Annotations ──────────────────────────────────────
 
 export interface StudentSubmission {

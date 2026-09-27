@@ -1,5 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, FileDown, Mail, Zap, X, Minus, Plus } from 'lucide-react'
+import { Mic, Square, FileDown, Mail, MailCheck, MailWarning, Zap, X, Minus, Plus } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
@@ -10,6 +10,8 @@ import { SnippetPicker } from './SnippetPicker'
 import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
 import { emailStudentMark } from '../../utils/emailStudent'
+import { useProjectEmailLogs, emailStatus, formatEmailedAt } from '../../db/hooks/useEmailLogs'
+import { useProjectImprovementNotes } from '../../db/hooks/useImprovementNotes'
 
 
 interface CellPopoverProps {
@@ -248,6 +250,14 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
   const [quickMarkIdx, setQuickMarkIdx] = useState<number | null>(null)
   const [emailingId, setEmailingId] = useState<string | null>(null)
   const [quickMarkCriterionIdx, setQuickMarkCriterionIdx] = useState<number | undefined>(undefined)
+  const emailLogs = useProjectEmailLogs(projectId)
+  const improvementNotes = useProjectImprovementNotes(projectId)
+  const statusFor = (studentId: string) => emailStatus(
+    emailLogs.find(l => l.studentId === studentId),
+    marks.filter(m => m.studentId === studentId),
+    improvementNotes.find(n => n.studentId === studentId)?.text,
+  )
+  const emailedCount = students.filter(s => statusFor(s.id).state !== 'none').length
 
   function getMark(studentId: string, criterionId: string) {
     return marks.find(m => m.studentId === studentId && m.criterionId === criterionId)
@@ -279,7 +289,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
     <div className="flex items-center gap-4 px-5 py-3 border-b border-gray-700 shrink-0">
       <div className="flex-1">
         <p className="text-sm font-medium text-gray-100">Marking Grid</p>
-        <p className="text-xs text-gray-400">{students.length} students · {criteria.length} criteria</p>
+        <p className="text-xs text-gray-400">{students.length} students · {criteria.length} criteria · {emailedCount} / {students.length} emailed</p>
       </div>
       <button
         onClick={() => { setQuickMarkCriterionIdx(undefined); setQuickMarkIdx(0) }}
@@ -321,6 +331,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
             const markedCount = criteria.filter(c => studentMarks.some(m => m.criterionId === c.id)).length
             const hasAnyMark = markedCount > 0
             const rowBg = si % 2 === 0 ? '' : 'bg-white/[0.018]'
+            const email = statusFor(s.id)
 
             return (
               <tr key={s.id} className={cn('group hover:bg-gray-200/5 transition-colors', rowBg)}>
@@ -351,15 +362,21 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                         try { await emailStudentMark(s, projectId, criteria, marks) } finally { setEmailingId(null) }
                       }}
                       disabled={!s.email || emailingId !== null}
-                      title={s.email ? `Email mark and marking sheet to ${s.email}` : 'Add an email address for this student on the class page to email their mark'}
+                      title={!s.email ? 'Add an email address for this student on the class page to email their mark'
+                        : email.state === 'sent' ? `Emailed ${formatEmailedAt(email.emailedAt)} — click to email ${s.email} again`
+                        : email.state === 'changed' ? `Marks changed since emailed ${formatEmailedAt(email.emailedAt)} — click to email ${s.email} again`
+                        : `Email mark and marking sheet to ${s.email}`}
                       className={cn(
-                        'p-1.5 rounded-lg text-gray-500 hover:text-indigo-300 hover:bg-indigo-950/50 transition-all hover:scale-110 disabled:hover:scale-100 disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:cursor-not-allowed',
+                        'p-1.5 rounded-lg hover:text-indigo-300 hover:bg-indigo-950/50 transition-all hover:scale-110 disabled:hover:scale-100 disabled:hover:bg-transparent disabled:cursor-not-allowed',
+                        email.state === 'sent' ? 'text-emerald-600 dark:text-emerald-400'
+                          : email.state === 'changed' ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-gray-500 disabled:hover:text-gray-500',
                         emailingId === s.id ? 'opacity-100 animate-pulse'
                           : !s.email ? (isTouch ? 'opacity-40' : 'opacity-0 group-hover:opacity-40')
-                          : isTouch ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          : isTouch || email.state !== 'none' ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       )}
                     >
-                      <Mail size={16} />
+                      {email.state === 'sent' ? <MailCheck size={16} /> : email.state === 'changed' ? <MailWarning size={16} /> : <Mail size={16} />}
                     </button>
                   </div>
                 </td>

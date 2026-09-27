@@ -3,11 +3,13 @@ import { flushSync } from 'react-dom'
 import type { Student, RubricCriterion, Mark } from '../types'
 import { db } from '../db/db'
 import { StudentReport } from '../components/marking/StudentReportModal'
+import { recordEmail, markSnapshot } from '../db/hooks/useEmailLogs'
 
 /**
  * Email a student their mark for a project. Desktop: opens the mail client with the PDF
  * marking sheet (and submission, if uploaded) attached. PWA / iPad: mailto link, no attachments.
  * `marks` may include other students' marks; only this student's are used.
+ * Records the email (see useEmailLogs) once the mail client or mailto link has been opened.
  */
 export async function emailStudentMark(student: Student, projectId: string, criteria: RubricCriterion[], marks: Mark[]) {
   if (!student.email) return
@@ -29,6 +31,7 @@ export async function emailStudentMark(student: Student, projectId: string, crit
 
   if (!isTauri) {
     window.location.href = `mailto:${student.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    await recordEmail(student.id, projectId, markSnapshot(studentMarks, improvement?.text))
     return
   }
 
@@ -65,4 +68,5 @@ export async function emailStudentMark(student: Student, projectId: string, crit
   }
 
   await invoke('open_outlook', { to: student.email, subject, body, attachmentPaths })
+  await recordEmail(student.id, projectId, markSnapshot(studentMarks, improvement?.text))
 }

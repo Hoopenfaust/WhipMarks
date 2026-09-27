@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail, Minus, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail, MailCheck, MailWarning, Minus, Plus } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { upsertImprovementNote } from '../../db/hooks/useImprovementNotes'
@@ -15,6 +15,8 @@ import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
 import { AnnotatorView } from '../annotator/AnnotatorView'
 import { emailStudentMark } from '../../utils/emailStudent'
+import { useProjectEmailLogs, emailStatus, formatEmailedAt } from '../../db/hooks/useEmailLogs'
+import { useProjectImprovementNotes } from '../../db/hooks/useImprovementNotes'
 
 interface Props {
   students: Student[]
@@ -63,6 +65,13 @@ export function QuickMarkModal({
 
   const student = students[studentIdx]
   const [emailing, setEmailing] = useState(false)
+  const emailLogs = useProjectEmailLogs(projectId)
+  const improvementNotes = useProjectImprovementNotes(projectId)
+  const email = emailStatus(
+    emailLogs.find(l => l.studentId === student.id),
+    marks.filter(m => m.studentId === student.id),
+    improvementNotes.find(n => n.studentId === student.id)?.text,
+  )
   const submission = useSubmission(student.id, projectId)
   const submissionAnnotation = useSubmissionAnnotation(student.id, projectId)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -272,14 +281,21 @@ export function QuickMarkModal({
             <button
               onClick={sendEmail}
               disabled={emailing}
-              title={`Email ${student.email}`}
+              title={email.state === 'sent' ? `Emailed ${formatEmailedAt(email.emailedAt)} — click to email ${student.email} again`
+                : email.state === 'changed' ? `Marks changed since emailed ${formatEmailedAt(email.emailedAt)} — click to email ${student.email} again`
+                : `Email ${student.email}`}
               className={cn('rounded-xl flex items-center gap-1.5 font-medium transition-colors disabled:opacity-50',
                 isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
-                'bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 hover:bg-emerald-900/60'
+                email.state === 'changed'
+                  ? 'bg-amber-950/60 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60'
+                  : 'bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 hover:bg-emerald-900/60'
               )}
             >
-              <Mail size={isTouch ? 16 : 13} />
-              {emailing ? 'Opening…' : 'Email'}
+              {email.state === 'sent' ? <MailCheck size={isTouch ? 16 : 13} /> : email.state === 'changed' ? <MailWarning size={isTouch ? 16 : 13} /> : <Mail size={isTouch ? 16 : 13} />}
+              {emailing ? 'Opening…'
+                : email.state === 'sent' ? `Emailed ${new Date(email.emailedAt).toLocaleDateString('en-CA', { day: 'numeric', month: 'short' })}`
+                : email.state === 'changed' ? 'Changed — re-email'
+                : 'Email'}
             </button>
           )}
 

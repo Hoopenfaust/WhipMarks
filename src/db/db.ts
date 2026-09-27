@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import dexieCloud from 'dexie-cloud-addon'
-import type { Class, Student, Project, RubricCriterion, Mark, ProjectSheet, RubricDescriptor, RubricTemplate, ScheduleWeek, TaMark, TaAssignment, Competency, CriterionCompetency, Snippet, ImprovementNote, LibraryProject, LibraryProjectCriterion, LibraryDescriptor, StudentSubmission, SubmissionAnnotation, CategoryDraw, CategoryAssignment, Group, GroupMember } from '../types'
+import type { Class, Student, Project, RubricCriterion, Mark, ProjectSheet, RubricDescriptor, RubricTemplate, ScheduleWeek, TaMark, TaAssignment, Competency, CriterionCompetency, Snippet, ImprovementNote, LibraryProject, LibraryProjectCriterion, LibraryDescriptor, StudentSubmission, SubmissionAnnotation, CategoryDraw, CategoryAssignment, Group, GroupMember, EmailLog } from '../types'
 
 class AppDatabase extends Dexie {
   classes!: Table<Class>
@@ -28,6 +28,7 @@ class AppDatabase extends Dexie {
   categoryAssignments!: Table<CategoryAssignment>
   groups!: Table<Group>
   groupMembers!: Table<GroupMember>
+  emailLogs!: Table<EmailLog>
 
   constructor() {
     super('GradeDesk', { addons: [dexieCloud] })
@@ -279,6 +280,34 @@ class AppDatabase extends Dexie {
         comp.classId = comp.projectId ? projectToClass.get(comp.projectId) : undefined
         delete comp.projectId
       })
+    })
+    this.version(16).stores({
+      classes: '&id, createdAt',
+      students: '&id, classId, sortIndex',
+      projects: '&id, classId, createdAt',
+      criteria: '&id, projectId, sortIndex',
+      marks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      projectSheets: '&id, projectId',
+      descriptors: '&id, criterionId',
+      rubricTemplates: '&id, createdAt',
+      scheduleWeeks: '&id, [classId+weekNumber], classId',
+      taMarks: '&id, [studentId+projectId+criterionId], studentId, projectId',
+      taAssignments: '&projectId',
+      competencies: '&id, classId, sortIndex',
+      criterionCompetencies: '&id, criterionId, competencyId',
+      snippets: '&id, projectId, createdAt',
+      improvementNotes: '&id, [studentId+projectId], projectId',
+      libraryProjects: '&id, createdAt',
+      libraryProjectCriteria: '&id, libraryProjectId, sortIndex',
+      libraryDescriptors: '&id, libraryCriterionId',
+      studentSubmissions: '&id, [studentId+projectId], projectId',
+      submissionAnnotations: '&id, [studentId+projectId]',
+      deletedClassIds: '&id',
+      categoryDraws: '&id, projectId',
+      categoryAssignments: '&id, projectId, studentId, createdAt',
+      groups: '&id, projectId, sortIndex',
+      groupMembers: '&id, groupId, studentId',
+      emailLogs: '&id, [studentId+projectId], projectId',
     })
   }
 }
