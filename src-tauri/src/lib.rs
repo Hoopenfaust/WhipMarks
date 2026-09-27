@@ -117,6 +117,17 @@ fn open_outlook(
 ) -> Result<(), String> {
     let boundary = "WhipMarksMIMEBoundary20250101";
 
+    // HTML body ending in an empty id="Signature" div: Outlook fills that with the user's
+    // automatic signature, so it lands after the message instead of above it.
+    let body_lines: String = body
+        .lines()
+        .map(|l| {
+            let l = l.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+            if l.is_empty() { "<div><br></div>".to_string() } else { format!("<div>{l}</div>") }
+        })
+        .collect();
+    let body = format!("<html><body>{body_lines}<div><br></div><div id=\"Signature\"></div></body></html>");
+
     // One base64 PDF part per attachment, chunked into 76-char lines (RFC 2045)
     let mut parts = String::new();
     for path in &attachment_paths {
@@ -153,7 +164,7 @@ fn open_outlook(
              Content-Type: multipart/mixed; boundary=\"{boundary}\"\r\n\
              \r\n\
              --{boundary}\r\n\
-             Content-Type: text/plain; charset=utf-8\r\n\
+             Content-Type: text/html; charset=utf-8\r\n\
              \r\n\
              {body}\r\n\
              \r\n\
@@ -166,13 +177,13 @@ fn open_outlook(
             parts = parts,
         )
     } else {
-        // Plain text only
+        // Body only
         format!(
             "X-Unsent: 1\r\n\
              To: {to}\r\n\
              Subject: {subject}\r\n\
              MIME-Version: 1.0\r\n\
-             Content-Type: text/plain; charset=utf-8\r\n\
+             Content-Type: text/html; charset=utf-8\r\n\
              \r\n\
              {body}\r\n",
             to = to,
