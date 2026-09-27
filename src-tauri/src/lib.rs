@@ -107,6 +107,7 @@ fn print_to_pdf(
 /// Open the default mail client (new Outlook, classic Outlook, etc.) with a
 /// pre-filled email. Creates a standards-compliant .eml file and opens it via
 /// the Windows shell, so whichever app handles .eml is used — no COM needed.
+/// X-Unsent makes Outlook open it as a new message with a Send button, not a received one.
 #[command]
 fn open_outlook(
     to: String,
@@ -145,7 +146,8 @@ fn open_outlook(
     let eml = if !parts.is_empty() {
         // Multipart/mixed with PDF attachments
         format!(
-            "To: {to}\r\n\
+            "X-Unsent: 1\r\n\
+             To: {to}\r\n\
              Subject: {subject}\r\n\
              MIME-Version: 1.0\r\n\
              Content-Type: multipart/mixed; boundary=\"{boundary}\"\r\n\
@@ -166,7 +168,8 @@ fn open_outlook(
     } else {
         // Plain text only
         format!(
-            "To: {to}\r\n\
+            "X-Unsent: 1\r\n\
+             To: {to}\r\n\
              Subject: {subject}\r\n\
              MIME-Version: 1.0\r\n\
              Content-Type: text/plain; charset=utf-8\r\n\
