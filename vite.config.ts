@@ -259,6 +259,8 @@ Rules:
 }
 
 export default defineConfig({
+  // Single source of truth for the version label: the Tauri app version
+  define: { __APP_VERSION__: JSON.stringify(JSON.parse(readFileSync(resolve(__dirname, 'src-tauri/tauri.conf.json'), 'utf8')).version) },
   plugins: [
     react(),
     anthropicProxyPlugin(),
