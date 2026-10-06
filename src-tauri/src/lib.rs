@@ -206,13 +206,15 @@ fn open_outlook(
     Ok(())
 }
 
-/// Transcribe a 16 kHz mono WAV with a local whisper.cpp install:
-/// <app local data>/whisper/Release/whisper-cli.exe and <app local data>/whisper/ggml-base.en.bin.
+/// Transcribe a 16 kHz mono WAV with the whisper.cpp bundled from src-tauri/whisper/:
+/// <resource dir>/whisper/whisper-cli.exe and <resource dir>/whisper/ggml-base.en.bin.
+/// Not AppData: anything the Claude desktop app writes there is redirected into its MSIX
+/// package folder, so the app only finds it when Claude launched it.
 #[command]
 async fn transcribe(app: AppHandle, wav: Vec<u8>) -> Result<String, String> {
     static NEXT: AtomicU32 = AtomicU32::new(0);
-    let dir = app.path().app_local_data_dir().map_err(|e| e.to_string())?.join("whisper");
-    let cli = dir.join("Release").join("whisper-cli.exe");
+    let dir = app.path().resource_dir().map_err(|e| e.to_string())?.join("whisper");
+    let cli = dir.join("whisper-cli.exe");
     let model = dir.join("ggml-base.en.bin");
     if !cli.exists() || !model.exists() {
         return Err(format!("Whisper isn't installed — expected {} and {}", cli.display(), model.display()));
