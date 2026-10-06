@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "WhipMarks",
-  "version": "0.1.0",
+  "version": "0.25.0",
   "identifier": "com.gradedesk.app",
   "build": {
     "frontendDist": "../dist",
