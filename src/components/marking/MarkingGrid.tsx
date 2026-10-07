@@ -258,6 +258,9 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
     improvementNotes.find(n => n.studentId === studentId)?.text,
   )
   const emailedCount = students.filter(s => statusFor(s.id).state !== 'none').length
+  const markedCount = students.filter(s =>
+    criteria.every(c => marks.some(m => m.studentId === s.id && m.criterionId === c.id))
+  ).length
 
   function getMark(studentId: string, criterionId: string) {
     return marks.find(m => m.studentId === studentId && m.criterionId === criterionId)
@@ -289,7 +292,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
     <div className="flex items-center gap-4 px-5 py-3 border-b border-gray-700 shrink-0">
       <div className="flex-1">
         <p className="text-sm font-medium text-gray-100">Marking Grid</p>
-        <p className="text-xs text-gray-400">{students.length} students · {criteria.length} criteria · {emailedCount} / {students.length} emailed</p>
+        <p className="text-xs text-gray-400">{students.length} students · {criteria.length} criteria · {markedCount} / {students.length} marked · {emailedCount} / {students.length} emailed</p>
       </div>
       <button
         onClick={() => { setQuickMarkCriterionIdx(undefined); setQuickMarkIdx(0) }}
