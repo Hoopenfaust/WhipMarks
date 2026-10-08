@@ -22,6 +22,45 @@ function stripFillers(text: string) {
   return text.replace(FILLERS, '').replace(/\s{2,}/g, ' ').replace(/\s+([,.!?])/g, '$1').trim()
 }
 
+// Whisper (and Web Speech) write US spelling; convert to Canadian. Canadian keeps -ize/-yze,
+// so only -our, -re, doubled-l, -ce and a few one-offs change. Suffixes are listed explicitly
+// because Canadian drops the u in e.g. honorary, laborious, humorous.
+const OUR_STEMS = ['behavior', 'color', 'endeavor', 'favor', 'flavor', 'harbor', 'honor', 'humor', 'labor', 'neighbor', 'odor', 'rumor', 'savor', 'armor', 'vapor', 'parlor', 'valor', 'rigor', 'clamor']
+const OUR_SUFFIX = '(s|ed|ing|ful|fully|less|able|ably|al|ally|ite|ites|er|ers|hood|hoods|ist|ists|way|ways)?'
+const RE_WORDS: Record<string, string> = {
+  center: 'centre', centers: 'centres', centered: 'centred', centering: 'centring',
+  theater: 'theatre', theaters: 'theatres', fiber: 'fibre', fibers: 'fibres', fiberglass: 'fibreglass',
+  caliber: 'calibre', somber: 'sombre', meager: 'meagre', luster: 'lustre', specter: 'spectre',
+  meters: 'metres', millimeter: 'millimetre', millimeters: 'millimetres', centimeter: 'centimetre',
+  centimeters: 'centimetres', kilometer: 'kilometre', kilometers: 'kilometres', liter: 'litre', liters: 'litres',
+  maneuver: 'manoeuvre', maneuvers: 'manoeuvres', maneuvered: 'manoeuvred', maneuvering: 'manoeuvring',
+}
+const DOUBLE_L_STEMS = ['travel', 'model', 'label', 'cancel', 'fuel', 'level', 'signal', 'counsel', 'channel', 'tunnel', 'panel', 'marshal', 'total', 'jewel', 'dial', 'duel', 'enamel', 'funnel', 'pedal', 'shovel', 'snorkel', 'tassel', 'bevel', 'chisel', 'stencil', 'pencil', 'equal']
+const OTHER_WORDS: Record<string, string> = {
+  gray: 'grey', grays: 'greys', grayed: 'greyed', grayish: 'greyish', grayscale: 'greyscale',
+  defense: 'defence', offense: 'offence', catalog: 'catalogue', catalogs: 'catalogues', dialog: 'dialogue', dialogs: 'dialogues',
+  analog: 'analogue', mold: 'mould', molds: 'moulds', molded: 'moulded', molding: 'moulding', moldings: 'mouldings',
+  jewelry: 'jewellery', marvelous: 'marvellous', marvelously: 'marvellously', woolen: 'woollen',
+  fulfill: 'fulfil', fulfills: 'fulfils', enroll: 'enrol', enrolls: 'enrols', skillful: 'skilful', skillfully: 'skilfully',
+  willful: 'wilful', installment: 'instalment', enrollment: 'enrolment', fulfillment: 'fulfilment',
+  ...RE_WORDS,
+}
+const SPELLINGS: [RegExp, (m: string, ...g: string[]) => string][] = [
+  [new RegExp(`\\b(${OUR_STEMS.join('|')})${OUR_SUFFIX}\\b`, 'gi'), (_, stem, suf = '') => stem.slice(0, -1) + (stem.endsWith('R') ? 'UR' : 'ur') + suf],
+  [new RegExp(`\\b(${DOUBLE_L_STEMS.join('|')})(ed|ing|er|ers)\\b`, 'gi'), (_, stem, suf) => stem + stem.slice(-1) + suf],
+  [new RegExp(`\\b(${Object.keys(OTHER_WORDS).join('|')})\\b`, 'gi'), m => matchCase(m, OTHER_WORDS[m.toLowerCase()])],
+]
+
+function matchCase(original: string, replacement: string) {
+  if (original === original.toUpperCase() && original.length > 1) return replacement.toUpperCase()
+  if (original[0] === original[0].toUpperCase()) return replacement[0].toUpperCase() + replacement.slice(1)
+  return replacement
+}
+
+function canadianSpelling(text: string) {
+  return SPELLINGS.reduce((t, [re, fn]) => t.replace(re, fn), text)
+}
+
 // Whisper marks non-speech as e.g. "[BLANK_AUDIO]" or "(wind blowing)".
 function stripWhisperTags(text: string) {
   return text.replace(/\[[^\]]*\]|\([^)]*\)/g, ' ')
@@ -94,7 +133,7 @@ export function useDictation(onText: (text: string) => void) {
       const wav = toWav(chunks)
       queue = queue.then(async () => {
         try {
-          const text = stripFillers(stripWhisperTags(await invoke<string>('transcribe', { wav: Array.from(wav) })))
+          const text = canadianSpelling(stripFillers(stripWhisperTags(await invoke<string>('transcribe', { wav: Array.from(wav) }))))
           if (text) onTextRef.current(text)
         } catch (err) {
           stop()
@@ -138,9 +177,9 @@ export function useDictation(onText: (text: string) => void) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     r.onresult = (e: any) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const transcript = stripFillers(Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
+      const transcript = canadianSpelling(stripFillers(Array.from({ length: e.results.length - e.resultIndex }, (_: any, i: number) =>
         e.results[e.resultIndex + i][0].transcript
-      ).join(' '))
+      ).join(' ')))
       if (transcript) onTextRef.current(transcript)
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
