@@ -242,14 +242,25 @@ interface Props {
   descriptors?: RubricDescriptor[]
   snippets?: Snippet[]
   onExportStudent?: (student: Student) => void
+  /** Open Quick Mark on this student once they've loaded (e.g. arriving from a student card). */
+  openStudentId?: string | null
+  onOpenedStudent?: () => void
 }
 
-export function MarkingGrid({ students, criteria, marks, projectId, descriptors = [], snippets = [], onExportStudent }: Props) {
+export function MarkingGrid({ students, criteria, marks, projectId, descriptors = [], snippets = [], onExportStudent, openStudentId, onOpenedStudent }: Props) {
   const isTouch = useIsTouch()
   const [activeCell, setActiveCell] = useState<{ studentIdx: number; criterionIdx: number } | null>(null)
   const [quickMarkIdx, setQuickMarkIdx] = useState<number | null>(null)
   const [emailingId, setEmailingId] = useState<string | null>(null)
   const [quickMarkCriterionIdx, setQuickMarkCriterionIdx] = useState<number | undefined>(undefined)
+  useEffect(() => {
+    if (!openStudentId || criteria.length === 0) return
+    const idx = students.findIndex(s => s.id === openStudentId)
+    if (idx === -1) return
+    setQuickMarkCriterionIdx(undefined)
+    setQuickMarkIdx(idx)
+    onOpenedStudent?.()
+  }, [openStudentId, students, criteria.length, onOpenedStudent])
   const emailLogs = useProjectEmailLogs(projectId)
   const improvementNotes = useProjectImprovementNotes(projectId)
   const statusFor = (studentId: string) => emailStatus(

@@ -630,7 +630,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                 </span>
               )}
               <Link
-                to={`/classes/${classId}/projects/${project.id}?tab=marking`}
+                to={`/classes/${classId}/projects/${project.id}?tab=marking&student=${student.id}`}
                 className="btn-accent ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:brightness-110 shrink-0"
               >
                 <BarChart2 size={12} />

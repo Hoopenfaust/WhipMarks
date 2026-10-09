@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { ChevronRight, UserCheck, Pencil, Check, FileOutput } from 'lucide-react'
 import { useProject, updateProject } from '../db/hooks/useProjects'
@@ -46,6 +46,8 @@ export function ProjectView() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') ?? 'builder'
   function setTab(t: string) { setSearchParams({ tab: t }) }
+  // Drop ?student= once Quick Mark has opened, so it doesn't reopen on tab switches.
+  const clearStudentParam = useCallback(() => setSearchParams({ tab: 'marking' }, { replace: true }), [setSearchParams])
 
   const [generating, setGenerating]       = useState(false)
   const [genError, setGenError]           = useState<string | null>(null)
@@ -284,6 +286,8 @@ export function ProjectView() {
             students={students} criteria={criteria} marks={marks}
             projectId={projectId!} descriptors={descriptors} snippets={snippets}
             onExportStudent={setReportStudent}
+            openStudentId={searchParams.get('student')}
+            onOpenedStudent={clearStudentParam}
           />
         </div>
       )}
