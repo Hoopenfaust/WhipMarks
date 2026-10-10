@@ -351,6 +351,13 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
               <tr key={s.id} className={cn('group hover:bg-gray-200/5 transition-colors', rowBg)}>
                 <td className={cn('border-b border-r border-gray-700 font-medium whitespace-nowrap', rowBg, isTouch ? 'px-4 py-5 text-base' : 'px-4 py-2.5 text-sm')}>
                   <div className="flex items-center gap-2">
+                    {s.photo ? (
+                      <img src={s.photo} alt="" className={cn('rounded-full object-cover shrink-0', isTouch ? 'w-9 h-9' : 'w-7 h-7')} />
+                    ) : (
+                      <div className={cn('rounded-full flex items-center justify-center font-semibold shrink-0 bg-gray-800 text-gray-400', isTouch ? 'w-9 h-9 text-sm' : 'w-7 h-7 text-xs')}>
+                        {[s.firstName, s.name].filter(Boolean).map(n => n![0].toUpperCase()).join('').slice(0, 2) || '?'}
+                      </div>
+                    )}
                     <button
                       onClick={() => setQuickMarkIdx(si)}
                       title="Quick Mark this student"
