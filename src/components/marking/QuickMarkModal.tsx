@@ -251,24 +251,33 @@ export function QuickMarkModal({
             <ChevronLeft size={isTouch ? 24 : 20} />
           </button>
 
-          <div className="flex-1 text-center min-w-0">
-            <p className={cn('font-semibold text-gray-100 truncate', isTouch ? 'text-lg' : 'text-base')}>
-              {student.firstName ? `${student.firstName} ${student.name}` : student.name}
-            </p>
-            <div className="flex items-center justify-center gap-2 mt-0.5">
-              <span className={cn('text-gray-400/70', isTouch ? 'text-sm' : 'text-xs')}>
-                {studentIdx + 1} of {students.length}
-              </span>
-              {isComplete ? (
-                <span className={cn('font-semibold flex items-center gap-1', gradeColor(pct!), isTouch ? 'text-sm' : 'text-xs')}>
-                  <CheckCircle2 size={isTouch ? 14 : 11} />
-                  {pct!.toFixed(1)}%
-                </span>
-              ) : (
+          <div className="flex-1 flex items-center justify-center gap-3 min-w-0">
+            {student.photo ? (
+              <img src={student.photo} alt="" className={cn('rounded-full object-cover shrink-0', isTouch ? 'w-14 h-14' : 'w-12 h-12')} />
+            ) : (
+              <div className={cn('rounded-full flex items-center justify-center font-semibold shrink-0 bg-gray-800 text-gray-400', isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base')}>
+                {[student.firstName, student.name].filter(Boolean).map(n => n![0].toUpperCase()).join('').slice(0, 2) || '?'}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className={cn('font-semibold text-gray-100 truncate', isTouch ? 'text-lg' : 'text-base')}>
+                {student.firstName ? `${student.firstName} ${student.name}` : student.name}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
                 <span className={cn('text-gray-400/70', isTouch ? 'text-sm' : 'text-xs')}>
-                  {completedCount}/{criteria.length} criteria
+                  {studentIdx + 1} of {students.length}
                 </span>
-              )}
+                {isComplete ? (
+                  <span className={cn('font-semibold flex items-center gap-1', gradeColor(pct!), isTouch ? 'text-sm' : 'text-xs')}>
+                    <CheckCircle2 size={isTouch ? 14 : 11} />
+                    {pct!.toFixed(1)}%
+                  </span>
+                ) : (
+                  <span className={cn('text-gray-400/70', isTouch ? 'text-sm' : 'text-xs')}>
+                    {completedCount}/{criteria.length} criteria
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
