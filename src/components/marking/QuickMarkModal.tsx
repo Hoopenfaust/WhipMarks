@@ -382,9 +382,9 @@ export function QuickMarkModal({
                     {mark !== undefined ? (
                       <>
                         <button
-                          onClick={() => adjustMark(c, -1)}
+                          onClick={() => adjustMark(c, -0.5)}
                           disabled={isSaving || mark.score <= 0}
-                          title="Subtract a point"
+                          title="Subtract half a point"
                           className="p-1 rounded-lg text-gray-400 hover:text-gray-100 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                           <Minus size={isTouch ? 16 : 14} />
@@ -398,9 +398,9 @@ export function QuickMarkModal({
                           )}
                         </div>
                         <button
-                          onClick={() => adjustMark(c, 1)}
+                          onClick={() => adjustMark(c, 0.5)}
                           disabled={isSaving || mark.score >= c.maxMarks}
-                          title="Add a point"
+                          title="Add half a point"
                           className="p-1 rounded-lg text-gray-400 hover:text-gray-100 hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                         >
                           <Plus size={isTouch ? 16 : 14} />

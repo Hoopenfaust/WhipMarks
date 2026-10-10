@@ -137,9 +137,9 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
       {/* Score row */}
       <div className="flex items-center gap-3 mb-4">
         <button
-          onClick={() => adjustScore(-1)}
+          onClick={() => adjustScore(-0.5)}
           disabled={score === '' || parseFloat(score) <= 0}
-          title="Subtract a point"
+          title="Subtract half a point"
           className="p-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Minus size={14} />
@@ -157,9 +157,9 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
           className="w-24 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-gray-200"
         />
         <button
-          onClick={() => adjustScore(1)}
+          onClick={() => adjustScore(0.5)}
           disabled={parseFloat(score) >= criterion.maxMarks}
-          title="Add a point"
+          title="Add half a point"
           className="p-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Plus size={14} />
