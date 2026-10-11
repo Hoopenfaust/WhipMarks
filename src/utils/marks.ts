@@ -56,24 +56,27 @@ export function weightTotal(projects: Project[]): number {
   return projects.filter(p => p.semesterWeight > 0).reduce((s, p) => s + p.semesterWeight, 0)
 }
 
+// The student's standing so far: a weighted average over only the criteria that have been marked,
+// so work that hasn't been marked yet doesn't drag the mark down as zero.
 export function calcStudentSemesterMark(
   studentId: string,
   projects: Project[],
   allMarks: Mark[],
   allCriteria: RubricCriterion[]
 ): number | null {
-  const active = projects.filter(p => p.semesterWeight > 0)
-  if (active.length === 0) return null
-  const anyMarked = active.some(p => {
+  let earned = 0
+  let possible = 0
+  for (const p of projects.filter(p => p.semesterWeight > 0)) {
     const criteria = allCriteria.filter(c => c.projectId === p.id)
-    return criteria.some(c => allMarks.some(m => m.studentId === studentId && m.criterionId === c.id))
-  })
-  if (!anyMarked) return null
-  return calcSemesterMark(active.map(p => ({
-    weight: p.semesterWeight,
-    percentage: calcProjectPercentage(
-      allMarks.filter(m => m.studentId === studentId && m.projectId === p.id),
-      allCriteria.filter(c => c.projectId === p.id)
-    ),
-  })))
+    const totalWeight = criteria.reduce((s, c) => s + c.weight, 0)
+    if (totalWeight === 0) continue
+    for (const c of criteria) {
+      const mark = allMarks.find(m => m.studentId === studentId && m.criterionId === c.id)
+      if (!mark) continue
+      const share = p.semesterWeight * (c.weight / totalWeight)
+      possible += share
+      earned += share * (mark.score / c.maxMarks)
+    }
+  }
+  return possible > 0 ? (earned / possible) * 100 : null
 }

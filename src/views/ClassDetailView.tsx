@@ -9,7 +9,7 @@ import { useProjects, createProject, updateProject, deleteProject } from '../db/
 import { bulkAddCriteria } from '../db/hooks/useCriteria'
 import { useAllMarksForClass, upsertMark } from '../db/hooks/useMarks'
 import { db } from '../db/db'
-import { calcProjectPercentage, calcSemesterMark, calcStudentSemesterMark, gradeColor } from '../utils/marks'
+import { calcProjectPercentage, calcStudentSemesterMark, gradeColor } from '../utils/marks'
 import { TabBar } from '../components/ui/TabBar'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -421,19 +421,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
 
   const sorted = [...projects].sort((a, b) => a.createdAt - b.createdAt)
 
-  const semesterProjects = sorted.filter(p => p.semesterWeight > 0)
-  const semesterMark = semesterProjects.length > 0 && semesterProjects.some(p => {
-    const criteria = allCriteria.filter(c => c.projectId === p.id)
-    return criteria.some(c => allMarks.some(m => m.studentId === student.id && m.criterionId === c.id))
-  })
-    ? calcSemesterMark(semesterProjects.map(p => ({
-        weight: p.semesterWeight,
-        percentage: calcProjectPercentage(
-          allMarks.filter(m => m.studentId === student.id && m.projectId === p.id),
-          allCriteria.filter(c => c.projectId === p.id)
-        ),
-      })))
-    : null
+  const semesterMark = calcStudentSemesterMark(student.id, projects, allMarks, allCriteria)
 
   function openEdit(c: RubricCriterion, mark: Mark | undefined) {
     setEditingId(c.id)
