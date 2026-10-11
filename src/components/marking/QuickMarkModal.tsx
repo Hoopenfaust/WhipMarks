@@ -393,7 +393,8 @@ export function QuickMarkModal({
                         >
                           <Minus size={isTouch ? 16 : 14} />
                         </button>
-                        <div className="flex flex-col items-end gap-0.5">
+                        {/* Fixed width (fits e.g. "99.5 / 100") so the −/+ buttons don't shift as the score changes */}
+                        <div className="flex flex-col items-center gap-0.5" style={{ width: `${String(c.maxMarks).length * 2 + 5}ch` }}>
                           <span className={cn('font-bold tabular-nums', scorePct !== null ? gradeColor(scorePct) : 'text-gray-400', isTouch ? 'text-base' : 'text-sm')}>
                             {mark.score} / {c.maxMarks}
                           </span>
