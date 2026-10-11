@@ -10,6 +10,7 @@ import { LEVELS } from '../../utils/levels'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
 import { cn } from '../../utils/cn'
 import { SnippetPicker } from './SnippetPicker'
+import { StudentAvatar } from './StudentAvatar'
 import { addSnippet } from '../../db/hooks/useSnippets'
 import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
@@ -252,13 +253,7 @@ export function QuickMarkModal({
           </button>
 
           <div className="flex-1 flex items-center justify-center gap-3 min-w-0">
-            {student.photo ? (
-              <img src={student.photo} alt="" className={cn('rounded-full object-cover shrink-0', isTouch ? 'w-14 h-14' : 'w-12 h-12')} />
-            ) : (
-              <div className={cn('rounded-full flex items-center justify-center font-semibold shrink-0 bg-gray-800 text-gray-400', isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base')}>
-                {[student.firstName, student.name].filter(Boolean).map(n => n![0].toUpperCase()).join('').slice(0, 2) || '?'}
-              </div>
-            )}
+            <StudentAvatar student={student} className={isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base'} />
             <div className="min-w-0">
               <p className={cn('font-semibold text-gray-100 truncate', isTouch ? 'text-lg' : 'text-base')}>
                 {student.firstName ? `${student.firstName} ${student.name}` : student.name}
