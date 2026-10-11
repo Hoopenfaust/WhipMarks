@@ -58,6 +58,28 @@ const STUDENT_PALETTE = [
   { cardBg: 'rgba(239,68,68,0.07)',  border: 'rgba(239,68,68,0.30)',  avatarBg: 'rgba(239,68,68,0.22)',  avatarText: '#fca5a5' }, // rose
 ]
 
+// How many Monday–Sunday weeks a project runs across (start → due), matching its rows in the
+// schedule calendar, plus the semester weeks it covers when the class has a start date.
+function projectWeekSpan(p: Project, classStartDate: string | undefined) {
+  if (!p.startDate || !p.dueDate) return null
+  const day = 86_400_000
+  const mondayOf = (iso: string) => {
+    const d = new Date(iso + 'T00:00:00')
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+    return d
+  }
+  const startMon = mondayOf(p.startDate), dueMon = mondayOf(p.dueDate)
+  if (dueMon < startMon) return null
+  const weeks = Math.round((dueMon.getTime() - startMon.getTime()) / day / 7) + 1
+  let semesterWeeks: [number, number] | null = null
+  if (classStartDate) {
+    const semMon = mondayOf(classStartDate)
+    const weekNum = (d: Date) => Math.round((d.getTime() - semMon.getTime()) / day / 7) + 1
+    if (weekNum(startMon) >= 1) semesterWeeks = [weekNum(startMon), weekNum(dueMon)]
+  }
+  return { weeks, semesterWeeks }
+}
+
 function studentColor(id: string) {
   let h = 0
   for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
@@ -1216,6 +1238,17 @@ export function ClassDetailView() {
                         </button>
                       </div>
                       <h3 className="text-3xl font-bold text-gray-100 mb-3 leading-tight">{p.name}</h3>
+                      {(() => {
+                        const span = projectWeekSpan(p, classObj.startDate)
+                        return (
+                          <p className="text-sm text-gray-400 mb-3">
+                            {span
+                              ? <><span className="font-semibold text-gray-100">{span.weeks} {span.weeks === 1 ? 'week' : 'weeks'}</span>
+                                  {span.semesterWeeks && ` · ${span.semesterWeeks[0] === span.semesterWeeks[1] ? `Week ${span.semesterWeeks[0]}` : `Weeks ${span.semesterWeeks[0]}–${span.semesterWeeks[1]}`}`}</>
+                              : `Add ${p.startDate ? 'a due date' : p.dueDate ? 'a start date' : 'start and due dates'} to see how many weeks it runs`}
+                          </p>
+                        )
+                      })()}
 
                       {/* Date fields — always visible, inline editable */}
                       <div className="flex flex-wrap gap-3 mt-1" onClick={e => e.stopPropagation()}>
