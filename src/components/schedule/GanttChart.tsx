@@ -18,7 +18,7 @@ const BAR_COLORS = [
   '#4f86e8', '#9b6dea', '#34c48b', '#e89b34',
   '#e868a4', '#34bfd4', '#e86830', '#34b8a6', '#7b82f4',
 ]
-function barColor(id: string): string {
+export function barColor(id: string): string {
   let h = 0
   for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
   return BAR_COLORS[Math.abs(h) % BAR_COLORS.length]

@@ -19,6 +19,7 @@ import { SlideOver } from '../components/ui/SlideOver'
 import { resizeImageToDataUrl } from '../utils/photo'
 import { ClassSchedule } from '../components/schedule/ClassSchedule'
 import { GanttChart } from '../components/schedule/GanttChart'
+import { CalendarView } from '../components/schedule/CalendarView'
 import { CategoryDrawPanel } from '../components/categories/CategoryDrawPanel'
 import { CompetencyTab } from '../components/class/CompetencyTab'
 import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../types'
@@ -831,7 +832,7 @@ export function ClassDetailView() {
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') ?? 'roster')
   const [sortMode, setSortMode] = useState<SortMode>('default')
-  const [scheduleView, setScheduleView] = useState<'weekly' | 'gantt'>('weekly')
+  const [scheduleView, setScheduleView] = useState<'weekly' | 'calendar' | 'gantt'>('weekly')
   const [addStudentName, setAddStudentName] = useState('')
   const [addProjectOpen, setAddProjectOpen] = useState(false)
   const [editingClass, setEditingClass] = useState(false)
@@ -1276,7 +1277,7 @@ export function ClassDetailView() {
           <div className="flex flex-col gap-5">
             {/* Sub-view toggle */}
             <div className="flex items-center gap-2">
-              {(['weekly', 'gantt'] as const).map(v => (
+              {(['weekly', 'calendar', 'gantt'] as const).map(v => (
                 <button
                   key={v}
                   onClick={() => setScheduleView(v)}
@@ -1287,13 +1288,21 @@ export function ClassDetailView() {
                       : 'bg-gray-800 text-gray-400 hover:text-gray-100 hover:bg-gray-750'
                   )}
                 >
-                  {v === 'weekly' ? 'Weekly Schedule' : 'Gantt Chart'}
+                  {v === 'weekly' ? 'Weekly Schedule' : v === 'calendar' ? 'Calendar' : 'Gantt Chart'}
                 </button>
               ))}
             </div>
 
             {scheduleView === 'weekly' && (
               <ClassSchedule
+                classId={classId}
+                startDate={classObj.startDate}
+                projects={projects}
+              />
+            )}
+
+            {scheduleView === 'calendar' && (
+              <CalendarView
                 classId={classId}
                 startDate={classObj.startDate}
                 projects={projects}
