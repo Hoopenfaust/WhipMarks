@@ -55,7 +55,7 @@ export function CalendarView({ classId, startDate, projects }: Props) {
     ])
   }
 
-  const shiftMonth = (n: number) => setMonth(new Date(month.getFullYear(), month.getMonth() + n, 1))
+  const shiftMonth = (n: number) => setMonth(m => new Date(m.getFullYear(), m.getMonth() + n, 1))
 
   return (
     <div className="pb-8">
