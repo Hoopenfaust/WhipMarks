@@ -254,6 +254,9 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
   const [quickMarkIdx, setQuickMarkIdx] = useState<number | null>(null)
   const [emailingId, setEmailingId] = useState<string | null>(null)
   const [quickMarkCriterionIdx, setQuickMarkCriterionIdx] = useState<number | undefined>(undefined)
+  // Students who weren't fully marked when "Unmarked only" was switched on. A snapshot, so a student
+  // you finish stays in the list (and in Quick Mark) until you toggle it again, instead of vanishing mid-mark.
+  const [unmarkedIds, setUnmarkedIds] = useState<Set<string> | null>(null)
   useEffect(() => {
     if (!openStudentId || criteria.length === 0) return
     const idx = students.findIndex(s => s.id === openStudentId)
@@ -273,6 +276,14 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
   const markedCount = students.filter(s =>
     criteria.every(c => marks.some(m => m.studentId === s.id && m.criterionId === c.id))
   ).length
+  const rows = unmarkedIds ? students.filter(s => unmarkedIds.has(s.id)) : students
+
+  function toggleUnmarkedOnly() {
+    setActiveCell(null)
+    setUnmarkedIds(unmarkedIds ? null : new Set(students
+      .filter(s => !criteria.every(c => marks.some(m => m.studentId === s.id && m.criterionId === c.id)))
+      .map(s => s.id)))
+  }
 
   function getMark(studentId: string, criterionId: string) {
     return marks.find(m => m.studentId === studentId && m.criterionId === criterionId)
@@ -285,7 +296,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
   function navigate(dir: 'next' | 'prev') {
     if (!activeCell) return
     const { studentIdx, criterionIdx } = activeCell
-    const totalCells = students.length * criteria.length
+    const totalCells = rows.length * criteria.length
     const flat = studentIdx * criteria.length + criterionIdx
     const next = dir === 'next' ? (flat + 1) % totalCells : (flat - 1 + totalCells) % totalCells
     setActiveCell({ studentIdx: Math.floor(next / criteria.length), criterionIdx: next % criteria.length })
@@ -307,10 +318,22 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
         <p className="text-xs text-gray-400">{students.length} students · {criteria.length} criteria · {markedCount} / {students.length} marked · {emailedCount} / {students.length} emailed</p>
       </div>
       <button
+        onClick={toggleUnmarkedOnly}
+        title={unmarkedIds ? 'Show all students' : 'Show only students who still need marks'}
+        className={cn(
+          'rounded-full border font-medium transition-colors',
+          isTouch ? 'px-5 py-3 text-base' : 'px-4 py-2 text-sm',
+          unmarkedIds ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600'
+        )}
+      >
+        Unmarked only{unmarkedIds && ` (${rows.length})`}
+      </button>
+      <button
         onClick={() => { setQuickMarkCriterionIdx(undefined); setQuickMarkIdx(0) }}
+        disabled={rows.length === 0}
         data-tutorial="quick-mark-btn"
         className={cn(
-          'flex items-center gap-2 rounded-full font-semibold transition-colors',
+          'flex items-center gap-2 rounded-full font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
           isTouch ? 'px-6 py-3.5 text-base' : 'px-5 py-2.5 text-sm'
         )}
         style={{ background: '#FFB59C', color: '#5F1500' }}
@@ -339,7 +362,14 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
           </tr>
         </thead>
         <tbody>
-          {students.map((s, si) => {
+          {rows.length === 0 && (
+            <tr>
+              <td colSpan={criteria.length + 2} className="px-4 py-6 text-center text-sm text-gray-400">
+                Everyone has been marked.
+              </td>
+            </tr>
+          )}
+          {rows.map((s, si) => {
             const studentMarks = marks.filter(m => m.studentId === s.id)
             const pct = calcProjectPercentage(studentMarks, criteria)
             const isComplete = criteria.every(c => studentMarks.some(m => m.criterionId === c.id))
@@ -497,7 +527,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
 
     {quickMarkIdx !== null && (
       <QuickMarkModal
-        students={students}
+        students={rows}
         criteria={criteria}
         marks={marks}
         projectId={projectId}
