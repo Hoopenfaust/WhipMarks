@@ -306,3 +306,15 @@ export interface GroupMember {
   groupId: string
   studentId: string
 }
+
+/** One mark per group per criterion. Saving it copies the score/feedback to each member's own Mark,
+ *  except members whose mark was changed away from the previous group value (an individual override). */
+export interface GroupMark {
+  id: string
+  groupId: string
+  projectId: string
+  criterionId: string
+  score: number
+  feedback: string
+  updatedAt: number
+}

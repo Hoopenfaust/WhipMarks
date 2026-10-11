@@ -28,7 +28,7 @@ export async function updateProject(id: string, data: Partial<Omit<Project, 'id'
 export async function deleteProject(id: string) {
   const criteria = await db.criteria.where('projectId').equals(id).toArray()
   const criterionIds = criteria.map(c => c.id)
-  await db.transaction('rw', [db.projects, db.criteria, db.marks, db.projectSheets, db.descriptors, db.categoryDraws, db.categoryAssignments, db.groups, db.groupMembers, db.criterionCompetencies], async () => {
+  await db.transaction('rw', [db.projects, db.criteria, db.marks, db.projectSheets, db.descriptors, db.categoryDraws, db.categoryAssignments, db.groups, db.groupMembers, db.groupMarks, db.criterionCompetencies], async () => {
     await db.marks.where('projectId').equals(id).delete()
     if (criterionIds.length) {
       await db.descriptors.where('criterionId').anyOf(criterionIds).delete()
@@ -41,6 +41,7 @@ export async function deleteProject(id: string) {
     const groupIds = (await db.groups.where('projectId').equals(id).toArray()).map(g => g.id)
     if (groupIds.length) await db.groupMembers.where('groupId').anyOf(groupIds).delete()
     await db.groups.where('projectId').equals(id).delete()
+    await db.groupMarks.where('projectId').equals(id).delete()
     await db.projects.delete(id)
   })
 }

@@ -1,7 +1,9 @@
 ﻿import { useState, useRef, useEffect } from 'react'
-import { Mic, Square, FileDown, Mail, MailCheck, MailWarning, Zap, X, Minus, Plus } from 'lucide-react'
-import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
+import { Mic, Square, FileDown, Mail, MailCheck, MailWarning, Zap, X, Minus, Plus, Users } from 'lucide-react'
+import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet, Group } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
+import { useProject } from '../../db/hooks/useProjects'
+import { useGroups, useGroupMembers, useGroupMarks, upsertGroupMark, deleteGroupMark } from '../../db/hooks/useGroups'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
 import { LEVELS } from '../../utils/levels'
 import { cn } from '../../utils/cn'
@@ -16,17 +18,19 @@ import { useProjectImprovementNotes } from '../../db/hooks/useImprovementNotes'
 
 
 interface CellPopoverProps {
-  student: Student
+  title: string
   criterion: RubricCriterion
-  mark: Mark | undefined
+  mark: Pick<Mark, 'score' | 'feedback'> | undefined
   criterionDescriptors: RubricDescriptor[]
   projectId: string
   snippets: Snippet[]
+  onSave: (score: number, feedback: string) => Promise<void>
+  onClear: () => Promise<void>
   onClose: () => void
   onNavigate: (dir: 'next' | 'prev') => void
 }
 
-function CellPopover({ student, criterion, mark, criterionDescriptors, projectId, snippets, onClose, onNavigate }: CellPopoverProps) {
+function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, snippets, onSave, onClear, onClose, onNavigate }: CellPopoverProps) {
   const [score, setScore] = useState(mark?.score?.toString() ?? '')
   const [feedback, setFeedback] = useState(mark?.feedback ?? '')
   const { recording, toggle: toggleRecording, stop: stopRecording } = useDictation(t => setFeedback(prev => prev ? prev + ' ' + t : t))
@@ -43,7 +47,7 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
     const num = parseFloat(score)
     if (!isNaN(num)) {
       try {
-        await upsertMark(student.id, projectId, criterion.id, Math.min(criterion.maxMarks, Math.max(0, num)), feedback)
+        await onSave(Math.min(criterion.maxMarks, Math.max(0, num)), feedback)
         setSaveError(null)
       } catch {
         setSaveError('Failed to save — please try again.')
@@ -56,7 +60,7 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
   async function clearMark() {
     stopRecording()
     try {
-      await deleteMark(student.id, projectId, criterion.id)
+      await onClear()
       setSaveError(null)
     } catch {
       setSaveError('Failed to clear mark — please try again.')
@@ -81,7 +85,7 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
     const next = Math.min(criterion.maxMarks, Math.max(0, (isNaN(current) ? 0 : current) + delta))
     setScore(next.toString())
     try {
-      await upsertMark(student.id, projectId, criterion.id, next, feedback)
+      await onSave(next, feedback)
       setSaveError(null)
     } catch {
       setSaveError('Failed to save — please try again.')
@@ -102,7 +106,7 @@ function CellPopover({ student, criterion, mark, criterionDescriptors, projectId
     <div className="absolute z-50 bg-gray-850 border border-gray-700 rounded-xl shadow-2xl shadow-black/60 p-5 w-[36rem] top-full left-0 mt-1" onClick={e => e.stopPropagation()}>
       {/* Header */}
       <div className="mb-4">
-        <p className="text-sm font-semibold text-gray-100">{student.name}</p>
+        <p className="text-sm font-semibold text-gray-100">{title}</p>
         <p className="text-xs text-gray-400">{criterion.name}</p>
         {criterion.description && <p className="text-xs text-gray-400/70 mt-0.5">{criterion.description}</p>}
       </div>
@@ -250,7 +254,7 @@ interface Props {
 
 export function MarkingGrid({ students, criteria, marks, projectId, descriptors = [], snippets = [], onExportStudent, openStudentId, onOpenedStudent }: Props) {
   const isTouch = useIsTouch()
-  const [activeCell, setActiveCell] = useState<{ studentIdx: number; criterionIdx: number } | null>(null)
+  const [activeCell, setActiveCell] = useState<{ rowKey: string; criterionIdx: number } | null>(null)
   const [quickMarkIdx, setQuickMarkIdx] = useState<number | null>(null)
   const [emailingId, setEmailingId] = useState<string | null>(null)
   const [quickMarkCriterionIdx, setQuickMarkCriterionIdx] = useState<number | undefined>(undefined)
@@ -278,6 +282,38 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
   ).length
   const rows = unmarkedIds ? students.filter(s => unmarkedIds.has(s.id)) : students
 
+  // Group projects can be marked a group at a time: a group row writes to all its members, and each
+  // member row below it can still be adjusted individually.
+  const project = useProject(projectId)
+  const groups = useGroups(project?.isGroupProject ? projectId : undefined)
+  const groupMembers = useGroupMembers(groups.map(g => g.id))
+  const groupMarks = useGroupMarks(projectId)
+  const [byGroup, setByGroup] = useState(true)
+  const groupMode = byGroup && groups.length > 0
+  const groupOf = (studentId: string) => {
+    const gm = groupMembers.find(m => m.studentId === studentId)
+    return gm && groups.find(g => g.id === gm.groupId)
+  }
+  type Row =
+    | { kind: 'group'; key: string; group: Group; size: number }
+    | { kind: 'student'; key: string; student: Student; group?: Group }
+  const studentRow = (s: Student, group?: Group): Row => ({ kind: 'student', key: 's:' + s.id, student: s, group })
+  const displayRows: Row[] = groupMode
+    ? [
+        ...groups.flatMap(g => {
+          const members = rows.filter(s => groupOf(s.id)?.id === g.id)
+          if (members.length === 0) return []
+          const size = groupMembers.filter(m => m.groupId === g.id).length
+          return [{ kind: 'group' as const, key: 'g:' + g.id, group: g, size }, ...members.map(s => studentRow(s, g))]
+        }),
+        ...rows.filter(s => !groupOf(s.id)).map(s => studentRow(s)),
+      ]
+    : rows.map(s => studentRow(s))
+
+  function getGroupMark(groupId: string, criterionId: string) {
+    return groupMarks.find(m => m.groupId === groupId && m.criterionId === criterionId)
+  }
+
   function toggleUnmarkedOnly() {
     setActiveCell(null)
     setUnmarkedIds(unmarkedIds ? null : new Set(students
@@ -295,11 +331,16 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
 
   function navigate(dir: 'next' | 'prev') {
     if (!activeCell) return
-    const { studentIdx, criterionIdx } = activeCell
-    const totalCells = rows.length * criteria.length
-    const flat = studentIdx * criteria.length + criterionIdx
+    const { rowKey, criterionIdx } = activeCell
+    // Tab stays among rows of the same kind, so marking groups moves group to group.
+    const kind = displayRows.find(r => r.key === rowKey)?.kind
+    const navRows = displayRows.filter(r => r.kind === kind)
+    const rowIdx = navRows.findIndex(r => r.key === rowKey)
+    if (rowIdx === -1) return
+    const totalCells = navRows.length * criteria.length
+    const flat = rowIdx * criteria.length + criterionIdx
     const next = dir === 'next' ? (flat + 1) % totalCells : (flat - 1 + totalCells) % totalCells
-    setActiveCell({ studentIdx: Math.floor(next / criteria.length), criterionIdx: next % criteria.length })
+    setActiveCell({ rowKey: navRows[Math.floor(next / criteria.length)].key, criterionIdx: next % criteria.length })
   }
 
   if (criteria.length === 0) {
@@ -328,6 +369,20 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
       >
         Unmarked only{unmarkedIds && ` (${rows.length})`}
       </button>
+      {groups.length > 0 && (
+        <button
+          onClick={() => { setActiveCell(null); setByGroup(!byGroup) }}
+          title={groupMode ? 'Show students only' : 'Mark each group at once, with members listed underneath for individual adjustments'}
+          className={cn(
+            'flex items-center gap-2 rounded-full border font-medium transition-colors',
+            isTouch ? 'px-5 py-3 text-base' : 'px-4 py-2 text-sm',
+            groupMode ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600'
+          )}
+        >
+          <Users size={isTouch ? 18 : 15} />
+          By group
+        </button>
+      )}
       <button
         onClick={() => { setQuickMarkCriterionIdx(undefined); setQuickMarkIdx(0) }}
         disabled={rows.length === 0}
@@ -369,18 +424,100 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
               </td>
             </tr>
           )}
-          {rows.map((s, si) => {
+          {displayRows.map((row, ri) => {
+            if (row.kind === 'group') {
+              const g = row.group
+              const gMarks = groupMarks.filter(m => m.groupId === g.id)
+              const gMarkedCount = criteria.filter(c => gMarks.some(m => m.criterionId === c.id)).length
+              const gPct = calcProjectPercentage(gMarks, criteria)
+              return (
+                <tr key={row.key} className="bg-gray-800/60">
+                  <td
+                    className={cn('border-b border-r border-gray-700 whitespace-nowrap', isTouch ? 'px-4 py-5 text-base' : 'px-4 py-2.5 text-sm')}
+                    style={{ boxShadow: `inset 4px 0 0 ${g.color}` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users size={isTouch ? 18 : 16} style={{ color: g.color }} />
+                      <span className="font-semibold text-gray-100">{g.name}</span>
+                      <span className="text-xs text-gray-400">{row.size} {row.size === 1 ? 'student' : 'students'}</span>
+                    </div>
+                  </td>
+                  {criteria.map((c, ci) => {
+                    const gm = getGroupMark(g.id, c.id)
+                    const isActive = activeCell?.rowKey === row.key && activeCell?.criterionIdx === ci
+                    const pctCell = gm ? (gm.score / c.maxMarks) * 100 : null
+                    return (
+                      <td
+                        key={c.id}
+                        title="Mark the whole group"
+                        className={cn(
+                          'relative border-b border-r border-gray-700 cursor-pointer transition-colors',
+                          isTouch ? 'px-4 py-5' : 'px-4 py-2.5',
+                          isActive ? 'bg-gray-800/30' : 'hover:bg-gray-800'
+                        )}
+                        onClick={() => setActiveCell(isActive ? null : { rowKey: row.key, criterionIdx: ci })}
+                      >
+                        {gm ? (
+                          <span className={cn(
+                            'font-semibold',
+                            pctCell! >= 100 ? 'text-emerald-400' :
+                            pctCell! < 50 ? 'text-red-400' : 'text-gray-100'
+                          )}>
+                            {gm.score}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400/50">—</span>
+                        )}
+                        {gm?.feedback && (
+                          <span className="ml-1 text-gray-100 text-xs">✦</span>
+                        )}
+
+                        {isActive && (
+                          <CellPopover
+                            title={`${g.name} — whole group`}
+                            criterion={c}
+                            mark={gm}
+                            criterionDescriptors={getCriterionDescriptors(c.id)}
+                            projectId={projectId}
+                            snippets={snippets}
+                            onSave={(score, feedback) => upsertGroupMark(g.id, projectId, c.id, score, feedback)}
+                            onClear={() => deleteGroupMark(g.id, projectId, c.id)}
+                            onClose={() => setActiveCell(null)}
+                            onNavigate={navigate}
+                          />
+                        )}
+                      </td>
+                    )
+                  })}
+                  <td className="border-b border-gray-700 px-4 py-2.5 whitespace-nowrap">
+                    {gMarkedCount === criteria.length ? (
+                      <span className={cn('font-bold', gradeColor(gPct))}>{gPct.toFixed(1)}%</span>
+                    ) : gMarkedCount > 0 ? (
+                      <span className="text-xs text-gray-400 tabular-nums">{gMarkedCount}/{criteria.length}</span>
+                    ) : (
+                      <span className="text-gray-400/40">—</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            }
+
+            const s = row.student
+            const si = rows.indexOf(s)
             const studentMarks = marks.filter(m => m.studentId === s.id)
             const pct = calcProjectPercentage(studentMarks, criteria)
             const isComplete = criteria.every(c => studentMarks.some(m => m.criterionId === c.id))
             const markedCount = criteria.filter(c => studentMarks.some(m => m.criterionId === c.id)).length
             const hasAnyMark = markedCount > 0
-            const rowBg = si % 2 === 0 ? '' : 'bg-white/[0.018]'
+            const rowBg = ri % 2 === 0 ? '' : 'bg-white/[0.018]'
             const email = statusFor(s.id)
 
             return (
-              <tr key={s.id} className={cn('group hover:bg-gray-200/5 transition-colors', rowBg)}>
-                <td className={cn('border-b border-r border-gray-700 font-medium whitespace-nowrap', rowBg, isTouch ? 'px-4 py-5 text-base' : 'px-4 py-2.5 text-sm')}>
+              <tr key={row.key} className={cn('group hover:bg-gray-200/5 transition-colors', rowBg)}>
+                <td
+                  className={cn('border-b border-r border-gray-700 font-medium whitespace-nowrap', rowBg, isTouch ? 'px-4 py-5 text-base' : 'px-4 py-2.5 text-sm', row.group && 'pl-8')}
+                  style={row.group ? { boxShadow: `inset 4px 0 0 ${row.group.color}` } : undefined}
+                >
                   <div className="flex items-center gap-2">
                     <StudentAvatar student={s} className={isTouch ? 'w-9 h-9 text-sm' : 'w-7 h-7 text-xs'} />
                     <button
@@ -428,13 +565,16 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                 </td>
                 {criteria.map((c, ci) => {
                   const mark = getMark(s.id, c.id)
-                  const isActive = activeCell?.studentIdx === si && activeCell?.criterionIdx === ci
+                  const isActive = activeCell?.rowKey === row.key && activeCell?.criterionIdx === ci
                   const hasMark = mark !== undefined
                   const pctCell = hasMark ? (mark.score / c.maxMarks) * 100 : null
+                  const gm = row.group && getGroupMark(row.group.id, c.id)
+                  const adjusted = gm && mark && mark.score !== gm.score
 
                   return (
                     <td
                       key={c.id}
+                      title={adjusted ? `Adjusted from the group mark of ${gm.score} — changing the group mark won't overwrite it` : undefined}
                       className={cn(
                         'relative border-b border-r border-gray-700 cursor-pointer transition-colors',
                         isTouch ? 'px-4 py-5' : 'px-4 py-2.5',
@@ -445,7 +585,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                           setQuickMarkCriterionIdx(ci)
                           setQuickMarkIdx(si)
                         } else {
-                          setActiveCell(isActive ? null : { studentIdx: si, criterionIdx: ci })
+                          setActiveCell(isActive ? null : { rowKey: row.key, criterionIdx: ci })
                         }
                       }}
                     >
@@ -463,15 +603,20 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                       {mark?.feedback && (
                         <span className="ml-1 text-gray-100 text-xs">✦</span>
                       )}
+                      {adjusted && (
+                        <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-amber-400">adj</span>
+                      )}
 
                       {isActive && (
                         <CellPopover
-                          student={s}
+                          title={s.name}
                           criterion={c}
                           mark={mark}
                           criterionDescriptors={getCriterionDescriptors(c.id)}
                           projectId={projectId}
                           snippets={snippets}
+                          onSave={(score, feedback) => upsertMark(s.id, projectId, c.id, score, feedback)}
+                          onClear={() => deleteMark(s.id, projectId, c.id)}
                           onClose={() => setActiveCell(null)}
                           onNavigate={navigate}
                         />

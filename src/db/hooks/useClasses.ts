@@ -95,6 +95,7 @@ async function purgeClassLocally(id: string) {
     const groupIds = (await db.groups.where('projectId').anyOf(projectIds).toArray()).map(g => g.id)
     if (groupIds.length) await db.groupMembers.where('groupId').anyOf(groupIds).delete()
     await db.groups.where('projectId').anyOf(projectIds).delete()
+    await db.groupMarks.where('projectId').anyOf(projectIds).delete()
     await db.projects.where('id').anyOf(projectIds).delete()
   }
   if (studentIds.length) await db.students.where('id').anyOf(studentIds).delete()

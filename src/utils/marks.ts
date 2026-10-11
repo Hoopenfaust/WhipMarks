@@ -1,7 +1,7 @@
 import type { Mark, RubricCriterion, Project } from '../types'
 
 export function calcProjectPercentage(
-  marks: Mark[],
+  marks: Pick<Mark, 'criterionId' | 'score'>[],
   criteria: RubricCriterion[]
 ): number {
   if (criteria.length === 0) return 0
