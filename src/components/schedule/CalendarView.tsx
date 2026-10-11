@@ -48,11 +48,24 @@ export function CalendarView({ classId, startDate, projects }: Props) {
     return n >= 1 && n <= NUM_WEEKS ? n : null
   }
 
-  function eventsOn(day: Date) {
-    return projects.flatMap(p => [
-      ...(p.startDate && sameDay(parseLocal(p.startDate), day) ? [{ project: p, kind: 'starts' as const }] : []),
-      ...(p.dueDate && sameDay(parseLocal(p.dueDate), day) ? [{ project: p, kind: 'due' as const }] : []),
-    ])
+  // The part of each project (start → due) that falls in this Monday–Sunday week, as day columns 0–6.
+  // Projects without a start date show on their due day only.
+  function segmentsIn(days: Date[]) {
+    const weekStart = days[0], weekEnd = days[6]
+    return projects
+      .filter(p => p.dueDate)
+      .map(p => {
+        const due = parseLocal(p.dueDate)
+        const start = p.startDate ? parseLocal(p.startDate) : due
+        return { project: p, start: start <= due ? start : due, due }
+      })
+      .filter(({ start, due }) => start <= weekEnd && due >= weekStart)
+      .sort((a, b) => a.start.getTime() - b.start.getTime())
+      .map(({ project, start, due }) => {
+        const from = start < weekStart ? 0 : days.findIndex(d => sameDay(d, start))
+        const to = due > weekEnd ? 6 : days.findIndex(d => sameDay(d, due))
+        return { project, from, to, isStart: start >= weekStart, isDue: due <= weekEnd }
+      })
   }
 
   const shiftMonth = (n: number) => setMonth(m => new Date(m.getFullYear(), m.getMonth() + n, 1))
@@ -102,6 +115,9 @@ export function CalendarView({ classId, startDate, projects }: Props) {
         {weeks.map(days => {
           const weekNum = semesterWeekOf(days[0])
           const topic = weekNum ? savedWeeks.find(w => w.weekNumber === weekNum)?.title : undefined
+          const segments = segmentsIn(days)
+          // Row 1 holds the day numbers, then one row per project bar, then a spacer so empty weeks keep their height.
+          const rowSpan = `1 / span ${segments.length + 2}`
           return (
             <div key={days[0].toISOString()} className="border-b border-gray-800 last:border-0">
               {topic && (
@@ -109,7 +125,7 @@ export function CalendarView({ classId, startDate, projects }: Props) {
               )}
               <div className="grid grid-cols-[4.5rem_repeat(7,minmax(0,1fr))]">
                 {/* Semester week */}
-                <div className="flex items-start justify-center pt-2">
+                <div className="flex items-start justify-center pt-2" style={{ gridColumn: 1, gridRow: rowSpan }}>
                   {weekNum && (
                     <span className="w-9 h-6 rounded bg-gray-800/70 border border-gray-700/50 flex items-center justify-center text-[11px] font-bold text-gray-100 tabular-nums" title={`Semester week ${weekNum}`}>
                       {weekNum}
@@ -117,37 +133,56 @@ export function CalendarView({ classId, startDate, projects }: Props) {
                   )}
                 </div>
 
-                {days.map(day => {
+                {days.map((day, i) => {
                   const inMonth = day.getMonth() === month.getMonth()
                   const isToday = sameDay(day, today)
-                  const events = eventsOn(day)
                   return (
                     <div
                       key={day.toISOString()}
+                      style={{ gridColumn: i + 2, gridRow: rowSpan }}
                       className={cn(
-                        'min-h-24 px-1.5 py-1.5 border-l border-gray-800 flex flex-col gap-1',
+                        'min-h-24 px-1.5 py-1.5 border-l border-gray-800',
                         !inMonth && 'opacity-40',
                         (day.getDay() === 0 || day.getDay() === 6) && 'bg-black/[0.03] dark:bg-white/[0.02]'
                       )}
                     >
                       <span className={cn(
-                        'self-start text-xs tabular-nums w-6 h-6 flex items-center justify-center rounded-full',
+                        'text-xs tabular-nums w-6 h-6 flex items-center justify-center rounded-full',
                         isToday ? 'btn-accent font-semibold' : 'text-gray-400'
                       )}>
                         {day.getDate()}
                       </span>
-                      {events.map(({ project, kind }) => (
-                        <span
-                          key={project.id + kind}
-                          title={`${project.name} ${kind === 'due' ? 'due' : 'starts'}`}
-                          className="text-[11px] font-medium leading-tight rounded px-1.5 py-1 truncate"
-                          style={kind === 'due'
-                            ? { background: barColor(project.id), color: '#fff' }
-                            : { border: `1px solid ${barColor(project.id)}`, color: barColor(project.id) }}
-                        >
-                          {kind === 'due' ? 'Due: ' : 'Starts: '}{project.name}
-                        </span>
-                      ))}
+                    </div>
+                  )
+                })}
+
+                {/* Day-number row height, so bars start below the numbers */}
+                <div className="h-9" style={{ gridColumn: 2, gridRow: 1 }} />
+
+                {/* Project bars spanning the days they run */}
+                {segments.map(({ project, from, to, isStart, isDue }, lane) => {
+                  const color = barColor(project.id)
+                  return (
+                    <div
+                      key={project.id}
+                      title={`${project.name}${project.startDate ? ` · ${project.startDate} → ${project.dueDate}` : ` · due ${project.dueDate}`}`}
+                      style={{
+                        gridColumn: `${from + 2} / ${to + 3}`,
+                        gridRow: lane + 2,
+                        background: `${color}2e`,
+                        borderLeft: isStart ? `3px solid ${color}` : undefined,
+                        color,
+                      }}
+                      className={cn(
+                        'relative z-10 mb-1 flex items-center gap-2 px-2 py-1 text-[11px] font-semibold leading-tight min-w-0',
+                        isStart ? 'ml-1 rounded-l' : '',
+                        isDue ? 'mr-1 rounded-r' : ''
+                      )}
+                    >
+                      <span className="truncate">{project.name}</span>
+                      {isDue && (
+                        <span className="ml-auto shrink-0 rounded px-1.5 py-px text-[10px] text-white" style={{ background: color }}>Due</span>
+                      )}
                     </div>
                   )
                 })}
