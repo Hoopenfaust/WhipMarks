@@ -22,6 +22,7 @@ import { GanttChart } from '../components/schedule/GanttChart'
 import { CalendarView } from '../components/schedule/CalendarView'
 import { CategoryDrawPanel } from '../components/categories/CategoryDrawPanel'
 import { CompetencyTab } from '../components/class/CompetencyTab'
+import { CompactCards, RosterList, FaceWall, StandingBoard, ROSTER_VIEWS, type RosterView } from '../components/class/RosterViews'
 import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../types'
 import { newId } from '../utils/id'
 import { cn } from '../utils/cn'
@@ -97,7 +98,7 @@ function StudentAvatar({ student, size = 80, onPhotoClick, onPhotoDrop, uploadin
     .join('')
     .slice(0, 2) || student.name[0]?.toUpperCase() || '?'
 
-  const sizeClass = size >= 160 ? 'w-36 h-36 text-3xl' : size >= 80 ? 'w-20 h-20 text-lg' : 'w-10 h-10 text-sm'
+  const sizeClass = size >= 160 ? 'w-36 h-36 text-3xl' : size >= 100 ? 'w-28 h-28 text-2xl' : size >= 80 ? 'w-20 h-20 text-lg' : size >= 48 ? 'w-12 h-12 text-base' : 'w-10 h-10 text-sm'
   const iconSize  = size >= 80 ? 22 : 12
 
   // Flash a checkmark briefly after a successful upload
@@ -854,6 +855,17 @@ export function ClassDetailView() {
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') ?? 'roster')
   const [sortMode, setSortMode] = useState<SortMode>('default')
+  // Remembered per device, so the roster reopens in the view last used.
+  const [rosterView, setRosterViewState] = useState<RosterView>(() => {
+    try {
+      const saved = localStorage.getItem('whipmarks-roster-view')
+      return ROSTER_VIEWS.some(v => v.id === saved) ? saved as RosterView : 'cards'
+    } catch { return 'cards' }
+  })
+  function setRosterView(v: RosterView) {
+    setRosterViewState(v)
+    try { localStorage.setItem('whipmarks-roster-view', v) } catch { /* not remembered */ }
+  }
   const [scheduleView, setScheduleView] = useState<'weekly' | 'calendar' | 'gantt'>('weekly')
   const [addStudentName, setAddStudentName] = useState('')
   const [addProjectOpen, setAddProjectOpen] = useState(false)
@@ -1044,11 +1056,24 @@ export function ClassDetailView() {
                       {opt.label}
                     </button>
                   ))}
-                  <span className="ml-auto text-xs text-gray-400/50">{students.length} students</span>
+                  <span className="ml-auto text-xs text-gray-400/50 mr-2">{students.length} students</span>
+                  <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-gray-800">
+                    {ROSTER_VIEWS.map(v => (
+                      <button
+                        key={v.id}
+                        onClick={() => setRosterView(v.id)}
+                        className={cn(
+                          'px-3 py-1 rounded-full text-xs font-medium transition-all',
+                          rosterView === v.id ? 'btn-accent' : 'text-gray-400 hover:text-gray-100'
+                        )}
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-              <div className="roster-grid grid grid-cols-2 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                {(() => {
+              {(() => {
                   const sorted = (() => {
                     if (sortMode === 'name') {
                       return [...students].sort((a, b) => {
@@ -1074,8 +1099,31 @@ export function ClassDetailView() {
                     }
                     return students
                   })()
-                  return sorted
-                })().map(s => (
+
+                  if (rosterView !== 'cards') {
+                    const viewProps = {
+                      students: sorted,
+                      semesterMark: getSemesterMark,
+                      projectMarks: getProjectMarks,
+                      avatar: (st: Student, size: number) => (
+                        <StudentAvatar
+                          student={st} size={size} uploading={uploadingStudentId === st.id}
+                          onPhotoClick={() => handlePhotoClick(st.id)} onPhotoDrop={file => handlePhotoDrop(st.id, file)}
+                        />
+                      ),
+                      cardColor: studentColor,
+                      onSelect: setDetailStudentId,
+                      onDelete: setDeleteStudentId,
+                    }
+                    if (rosterView === 'compact') return <CompactCards {...viewProps} />
+                    if (rosterView === 'list') return <RosterList {...viewProps} />
+                    if (rosterView === 'faces') return <FaceWall {...viewProps} />
+                    return <StandingBoard {...viewProps} />
+                  }
+
+                  return (
+              <div className="roster-grid grid grid-cols-2 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                {sorted.map(s => (
                   editStudentId === s.id ? (
                     <div key={s.id} className="bg-gray-800 border border-gray-200/40 rounded-xl p-4 flex flex-col gap-2">
                       <input
@@ -1113,6 +1161,8 @@ export function ClassDetailView() {
                   )
                 ))}
               </div>
+                  )
+              })()}
               </>
             )}
           </div>
