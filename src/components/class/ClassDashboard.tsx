@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ShieldCheck, ShieldAlert, CalendarClock, ChevronRight, Zap } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, CalendarClock, ChevronRight, Zap, Star, TrendingUp, AlertTriangle, Flag } from 'lucide-react'
 import { db } from '../../db/db'
 import type { Class, Student, Project, RubricCriterion, Mark } from '../../types'
 import { calcProjectPercentage, calcStudentSemesterMark } from '../../utils/marks'
@@ -270,7 +270,7 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
             </p>
           </div>
           {trend.length > 0 ? (
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-h-40">
               <defs><linearGradient id="trendfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={ACCENT} stopOpacity=".35" /><stop offset="1" stopColor={ACCENT} stopOpacity="0" /></linearGradient></defs>
               {[50, 75].map(v => { const y = H - 24 - (v / 100) * (H - 40); return <g key={v}><line x1={PAD} x2={W - 6} y1={y} y2={y} stroke="rgba(255,255,255,.12)" strokeDasharray="2 4" /><text x={PAD - 22} y={y + 3} fontSize="9" fill="#918CAB">{v}%</text></g> })}
               {pts.length > 1 && <path d={`${line} L${pts[pts.length - 1][0]} ${H - 22} L${pts[0][0]} ${H - 22}Z`} fill="url(#trendfill)" />}
@@ -285,17 +285,26 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
           <Label>Class standing summary</Label>
           <div className="grid grid-cols-4 gap-3 mt-6 text-center text-[13px] text-gray-300">
             {[
-              { n: standing.high, label: 'High achievers', range: '85%+', badge: 'bg-orange-400', mark: '✓' },
-              { n: standing.track, label: 'On track', range: '65–85%', badge: 'bg-orange-400', mark: '✓' },
-              { n: standing.borderline, label: 'Borderline', range: '50–65%', badge: 'bg-amber-400', mark: '!' },
-              { n: standing.risk, label: 'At risk', range: 'under 50%', badge: 'bg-red-400', mark: '!' },
-            ].map(s => (
-              <div key={s.label}>
-                <div className="relative mx-auto mb-3 w-14 h-14 rounded-full bg-white/[0.05] grid place-items-center text-2xl font-light text-gray-100">
-                  {s.n}
-                  <span className={cn('absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full grid place-items-center text-[11px] font-bold text-gray-950', s.badge)}>{s.mark}</span>
+              { n: standing.high, label: 'High achievers', range: '85%+', icon: Star, rgb: '167,139,250' },
+              { n: standing.track, label: 'On track', range: '65–85%', icon: TrendingUp, rgb: '52,211,153' },
+              { n: standing.borderline, label: 'Borderline', range: '50–65%', icon: AlertTriangle, rgb: '251,191,36' },
+              { n: standing.risk, label: 'At risk', range: 'under 50%', icon: Flag, rgb: '248,113,113' },
+            ].map(({ n, label, range, icon: Icon, rgb }) => (
+              <div key={label} className={cn('flex flex-col items-center', n === 0 && 'opacity-40')}>
+                <div
+                  className="w-14 h-14 rounded-full grid place-items-center border"
+                  style={{
+                    color: `rgb(${rgb})`,
+                    background: `radial-gradient(circle at 50% 35%, rgba(${rgb},0.22), rgba(${rgb},0.06))`,
+                    borderColor: `rgba(${rgb},0.3)`,
+                    boxShadow: n > 0 ? `0 0 22px rgba(${rgb},0.25)` : undefined,
+                  }}
+                >
+                  <Icon size={22} strokeWidth={1.7} />
                 </div>
-                {s.label}<br /><span className="text-gray-400">{s.range}</span>
+                <p className="mt-3 text-3xl font-light leading-none" style={{ color: n > 0 ? `rgb(${rgb})` : undefined }}>{n}</p>
+                <p className="mt-2 text-gray-200">{label}</p>
+                <p className="text-gray-400">{range}</p>
               </div>
             ))}
           </div>
