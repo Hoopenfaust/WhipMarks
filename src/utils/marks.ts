@@ -15,6 +15,23 @@ export function calcProjectPercentage(
   }, 0)
 }
 
+// A project's percentage over only the criteria marked so far, so a partly marked project isn't
+// dragged down by zeros. Same as calcProjectPercentage once every criterion is marked; null if none are.
+export function calcMarkedPercentage(
+  marks: Pick<Mark, 'criterionId' | 'score'>[],
+  criteria: RubricCriterion[]
+): number | null {
+  let earned = 0
+  let possible = 0
+  for (const c of criteria) {
+    const mark = marks.find(m => m.criterionId === c.id)
+    if (!mark) continue
+    possible += c.weight
+    earned += c.weight * (mark.score / c.maxMarks)
+  }
+  return possible > 0 ? (earned / possible) * 100 : null
+}
+
 export function calcSemesterMark(
   projectSummaries: { weight: number; percentage: number }[]
 ): number {

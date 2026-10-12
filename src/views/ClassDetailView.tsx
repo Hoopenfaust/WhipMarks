@@ -9,7 +9,7 @@ import { useProjects, createProject, updateProject, deleteProject } from '../db/
 import { bulkAddCriteria } from '../db/hooks/useCriteria'
 import { useAllMarksForClass, upsertMark } from '../db/hooks/useMarks'
 import { db } from '../db/db'
-import { calcProjectPercentage, calcStudentSemesterMark, gradeColor } from '../utils/marks'
+import { calcMarkedPercentage, calcStudentSemesterMark, gradeColor } from '../utils/marks'
 import { TabBar } from '../components/ui/TabBar'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -305,7 +305,7 @@ function ProgressChart({ projects, allMarks, allCriteria }: { projects: Project[
     const criteria = allCriteria.filter(c => c.projectId === p.id)
     const marks = allMarks.filter(m => m.projectId === p.id)
     if (criteria.length === 0 || marks.length === 0) return { name: p.name, idx, pct: null as number | null }
-    return { name: p.name, idx, pct: calcProjectPercentage(marks, criteria) }
+    return { name: p.name, idx, pct: calcMarkedPercentage(marks, criteria) }
   })
 
   const scored = dataPoints.filter(d => d.pct !== null)
@@ -615,7 +615,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
       {sorted.map(project => {
         const criteria = allCriteria.filter(c => c.projectId === project.id)
         const marks = allMarks.filter(m => m.studentId === student.id && m.projectId === project.id)
-        const pct = criteria.length > 0 ? calcProjectPercentage(marks, criteria) : null
+        const pct = calcMarkedPercentage(marks, criteria)
         const hasAnyMark = marks.length > 0
 
         return (
@@ -641,7 +641,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
               )}
               {project.dueDate && (
                 <span className="text-xs text-gray-400/70">
-                  Due {new Date(project.dueDate).toLocaleDateString()}
+                  Due {new Date(project.dueDate + 'T00:00:00').toLocaleDateString()}
                 </span>
               )}
               <Link
@@ -901,7 +901,7 @@ export function ClassDetailView() {
       const criteria = allCriteria.filter(c => c.projectId === p.id)
       const marks = allMarks.filter(m => m.studentId === studentId && m.projectId === p.id)
       if (criteria.length === 0 || marks.length === 0) return { name: p.name, pct: null }
-      return { name: p.name, pct: calcProjectPercentage(marks, criteria) }
+      return { name: p.name, pct: calcMarkedPercentage(marks, criteria) }
     })
   }
 
