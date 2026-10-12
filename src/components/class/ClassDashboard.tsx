@@ -196,6 +196,25 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
                 <p className="mt-1 text-[13px] text-gray-300">
                   {students.length - focusMarked === 0 ? 'Everyone is marked' : `${students.length - focusMarked} ${students.length - focusMarked === 1 ? 'student' : 'students'} left to mark`}
                 </p>
+                {/* Who's left: click one to open Quick Mark on them */}
+                <div className="mt-3 flex flex-col gap-1">
+                  {students.filter(s => !isFullyMarked(s.id, focus)).map(s => {
+                    const criteria = criteriaOf(focus)
+                    const done = criteria.filter(c => allMarks.some(m => m.studentId === s.id && m.criterionId === c.id)).length
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={e => { e.stopPropagation(); navigate(`/classes/${classObj.id}/projects/${focus.id}?tab=marking&student=${s.id}`) }}
+                        title={`Mark ${s.firstName ?? s.name} on ${focus.name}`}
+                        className="flex items-center gap-2 rounded-lg px-2 py-1.5 -mx-2 text-left text-[13px] text-gray-200 hover:bg-orange-500/10 hover:text-gray-100 transition-colors"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_6px_rgba(167,139,250,0.8)] shrink-0" />
+                        <span className="truncate">{s.firstName ? `${s.firstName} ${s.name}` : s.name}</span>
+                        <span className="ml-auto text-[11px] text-gray-400 tabular-nums shrink-0">{done === 0 ? 'not started' : `${done}/${criteria.length}`}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </>
             ) : <p className="text-[13px] text-gray-400">Add a project with a rubric and due date to track marking.</p>}
           </div>
