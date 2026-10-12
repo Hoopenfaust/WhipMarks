@@ -285,7 +285,7 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
             <Label>Class average<br />trend</Label>
             <p className="mt-4 text-4xl font-light text-orange-400">{lastAvg !== null ? `${lastAvg.toFixed(0)}%` : '—'}</p>
             <p className="mt-1.5 text-[13px] text-gray-400">
-              {delta !== null ? <><span className={delta >= 0 ? 'text-orange-400' : 'text-amber-400'}>{delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(0)}%</span> vs last project</> : 'Latest marked project'}
+              {delta !== null ? <><span className={delta >= 0 ? 'text-orange-400' : 'text-amber-400'}>{delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(0)} {Math.abs(delta).toFixed(0) === "1" ? "pt" : "pts"}</span> vs last project</> : 'Latest marked project'}
             </p>
           </div>
           {trend.length > 0 ? (
