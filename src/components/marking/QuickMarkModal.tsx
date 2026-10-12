@@ -240,7 +240,7 @@ export function QuickMarkModal({
       <div
         className={cn(
           'relative bg-gray-900/95 backdrop-blur-xl border border-gray-700/70 rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(139,92,246,0.08)] w-full z-10 flex flex-col overflow-hidden',
-          isTouch ? 'max-w-2xl max-h-[95vh]' : 'max-w-2xl max-h-[90vh]'
+          isTouch ? 'max-w-3xl max-h-[95vh]' : 'max-w-3xl max-h-[90vh]'
         )}
         onClick={e => e.stopPropagation()}
       >
