@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react'
 import type { Student } from '../../types'
 import { gradeColor } from '../../utils/marks'
 import { cn } from '../../utils/cn'
+import { STANDINGS, standingOf } from '../../utils/standing'
 
 export type RosterView = 'cards' | 'compact' | 'list' | 'faces' | 'standing'
 
@@ -25,19 +26,8 @@ interface ViewProps {
   onDelete: (studentId: string) => void
 }
 
-// Same thresholds as the at-risk flag and high-achiever star on the student cards.
-const STANDINGS = [
-  { id: 'risk',       label: 'At risk',        range: 'under 50%', dot: 'bg-red-400',     pill: 'bg-red-400/15 text-red-400' },
-  { id: 'borderline', label: 'Borderline',     range: '50–65%',    dot: 'bg-amber-400',   pill: 'bg-amber-400/15 text-amber-400' },
-  { id: 'track',      label: 'On track',       range: '65–85%',    dot: 'bg-emerald-400', pill: 'bg-emerald-400/15 text-emerald-400' },
-  { id: 'high',       label: 'High achiever',  range: '85%+',      dot: 'bg-indigo-400',  pill: 'bg-indigo-400/15 text-indigo-400' },
-  { id: 'none',       label: 'Not marked yet', range: '',          dot: 'bg-gray-500',    pill: 'bg-gray-500/15 text-gray-400' },
-] as const
-
-function standingOf(mark: number | null) {
-  const id = mark === null ? 'none' : mark < 50 ? 'risk' : mark < 65 ? 'borderline' : mark >= 85 ? 'high' : 'track'
-  return STANDINGS.find(s => s.id === id)!
-}
+// Worst first, so the students who need attention lead the By standing board.
+const BOARD_ORDER = ['risk', 'borderline', 'developing', 'track', 'high', 'none'].map(id => STANDINGS.find(s => s.id === id)!)
 
 const fullName = (s: Student) => s.firstName ? `${s.firstName} ${s.name}` : s.name
 const pctText = (v: number | null) => v === null ? '—' : `${v.toFixed(0)}%`
@@ -137,7 +127,7 @@ export function RosterList({ students, semesterMark, projectMarks, avatar, onSel
                   <td key={name} className={cn('px-4 py-2 font-semibold tabular-nums', markClass(pct))}>{pctText(pct)}</td>
                 ))}
                 <td className="px-4 py-2">
-                  <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap', standing.pill)}>{standing.label}</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ color: `rgb(${standing.rgb})`, background: `rgba(${standing.rgb},0.15)` }}>{standing.label}</span>
                 </td>
                 <td className="px-2 py-2 text-right"><DeleteButton onClick={() => onDelete(s.id)} /></td>
               </tr>
@@ -175,13 +165,13 @@ export function FaceWall({ students, semesterMark, avatar, onSelect }: ViewProps
 
 export function StandingBoard({ students, semesterMark, avatar, onSelect }: ViewProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3 items-start">
-      {STANDINGS.map(col => {
+    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 items-start">
+      {BOARD_ORDER.map(col => {
         const list = students.filter(s => standingOf(semesterMark(s.id)).id === col.id)
         return (
           <div key={col.id} className="rounded-xl bg-black/[0.04] dark:bg-white/[0.03] border border-gray-700 p-2.5">
             <div className="flex items-center gap-2 px-1 pb-2.5">
-              <span className={cn('w-2 h-2 rounded-full', col.dot)} />
+              <span className="w-2 h-2 rounded-full" style={{ background: `rgb(${col.rgb})`, boxShadow: `0 0 6px rgba(${col.rgb},0.7)` }} />
               <span className="text-sm font-semibold text-gray-100">{col.label}</span>
               <span className="ml-auto text-xs text-gray-400">{col.range}{col.range && ' · '}{list.length}</span>
             </div>

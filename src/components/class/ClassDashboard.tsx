@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ShieldCheck, ShieldAlert, CalendarClock, ChevronRight, Zap, Star, TrendingUp, AlertTriangle, Flag } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, CalendarClock, ChevronRight, Zap } from 'lucide-react'
 import { db } from '../../db/db'
 import type { Class, Student, Project, RubricCriterion, Mark } from '../../types'
 import { calcProjectPercentage, calcStudentSemesterMark } from '../../utils/marks'
 import { cn } from '../../utils/cn'
 import { MaceArt } from './MaceArt'
+import { STANDINGS, standingOf, type StandingId } from '../../utils/standing'
 
 const NUM_WEEKS = 13
 const DAY = 86_400_000
@@ -106,12 +107,8 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
 
   // ── Standing ─────────────────────────────────────────────────────────────
   const semMarks = students.map(s => calcStudentSemesterMark(s.id, projects, allMarks, allCriteria))
-  const standing = {
-    high: semMarks.filter(m => m !== null && m >= 85).length,
-    track: semMarks.filter(m => m !== null && m >= 65 && m < 85).length,
-    borderline: semMarks.filter(m => m !== null && m >= 50 && m < 65).length,
-    risk: semMarks.filter(m => m !== null && m < 50).length,
-  }
+  const countOf = (id: StandingId) => semMarks.filter(m => m !== null && standingOf(m).id === id).length
+  const standing = { high: countOf('high'), track: countOf('track'), developing: countOf('developing'), borderline: countOf('borderline'), risk: countOf('risk') }
   const needCheckIn = standing.risk + standing.borderline
   const marked = semMarks.filter((m): m is number => m !== null)
   const classAvg = marked.length ? marked.reduce((a, b) => a + b, 0) / marked.length : null
@@ -307,14 +304,9 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
 
         <Panel>
           <Label>Class standing summary</Label>
-          <div className="grid grid-cols-4 gap-3 mt-6 text-center text-[13px] text-gray-300">
-            {[
-              { n: standing.high, label: 'High achievers', range: '85%+', icon: Star, rgb: '167,139,250' },
-              { n: standing.track, label: 'On track', range: '65–85%', icon: TrendingUp, rgb: '52,211,153' },
-              { n: standing.borderline, label: 'Borderline', range: '50–65%', icon: AlertTriangle, rgb: '251,191,36' },
-              { n: standing.risk, label: 'At risk', range: 'under 50%', icon: Flag, rgb: '248,113,113' },
-            ].map(({ n, label, range, icon: Icon, rgb }) => (
-              <div key={label} className={cn('flex flex-col items-center', n === 0 && 'opacity-40')}>
+          <div className="grid grid-cols-5 gap-3 mt-6 text-center text-[13px] text-gray-300">
+            {STANDINGS.filter(st => st.id !== 'none').map(st => ({ ...st, n: countOf(st.id) })).map(({ id, n, label, range, icon: Icon, rgb }) => (
+              <div key={id} className={cn('flex flex-col items-center', n === 0 && 'opacity-40')}>
                 <div
                   className="w-14 h-14 rounded-full grid place-items-center border"
                   style={{
