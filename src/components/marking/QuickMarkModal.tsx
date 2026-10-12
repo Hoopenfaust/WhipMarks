@@ -10,6 +10,7 @@ import { LEVELS } from '../../utils/levels'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
 import { cn } from '../../utils/cn'
 import { SnippetPicker } from './SnippetPicker'
+import { LevelButton } from './LevelButton'
 import { StudentAvatar } from './StudentAvatar'
 import { addSnippet } from '../../db/hooks/useSnippets'
 import { useIsTouch } from '../../utils/useIsTouch'
@@ -238,14 +239,14 @@ export function QuickMarkModal({
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
         className={cn(
-          'relative bg-gray-850 border border-gray-700 rounded-xl shadow-2xl w-full z-10 flex flex-col',
+          'relative bg-gray-900/95 backdrop-blur-xl border border-gray-700/70 rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.6),0_0_60px_rgba(139,92,246,0.08)] w-full z-10 flex flex-col overflow-hidden',
           isTouch ? 'max-w-2xl max-h-[95vh]' : 'max-w-2xl max-h-[90vh]'
         )}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className={cn(
-          'flex items-center gap-3 border-b border-gray-800 shrink-0',
+          'flex items-center gap-3 border-b border-gray-700/60 shrink-0',
           isTouch ? 'px-3 py-3' : 'px-4 py-4'
         )}>
           <button onClick={prev} disabled={studentIdx === 0} className={navBtnClass}>
@@ -253,7 +254,7 @@ export function QuickMarkModal({
           </button>
 
           <div className="flex-1 flex items-center justify-center gap-3 min-w-0">
-            <StudentAvatar student={student} className={isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base'} />
+            <StudentAvatar student={student} className={cn('ring-2 ring-orange-500/40 shadow-[0_0_16px_rgba(139,92,246,0.25)]', isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base')} />
             <div className="min-w-0">
               <p className={cn('font-semibold text-gray-100 truncate', isTouch ? 'text-lg' : 'text-base')}>
                 {student.firstName ? `${student.firstName} ${student.name}` : student.name}
@@ -288,7 +289,7 @@ export function QuickMarkModal({
               title={email.state === 'sent' ? `Emailed ${formatEmailedAt(email.emailedAt)} — click to email ${student.email} again`
                 : email.state === 'changed' ? `Marks changed since emailed ${formatEmailedAt(email.emailedAt)} — click to email ${student.email} again`
                 : `Email ${student.email}`}
-              className={cn('rounded-xl flex items-center gap-1.5 font-medium transition-colors disabled:opacity-50',
+              className={cn('rounded-full flex items-center gap-1.5 font-medium transition-colors disabled:opacity-50',
                 isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
                 email.state === 'changed'
                   ? 'bg-amber-950/60 border border-amber-800/50 text-amber-300 hover:bg-amber-900/60'
@@ -309,7 +310,7 @@ export function QuickMarkModal({
             <button
               onClick={() => setAnnotating(true)}
               title="Open annotated submission"
-              className={cn('rounded-xl flex items-center gap-1.5 font-medium transition-colors',
+              className={cn('rounded-full flex items-center gap-1.5 font-medium transition-colors',
                 isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
                 'bg-blue-950/60 border border-blue-800/50 text-blue-300 hover:bg-blue-900/60'
               )}
@@ -321,7 +322,7 @@ export function QuickMarkModal({
             <button
               onClick={() => fileInputRef.current?.click()}
               title="Upload student submission PDF"
-              className={cn('rounded-xl flex items-center gap-1.5 font-medium transition-colors',
+              className={cn('rounded-full flex items-center gap-1.5 font-medium transition-colors',
                 isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
                 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100 hover:border-gray-600'
               )}
@@ -341,9 +342,9 @@ export function QuickMarkModal({
         </div>
 
         {/* Progress bar */}
-        <div className="h-1 bg-gray-800 shrink-0">
+        <div className="h-1 bg-white/[0.04] shrink-0">
           <div
-            className="h-full bg-indigo-500/60 transition-all duration-300"
+            className="h-full bg-orange-400 shadow-[0_0_10px_rgba(167,139,250,0.7)] transition-all duration-300"
             style={{ width: criteria.length > 0 ? `${(completedCount / criteria.length) * 100}%` : '0%' }}
           />
         </div>
@@ -369,8 +370,8 @@ export function QuickMarkModal({
                 key={c.id}
                 ref={el => { if (el) criterionRefs.current.set(c.id, el); else criterionRefs.current.delete(c.id) }}
                 className={cn(
-                  'bg-gray-900 border rounded-xl transition-colors',
-                  mark ? 'border-gray-700' : 'border-gray-800',
+                  'bg-white/[0.025] border rounded-2xl transition-colors',
+                  mark ? 'border-gray-700/80' : 'border-gray-700/40',
                   isTouch ? 'p-4' : 'p-4'
                 )}
               >
@@ -395,7 +396,7 @@ export function QuickMarkModal({
                         </button>
                         {/* Fixed width (fits e.g. "99.5 / 100") so the −/+ buttons don't shift as the score changes */}
                         <div className="flex flex-col items-center gap-0.5" style={{ width: `${String(c.maxMarks).length * 2 + 5}ch` }}>
-                          <span className={cn('font-bold tabular-nums', scorePct !== null ? gradeColor(scorePct) : 'text-gray-400', isTouch ? 'text-base' : 'text-sm')}>
+                          <span className={cn('font-light tabular-nums', scorePct !== null ? gradeColor(scorePct) : 'text-gray-400', isTouch ? 'text-xl' : 'text-lg')}>
                             {mark.score} / {c.maxMarks}
                           </span>
                           {scorePct !== null && (
@@ -432,32 +433,19 @@ export function QuickMarkModal({
                 <div className="grid grid-cols-4 gap-2 mb-3">
                   {LEVELS.map(level => {
                     const descriptor = descriptors.find(d => d.criterionId === c.id && d.level === level.id)
-                    const fraction = descriptor?.score ?? level.defaultScore
-                    const pts = Math.round(c.maxMarks * fraction)
-                    const isActive = mark !== undefined && mark.score === pts
-
+                    const pts = Math.round(c.maxMarks * (descriptor?.score ?? level.defaultScore))
                     return (
-                      <button
+                      <LevelButton
                         key={level.id}
-                        onClick={() => applyLevel(c, level.id)}
+                        level={level}
+                        points={pts}
+                        maxMarks={c.maxMarks}
+                        active={mark !== undefined && mark.score === pts}
                         disabled={isSaving}
                         title={descriptor?.text || level.label}
-                        className={cn(
-                          'flex flex-col items-center gap-1 px-2 rounded-xl border text-center transition-all duration-100',
-                          isTouch ? 'py-4' : 'py-2.5',
-                          isActive
-                            ? cn('border-gray-200/60 ring-1 ring-white/20 scale-[1.03]', level.bgColor)
-                            : cn('border-gray-700 hover:border-gray-500', level.bgColor),
-                          isSaving && 'opacity-50 cursor-wait'
-                        )}
-                      >
-                        <span className={cn('font-bold leading-tight', level.textColor, isTouch ? 'text-sm' : 'text-xs')}>
-                          {level.shortLabel.split(' ')[0]}
-                        </span>
-                        <span className={cn('text-gray-400 tabular-nums font-medium', isTouch ? 'text-sm' : 'text-[11px]')}>
-                          {pts}/{c.maxMarks}
-                        </span>
-                      </button>
+                        large={isTouch}
+                        onClick={() => applyLevel(c, level.id)}
+                      />
                     )
                   })}
                 </div>
@@ -485,7 +473,7 @@ export function QuickMarkModal({
                       rows={isTouch ? 4 : 2}
                       placeholder={feedbackRecording ? 'Listening…' : 'Feedback for this criterion…'}
                       className={cn(
-                        'w-full bg-gray-800 border rounded-xl px-3 py-3 text-sm text-gray-100 placeholder-gray-500 resize-none focus:outline-none focus:border-gray-400',
+                        'w-full bg-black/20 border rounded-xl px-3 py-3 text-sm text-gray-100 placeholder-gray-500 resize-none focus:outline-none focus:border-gray-400',
                         feedbackRecording ? 'border-red-500/50' : 'border-gray-600'
                       )}
                     />
@@ -515,7 +503,7 @@ export function QuickMarkModal({
                             }
                           }}
                           disabled={!snippetLabel.trim()}
-                          className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-900 disabled:opacity-40 transition-colors"
+                          className="px-2.5 py-1.5 text-xs font-medium rounded-full btn-accent disabled:opacity-40 transition-colors"
                         >
                           Save snippet
                         </button>
@@ -527,7 +515,7 @@ export function QuickMarkModal({
                         <button
                           onClick={() => saveFeedback(c)}
                           className={cn(
-                            'bg-gray-100 hover:bg-gray-100/90 text-gray-900 font-medium rounded-xl transition-colors',
+                            'btn-accent font-medium rounded-full transition-colors',
                             isTouch ? 'px-5 py-3 text-sm' : 'px-3 py-1 text-xs'
                           )}
                         >
@@ -588,7 +576,7 @@ export function QuickMarkModal({
           })}
 
           {/* Room for Improvement */}
-          <div className={cn('bg-gray-900 border border-gray-700 rounded-xl', isTouch ? 'p-4' : 'p-4')}>
+          <div className={cn('bg-white/[0.025] border border-gray-700/80 rounded-2xl', isTouch ? 'p-4' : 'p-4')}>
             <div className="flex items-center justify-between mb-2">
               <p className={cn('font-semibold text-gray-100', isTouch ? 'text-base' : 'text-sm')}>Room for Improvement</p>
               <div className="flex items-center gap-2">
@@ -620,7 +608,7 @@ export function QuickMarkModal({
               placeholder={recording ? 'Listening…' : 'Overall room for improvement…'}
               rows={isTouch ? 4 : 3}
               className={cn(
-                'w-full bg-gray-800 border rounded-xl px-3 py-3 text-gray-100 placeholder-gray-600 resize-none focus:outline-none focus:border-gray-500',
+                'w-full bg-black/20 border rounded-xl px-3 py-3 text-gray-100 placeholder-gray-600 resize-none focus:outline-none focus:border-gray-500',
                 isTouch ? 'text-sm' : 'text-sm',
                 recording ? 'border-red-500/50' : 'border-gray-700'
               )}
@@ -629,11 +617,11 @@ export function QuickMarkModal({
               onClick={saveImprovement}
               disabled={improvementText === savedImprovementText}
               className={cn(
-                'mt-2 w-full font-medium rounded-xl transition-colors',
+                'mt-2 w-full font-medium rounded-full transition-colors',
                 isTouch ? 'py-3 text-sm' : 'py-1.5 text-xs',
                 improvementText === savedImprovementText
-                  ? 'bg-gray-800 text-gray-500 cursor-default'
-                  : 'bg-gray-100 hover:bg-gray-100/90 text-gray-900'
+                  ? 'bg-white/[0.04] text-gray-500 cursor-default'
+                  : 'btn-accent'
               )}
             >
               {improvementText === savedImprovementText ? 'Saved' : 'Save'}
@@ -643,8 +631,8 @@ export function QuickMarkModal({
 
         {/* Footer */}
         <div className={cn(
-          'border-t border-gray-800 flex items-center shrink-0',
-          isTouch ? 'px-4 py-4 justify-center' : 'px-4 py-3 justify-between'
+          'border-t border-gray-700/60 flex items-center shrink-0',
+          isTouch ? 'px-4 py-4 justify-center gap-4' : 'px-4 py-3 justify-between'
         )}>
           {!isTouch && <p className="text-[11px] text-gray-400/50">← → navigate · Esc close</p>}
           {isTouch && (
@@ -662,8 +650,8 @@ export function QuickMarkModal({
                     className={cn(
                       'rounded-full transition-all duration-200',
                       isTouch
-                        ? i === studentIdx ? 'w-6 h-2.5 bg-gray-100' : done ? 'w-2.5 h-2.5 bg-emerald-500' : 'w-2.5 h-2.5 bg-gray-700'
-                        : i === studentIdx ? 'w-4 h-1.5 bg-gray-100' : done ? 'w-1.5 h-1.5 bg-emerald-600' : 'w-1.5 h-1.5 bg-gray-700'
+                        ? i === studentIdx ? 'w-6 h-2.5 bg-orange-400 shadow-[0_0_8px_rgba(167,139,250,0.7)]' : done ? 'w-2.5 h-2.5 bg-emerald-500' : 'w-2.5 h-2.5 bg-gray-700'
+                        : i === studentIdx ? 'w-4 h-1.5 bg-orange-400 shadow-[0_0_8px_rgba(167,139,250,0.7)]' : done ? 'w-1.5 h-1.5 bg-emerald-600' : 'w-1.5 h-1.5 bg-gray-700'
                     )}
                     title={students[i].firstName ? `${students[i].firstName} ${students[i].name}` : students[i].name}
                   />
@@ -674,7 +662,7 @@ export function QuickMarkModal({
             <div className="flex items-center gap-2">
               <div className="w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-indigo-500/60 rounded-full transition-all"
+                  className="h-full bg-orange-400 rounded-full transition-all"
                   style={{ width: `${students.length > 0 ? ((studentIdx + 1) / students.length) * 100 : 0}%` }}
                 />
               </div>

@@ -5,6 +5,7 @@ import type { TaAssignment, RubricCriterion, RubricDescriptor } from '../../type
 import { useTaMarksForProject, upsertTaMark } from '../../db/hooks/useTaMarks'
 import { calcProjectPercentage } from '../../utils/marks'
 import { LEVELS } from '../../utils/levels'
+import { LevelButton } from './LevelButton'
 import { cn } from '../../utils/cn'
 import { downloadTaResults } from '../../utils/taExport'
 import { useDictation } from '../../utils/useDictation'
@@ -52,7 +53,7 @@ function CellPopover({ studentName, criterion, initialScore, initialFeedback, de
   }
 
   return (
-    <div className="absolute z-50 bg-gray-850 border border-gray-700 rounded-xl shadow-2xl shadow-black/60 p-5 w-[36rem] top-full left-0 mt-1" onClick={e => e.stopPropagation()}>
+    <div className="absolute z-50 bg-gray-900/95 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(139,92,246,0.08)] p-5 w-[36rem] top-full left-0 mt-1" onClick={e => e.stopPropagation()}>
       <div className="mb-4">
         <p className="text-sm font-semibold text-gray-100">{studentName}</p>
         <p className="text-xs text-gray-400">{criterion.name}</p>
@@ -63,11 +64,8 @@ function CellPopover({ studentName, criterion, initialScore, initialFeedback, de
           const d = descriptors.find(d => d.level === level.id)
           const pts = Math.round(criterion.maxMarks * (d?.score ?? level.defaultScore))
           return (
-            <button key={level.id} onClick={() => applyLevel(level.id)} title={d?.text || level.label}
-              className={cn('flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-colors border-gray-700 hover:border-gray-600', level.bgColor)}>
-              <span className={cn('text-xs font-semibold leading-tight', level.textColor)}>{level.shortLabel}</span>
-              <span className={cn('text-xs tabular-nums ml-2 shrink-0 opacity-70', level.textColor)}>{pts} / {criterion.maxMarks}</span>
-            </button>
+            <LevelButton key={level.id} level={level} points={pts} maxMarks={criterion.maxMarks}
+              active={score !== '' && parseFloat(score) === pts} title={d?.text || level.label} layout="row" onClick={() => applyLevel(level.id)} />
           )
         })}
       </div>

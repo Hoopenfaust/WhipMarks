@@ -1,3 +1,4 @@
+import { Award, Lightbulb, Sprout, Wrench, type LucideIcon } from 'lucide-react'
 import type { DescriptorLevel } from '../types'
 
 export interface LevelConfig {
@@ -8,6 +9,8 @@ export interface LevelConfig {
   dotColor: string      // Tailwind bg class for the dot
   textColor: string     // Tailwind text class
   bgColor: string       // Tailwind bg class for button hover
+  icon: LucideIcon      // shown on the level buttons when marking
+  rgb: string           // 'r,g,b' of the level colour, for tints and glows
 }
 
 export const LEVELS: LevelConfig[] = [
@@ -19,6 +22,8 @@ export const LEVELS: LevelConfig[] = [
     dotColor: 'bg-emerald-400',
     textColor: 'text-emerald-400',
     bgColor: 'bg-emerald-950/50',
+    icon: Award,
+    rgb: '52,211,153',
   },
   {
     id: 'good',
@@ -28,6 +33,8 @@ export const LEVELS: LevelConfig[] = [
     dotColor: 'bg-blue-400',
     textColor: 'text-blue-400',
     bgColor: 'bg-blue-950/50',
+    icon: Lightbulb,
+    rgb: '96,165,250',
   },
   {
     id: 'satisfactory',
@@ -37,6 +44,8 @@ export const LEVELS: LevelConfig[] = [
     dotColor: 'bg-amber-400',
     textColor: 'text-amber-400',
     bgColor: 'bg-amber-950/50',
+    icon: Sprout,
+    rgb: '251,191,36',
   },
   {
     id: 'poor',
@@ -46,5 +55,7 @@ export const LEVELS: LevelConfig[] = [
     dotColor: 'bg-red-400',
     textColor: 'text-red-400',
     bgColor: 'bg-red-950/50',
+    icon: Wrench,
+    rgb: '248,113,113',
   },
 ]
