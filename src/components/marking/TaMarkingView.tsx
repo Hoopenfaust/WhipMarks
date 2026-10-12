@@ -93,7 +93,7 @@ function CellPopover({ studentName, criterion, initialScore, initialFeedback, de
       </div>
       <div className="flex gap-2">
         <button onClick={onClose} className="flex-1 text-xs text-gray-400 hover:text-gray-100 py-1.5">Cancel</button>
-        <button onClick={() => { save(); onNavigate('next') }} className="flex-1 text-sm font-medium py-1.5 rounded-full transition-colors" style={{ background: '#FFB59C', color: '#5F1500' }}>Save</button>
+        <button onClick={() => { save(); onNavigate('next') }} className="flex-1 text-sm font-medium py-1.5 rounded-full transition-colors" style={{ background: '#8b5cf6', color: '#ffffff', boxShadow: '0 0 18px rgba(139,92,246,0.35)' }}>Save</button>
       </div>
       <p className="text-center text-[10px] text-gray-400/70 mt-2">Tab → next · Shift+Tab ← prev · Esc close</p>
     </div>

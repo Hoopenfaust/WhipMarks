@@ -22,6 +22,7 @@ import { GanttChart } from '../components/schedule/GanttChart'
 import { CalendarView } from '../components/schedule/CalendarView'
 import { CategoryDrawPanel } from '../components/categories/CategoryDrawPanel'
 import { CompetencyTab } from '../components/class/CompetencyTab'
+import { ClassDashboard } from '../components/class/ClassDashboard'
 import { CompactCards, RosterList, FaceWall, StandingBoard, ROSTER_VIEWS, type RosterView } from '../components/class/RosterViews'
 import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../types'
 import { newId } from '../utils/id'
@@ -30,6 +31,7 @@ import { cn } from '../utils/cn'
 type SortMode = 'default' | 'name' | 'name-last' | 'mark-high' | 'mark-low'
 
 const TABS = [
+  { id: 'dashboard', label: 'Dashboard' },
   { id: 'roster', label: 'Roster' },
   { id: 'projects', label: 'Projects' },
   { id: 'schedule', label: 'Schedule' },
@@ -84,7 +86,8 @@ function projectWeekSpan(p: Project, classStartDate: string | undefined) {
 function studentColor(id: string) {
   let h = 0
   for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
-  return STUDENT_PALETTE[Math.abs(h) % STUDENT_PALETTE.length]
+  // Cards are neutral glass; the student's own colour stays on their avatar.
+  return { ...STUDENT_PALETTE[Math.abs(h) % STUDENT_PALETTE.length], cardBg: 'rgba(21,19,31,0.8)', border: 'rgba(255,255,255,0.07)' }
 }
 
 function StudentAvatar({ student, size = 80, onPhotoClick, onPhotoDrop, uploading = false }: { student: Student; size?: number; onPhotoClick?: () => void; onPhotoDrop?: (file: File) => void; uploading?: boolean }) {
@@ -267,11 +270,11 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
         {/* Semester tile */}
         <div className="flex flex-col items-center gap-0.5 px-4 py-2 min-w-[72px]">
           {semesterMark !== null ? (
-            <span className={`text-3xl font-bold leading-none ${gradeColor(semesterMark)}`}>
+            <span className={`text-3xl font-light leading-none ${gradeColor(semesterMark)}`}>
               {semesterMark.toFixed(0)}%
             </span>
           ) : (
-            <span className="text-3xl font-bold leading-none text-gray-400/70">—</span>
+            <span className="text-3xl font-light leading-none text-gray-400/70">—</span>
           )}
           <span className="text-xs text-gray-400 mt-1">sem.</span>
         </div>
@@ -280,11 +283,11 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
         {projectMarks.map(({ name, pct }) => (
           <div key={name} className="flex flex-col items-center gap-0.5 px-4 py-2 min-w-[72px] max-w-[104px]">
             {pct !== null ? (
-              <span className={`text-3xl font-bold leading-none ${gradeColor(pct)}`}>
+              <span className={`text-3xl font-light leading-none ${gradeColor(pct)}`}>
                 {pct.toFixed(0)}%
               </span>
             ) : (
-              <span className="text-3xl font-bold leading-none text-gray-400/70">—</span>
+              <span className="text-3xl font-light leading-none text-gray-400/70">—</span>
             )}
             <span className="text-xs text-gray-400 text-center w-full truncate mt-1" title={name}>
               {name}
@@ -496,7 +499,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                 <button
                   onClick={async () => { if (editLastName.trim()) { await updateStudentNames(student.id, editFirstName.trim(), editLastName.trim()); setEditingName(false) } }}
                   className="px-3 py-1 text-xs font-medium rounded-full transition-all hover:brightness-110"
-                  style={{ background: '#FFB59C', color: '#5F1500' }}
+                  style={{ background: '#8b5cf6', color: '#ffffff', boxShadow: '0 0 18px rgba(139,92,246,0.35)' }}
                 >
                   Save
                 </button>
@@ -703,7 +706,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
                                   <button
                                     onClick={() => saveEdit(project.id, c.id, c.maxMarks)}
                                     className="px-3 py-1 text-xs font-medium rounded-full transition-all hover:brightness-110"
-                  style={{ background: '#FFB59C', color: '#5F1500' }}
+                  style={{ background: '#8b5cf6', color: '#ffffff', boxShadow: '0 0 18px rgba(139,92,246,0.35)' }}
                                   >
                                     Save
                                   </button>
@@ -853,7 +856,7 @@ export function ClassDetailView() {
   ) ?? []
 
   const [searchParams] = useSearchParams()
-  const [tab, setTab] = useState(searchParams.get('tab') ?? 'roster')
+  const [tab, setTab] = useState(searchParams.get('tab') ?? 'dashboard')
   const [sortMode, setSortMode] = useState<SortMode>('default')
   // Remembered per device, so the roster reopens in the view last used.
   const [rosterView, setRosterViewState] = useState<RosterView>(() => {
@@ -1007,7 +1010,12 @@ export function ClassDetailView() {
 
       <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 px-8">
+        {/* DASHBOARD TAB */}
+        {tab === 'dashboard' && (
+          <ClassDashboard classObj={classObj} students={students} projects={projects} allMarks={allMarks} allCriteria={allCriteria} />
+        )}
+
         {/* ROSTER TAB */}
         {tab === 'roster' && (
           <div>

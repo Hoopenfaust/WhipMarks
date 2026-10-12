@@ -42,7 +42,7 @@ const STEPS: TutorialStep[] = [
   {
     icon: '👥',
     title: 'Open your class',
-    body: 'Once imported, your class appears as a card. Click it to open the roster where you can view all students, track individual progress, and add notes.',
+    body: 'Once imported, your class appears as a card. Click it to open the class: the Dashboard shows how the class is doing, and the Roster lets you view all students, track individual progress, and add notes.',
     target: 'class-card',
     placement: 'below',
     navHint: 'the Classes page',
@@ -125,14 +125,14 @@ const TUTORIAL_CSS = `
     0%, 100% {
       box-shadow:
         0 0 0 9999px rgba(0,0,0,0.68),
-        0 0 0 2px  rgba(249,115,22,0.50),
-        0 0 18px 4px rgba(249,115,22,0.20);
+        0 0 0 2px  rgba(139,92,246,0.50),
+        0 0 18px 4px rgba(139,92,246,0.20);
     }
     50% {
       box-shadow:
         0 0 0 9999px rgba(0,0,0,0.68),
-        0 0 0 3px  rgba(249,115,22,0.95),
-        0 0 30px 9px rgba(249,115,22,0.48);
+        0 0 0 3px  rgba(139,92,246,0.95),
+        0 0 30px 9px rgba(139,92,246,0.48);
     }
   }
 
@@ -143,8 +143,8 @@ const TUTORIAL_CSS = `
 
   /* Next button glow pulse */
   @keyframes t-btn-pulse {
-    0%,100% { box-shadow: 0 4px 14px rgba(249,115,22,0.30); }
-    50%      { box-shadow: 0 4px 28px rgba(249,115,22,0.75); }
+    0%,100% { box-shadow: 0 4px 14px rgba(139,92,246,0.30); }
+    50%      { box-shadow: 0 4px 28px rgba(139,92,246,0.75); }
   }
 
   .t-card      { animation: t-slide-in  0.40s cubic-bezier(0.34, 1.38, 0.64, 1) both; }
@@ -316,7 +316,7 @@ export function TutorialOverlay() {
               width:        spotlight.width,
               height:       spotlight.height,
               borderRadius: 12,
-              border:       '2px solid rgba(249,115,22,0.75)',
+              border:       '2px solid rgba(139,92,246,0.75)',
               zIndex:       10001,
               pointerEvents: 'none',
             }}
@@ -332,7 +332,7 @@ export function TutorialOverlay() {
               width:        spotlight.width,
               height:       spotlight.height,
               borderRadius: 12,
-              border:       '2px solid rgba(249,115,22,0.50)',
+              border:       '2px solid rgba(139,92,246,0.50)',
               zIndex:       10001,
               pointerEvents: 'none',
             }}
@@ -364,8 +364,8 @@ export function TutorialOverlay() {
           <div style={{ position: 'absolute', top: -46, left: '50%', transform: 'translateX(-50%)' }}>
             <div
               className="t-arr-up"
-              style={{ color: 'rgb(249,115,22)', fontSize: 32, lineHeight: 1,
-                       filter: 'drop-shadow(0 0 8px rgba(249,115,22,0.8))' }}
+              style={{ color: 'rgb(139,92,246)', fontSize: 32, lineHeight: 1,
+                       filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.8))' }}
             >↑</div>
           </div>
         )}
@@ -375,8 +375,8 @@ export function TutorialOverlay() {
           <div style={{ position: 'absolute', right: -50, top: '50%', transform: 'translateY(-50%)' }}>
             <div
               className="t-arr-right"
-              style={{ color: 'rgb(249,115,22)', fontSize: 32, lineHeight: 1,
-                       filter: 'drop-shadow(0 0 8px rgba(249,115,22,0.8))' }}
+              style={{ color: 'rgb(139,92,246)', fontSize: 32, lineHeight: 1,
+                       filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.8))' }}
             >→</div>
           </div>
         )}
@@ -386,8 +386,8 @@ export function TutorialOverlay() {
           <div style={{ position: 'absolute', left: -50, top: '50%', transform: 'translateY(-50%)' }}>
             <div
               className="t-arr-left"
-              style={{ color: 'rgb(249,115,22)', fontSize: 32, lineHeight: 1,
-                       filter: 'drop-shadow(0 0 8px rgba(249,115,22,0.8))' }}
+              style={{ color: 'rgb(139,92,246)', fontSize: 32, lineHeight: 1,
+                       filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.8))' }}
             >←</div>
           </div>
         )}
@@ -401,7 +401,7 @@ export function TutorialOverlay() {
           <div
             style={{
               height:     4,
-              background: 'linear-gradient(90deg, rgb(194,65,12), rgb(249,115,22), rgb(253,186,116))',
+              background: 'linear-gradient(90deg, rgb(109,40,217), rgb(139,92,246), rgb(196,181,253))',
             }}
           />
 

@@ -9,8 +9,8 @@ const TA_CSS = `
     to   { opacity: 1; transform: scale(1)    translateY(0);    }
   }
   @keyframes ta-btn-pulse {
-    0%,100% { box-shadow: 0 4px 14px rgba(249,115,22,0.30); }
-    50%      { box-shadow: 0 4px 28px rgba(249,115,22,0.75); }
+    0%,100% { box-shadow: 0 4px 14px rgba(139,92,246,0.30); }
+    50%      { box-shadow: 0 4px 28px rgba(139,92,246,0.75); }
   }
   .ta-card     { animation: ta-slide-in  0.40s cubic-bezier(0.34, 1.38, 0.64, 1) both; }
   .ta-btn-next { animation: ta-btn-pulse 2.0s  ease-in-out infinite; }
@@ -110,7 +110,7 @@ export function TaTutorialOverlay({ projectId, projectName, taName, studentCount
           onClick={e => e.stopPropagation()}
         >
           {/* Orange accent bar */}
-          <div style={{ height: 4, background: 'linear-gradient(90deg, rgb(194,65,12), rgb(249,115,22), rgb(253,186,116))' }} />
+          <div style={{ height: 4, background: 'linear-gradient(90deg, rgb(109,40,217), rgba(139,92,246), rgb(196,181,253))' }} />
 
           {/* TA Mode badge */}
           <div className="flex items-center gap-2 px-8 pt-6 pb-0">

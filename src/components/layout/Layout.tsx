@@ -38,13 +38,13 @@ export function Layout() {
   const [loginOpen, setLoginOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden">
+    <div className="flex h-screen app-bg overflow-hidden">
       <AutoBackup />
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top App Bar */}
-        <header className="h-16 bg-gray-900 border-b border-gray-700 flex items-center px-6 gap-4 shrink-0">
-          <h1 className="text-lg font-medium text-gray-100 tracking-wide">WhipMarks</h1>
+        <header className="h-16 flex items-center px-8 gap-4 shrink-0">
+          <h1 className="text-lg font-light text-gray-100 tracking-wide">WhipMarks</h1>
           <span className="text-xs text-gray-500 font-mono">v{__APP_VERSION__}</span>
           <div className="ml-auto flex items-center gap-3">
             <SyncStatus onLoginClick={() => setLoginOpen(true)} />

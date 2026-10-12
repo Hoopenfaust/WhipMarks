@@ -229,7 +229,7 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
         <button
           onClick={() => { save(); onNavigate('next') }}
           className="flex-1 text-sm font-medium py-1.5 rounded-full transition-colors"
-          style={{ background: '#FFB59C', color: '#5F1500' }}
+          style={{ background: '#8b5cf6', color: '#ffffff', boxShadow: '0 0 18px rgba(139,92,246,0.35)' }}
         >
           Save
         </button>
@@ -391,7 +391,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
           'flex items-center gap-2 rounded-full font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed',
           isTouch ? 'px-6 py-3.5 text-base' : 'px-5 py-2.5 text-sm'
         )}
-        style={{ background: '#FFB59C', color: '#5F1500' }}
+        style={{ background: '#8b5cf6', color: '#ffffff', boxShadow: '0 0 18px rgba(139,92,246,0.35)' }}
       >
         <Zap size={isTouch ? 18 : 15} />
         Quick Mark

@@ -80,7 +80,7 @@ export function CompactCards({ students, semesterMark, projectMarks, avatar, car
                 <p className="text-base font-semibold text-gray-100 leading-tight truncate">{s.firstName ?? s.name}</p>
                 {s.firstName && <p className="text-sm text-gray-400 truncate">{s.name}</p>}
               </div>
-              <span className={cn('ml-auto text-2xl font-bold', markClass(sem))}>{pctText(sem)}</span>
+              <span className={cn('ml-auto text-2xl font-light', markClass(sem))}>{pctText(sem)}</span>
             </div>
             <div className="flex flex-col gap-1.5">
               {projectMarks(s.id).map(({ name, pct }) => (

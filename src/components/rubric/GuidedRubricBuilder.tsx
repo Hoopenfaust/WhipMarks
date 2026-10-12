@@ -12,8 +12,8 @@ import { LEVELS } from '../../utils/levels'
 
 const GUIDED_CSS = `
   @keyframes g-btn-pulse {
-    0%,100% { box-shadow: 0 4px 14px rgba(249,115,22,0.20); }
-    50%      { box-shadow: 0 4px 28px rgba(249,115,22,0.55); }
+    0%,100% { box-shadow: 0 4px 14px rgba(139,92,246,0.20); }
+    50%      { box-shadow: 0 4px 28px rgba(139,92,246,0.55); }
   }
   .g-btn-next { animation: g-btn-pulse 2.0s ease-in-out infinite; }
 `
@@ -76,7 +76,7 @@ function StepCard({ step, children }: { step: number; children: React.ReactNode 
   return (
     <div className="bg-gray-850 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden">
       {/* Orange gradient bar — identical to tutorial */}
-      <div style={{ height: 4, background: 'linear-gradient(90deg, rgb(194,65,12), rgb(249,115,22), rgb(253,186,116))' }} />
+      <div style={{ height: 4, background: 'linear-gradient(90deg, rgb(109,40,217), rgba(139,92,246), rgb(196,181,253))' }} />
 
       <div className="p-8">
         {/* Icon + counter row */}

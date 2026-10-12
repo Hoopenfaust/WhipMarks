@@ -628,7 +628,7 @@ export function AnnotatorView({ student, projectId, pdfData, filename, initialAn
             onClick={exportPdf}
             disabled={exporting}
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors disabled:opacity-50"
-            style={{ background: '#FFB59C', color: '#5F1500' }}
+            style={{ background: '#8b5cf6', color: '#ffffff', boxShadow: '0 0 18px rgba(139,92,246,0.35)' }}
           >
             <Download size={15} />
             {exporting ? 'Saving…' : 'Save PDF'}

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { NavLink, useNavigate, useMatch } from 'react-router-dom'
-import { Plus, GraduationCap, BarChart2, HelpCircle, Briefcase, Layers, Sun, Moon } from 'lucide-react'
-import { createClass } from '../../db/hooks/useClasses'
+import { Plus, GraduationCap, BarChart2, HelpCircle, Briefcase, Layers } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { createClass, useClass } from '../../db/hooks/useClasses'
 import { useActiveTaAssignment, saveTaAssignment } from '../../db/hooks/useTaMarks'
 import { openFilePicker, parseTaAssignmentFile } from '../../utils/taExport'
 import { cn } from '../../utils/cn'
@@ -9,33 +10,35 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { TaMarkingView } from '../marking/TaMarkingView'
-import { getTheme, applyTheme } from '../../utils/useTheme'
-import type { Theme } from '../../utils/useTheme'
+
+// Icon-only rail tile; the name shows as a tooltip.
+const tileClass = (active: boolean, disabled = false) => cn(
+  'relative w-14 h-14 rounded-2xl flex items-center justify-center border transition-all',
+  active
+    ? 'text-orange-400 bg-orange-500/10 border-orange-500/25 shadow-[inset_0_0_24px_rgba(139,92,246,0.18),0_0_20px_rgba(139,92,246,0.12)]'
+    : disabled
+      ? 'text-gray-400/30 border-transparent'
+      : 'text-gray-400 border-transparent hover:text-gray-100 hover:bg-white/[0.04]'
+)
+
+function RailLink({ to, label, icon: Icon, disabled }: { to: string; label: string; icon: LucideIcon; disabled?: boolean }) {
+  return (
+    <NavLink to={to} title={label} aria-label={label}>
+      {({ isActive }) => <span className={tileClass(isActive && !disabled, disabled)}><Icon size={22} strokeWidth={1.6} /></span>}
+    </NavLink>
+  )
+}
 
 export function Sidebar() {
   const navigate = useNavigate()
   const classMatch = useMatch('/classes/:classId/*')
   const classId = classMatch?.params.classId
+  const currentClass = useClass(classId)
   const [addOpen, setAddOpen]   = useState(false)
   const [newName, setNewName]   = useState('')
   const [taOpen, setTaOpen]     = useState(false)
   const [taError, setTaError]   = useState<string | null>(null)
-  const [theme, setTheme]       = useState<Theme>(getTheme)
   const activeAssignment        = useActiveTaAssignment()
-
-  useEffect(() => {
-    applyTheme(theme)
-  }, [theme])
-
-  const isDark = theme === 'dark'
-  // Active pill: warm brown in dark, soft indigo in light
-  const activePillStyle = isDark
-    ? { background: '#5D3F3A' }
-    : { background: 'rgba(99,102,241,0.15)' }
-  const activeIconStyle = isDark
-    ? { color: '#FFDBD5' }
-    : { color: '#4338ca' }
-  const activeTextCls = isDark ? 'text-gray-100' : 'text-indigo-700'
 
   async function handleAdd() {
     if (!newName.trim()) return
@@ -59,135 +62,62 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-[88px] flex flex-col bg-gray-900 border-r border-gray-700 shrink-0 shadow-[4px_0_16px_rgba(0,0,0,0.4)]" style={{ zIndex: 10, position: 'relative' }}>
-        {/* Brand — aligned with top app bar */}
-        <div className="h-16 flex items-center justify-center border-b border-gray-700">
-          <GraduationCap size={24} className="text-indigo-400" />
+      <aside className="w-24 flex flex-col items-center bg-white/[0.02] border-r border-gray-700/60 shrink-0" style={{ zIndex: 10, position: 'relative' }}>
+        {/* Brand */}
+        <div className="h-20 flex items-center justify-center">
+          <GraduationCap size={30} strokeWidth={1.8} className="text-orange-400 drop-shadow-[0_0_10px_rgba(167,139,250,0.5)]" />
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 flex flex-col items-center py-4 gap-1">
-          <NavLink
-            to="/classes"
-            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
-          >
-            {({ isActive }) => (
-              <>
-                <div className={cn(
-                  'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
-                  isActive ? '' : 'group-hover:bg-gray-800'
-                )} style={isActive ? activePillStyle : {}}>
-                  <GraduationCap size={18} className={isActive ? '' : 'text-gray-400 group-hover:text-gray-100'} style={isActive ? activeIconStyle : {}} />
-                </div>
-                <span className={cn(
-                  'text-[10px] font-medium transition-colors',
-                  isActive ? activeTextCls : 'text-gray-400 group-hover:text-gray-200'
-                )}>Classes</span>
-              </>
-            )}
-          </NavLink>
-
-          <NavLink
-            to="/library"
-            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
-          >
-            {({ isActive }) => (
-              <>
-                <div className={cn(
-                  'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
-                  isActive ? '' : 'group-hover:bg-gray-800'
-                )} style={isActive ? activePillStyle : {}}>
-                  <Layers size={18} className={isActive ? '' : 'text-gray-400 group-hover:text-gray-100'} style={isActive ? activeIconStyle : {}} />
-                </div>
-                <span className={cn(
-                  'text-[10px] font-medium transition-colors text-center leading-tight',
-                  isActive ? activeTextCls : 'text-gray-400 group-hover:text-gray-200'
-                )}>Project Library</span>
-              </>
-            )}
-          </NavLink>
-
-          <NavLink
+        <nav className="flex-1 flex flex-col items-center gap-3 pt-8">
+          <RailLink to="/classes" label="Classes" icon={GraduationCap} />
+          <RailLink to="/library" label="Project Library" icon={Layers} />
+          <RailLink
             to={classId ? `/classes/${classId}/semester` : '/classes'}
-            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
-          >
-            {({ isActive }) => (
-              <>
-                <div className={cn(
-                  'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
-                  isActive ? '' : 'group-hover:bg-gray-800'
-                )} style={isActive ? activePillStyle : {}}>
-                  <BarChart2 size={18} className={cn(
-                    isActive ? '' : 'group-hover:text-gray-100 transition-colors',
-                    !classId ? 'text-gray-400/40' : isActive ? '' : 'text-gray-400'
-                  )} style={isActive ? activeIconStyle : {}} />
-                </div>
-                <span className={cn(
-                  'text-[10px] font-medium transition-colors',
-                  isActive ? activeTextCls : !classId ? 'text-gray-400/40' : 'text-gray-400 group-hover:text-gray-200'
-                )}>Summary</span>
-              </>
-            )}
-          </NavLink>
-
-          {/* TA Mode button */}
+            label={classId ? 'Semester Summary' : 'Semester Summary — open a class first'}
+            icon={BarChart2}
+            disabled={!classId}
+          />
           <button
             onClick={() => activeAssignment ? setTaOpen(true) : importTaAssignment()}
-            className="flex flex-col items-center gap-1 w-full px-4 py-2 group relative"
-            title={activeAssignment ? `Resume TA marking — ${activeAssignment.projectName}` : 'Open TA assignment'}
+            title={activeAssignment ? `Resume TA marking — ${activeAssignment.projectName}` : 'TA Mode — open a TA assignment'}
+            aria-label="TA Mode"
+            className={tileClass(!!activeAssignment)}
           >
-            <div className={cn(
-              'w-14 h-8 rounded-full flex items-center justify-center transition-colors',
-              activeAssignment ? '' : 'group-hover:bg-gray-800'
-            )} style={activeAssignment ? activePillStyle : {}}>
-              <Briefcase size={18} className={activeAssignment ? '' : 'text-gray-400 group-hover:text-gray-100 transition-colors'}
-                style={activeAssignment ? activeIconStyle : {}} />
-              {activeAssignment && (
-                <span className="absolute top-1 right-3 w-2 h-2 rounded-full bg-indigo-400" />
-              )}
-            </div>
-            <span className={cn('text-[10px] font-medium transition-colors',
-              activeAssignment ? activeTextCls : 'text-gray-400 group-hover:text-gray-200')}>TA Mode</span>
+            <Briefcase size={22} strokeWidth={1.6} />
+            {activeAssignment && <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-orange-400 shadow-[0_0_8px_#a78bfa]" />}
           </button>
-
           <button
             onClick={() => {
               localStorage.removeItem('gradedesk-tutorial-done')
               localStorage.removeItem('gradedesk-tutorial-step')
               window.location.reload()
             }}
-            className="flex flex-col items-center gap-1 w-full px-4 py-2 group"
+            title="Help — replay the tour"
+            aria-label="Help"
+            className={tileClass(false)}
           >
-            <div className="w-14 h-8 rounded-full flex items-center justify-center group-hover:bg-gray-800 transition-colors">
-              <HelpCircle size={18} className="text-gray-400 group-hover:text-gray-100 transition-colors" />
-            </div>
-            <span className="text-[10px] font-medium text-gray-400 group-hover:text-gray-200 transition-colors">Help</span>
+            <HelpCircle size={22} strokeWidth={1.6} />
           </button>
         </nav>
 
-        {/* Theme toggle */}
-        <div className="pb-2 flex justify-center">
-          <button
-            onClick={() => setTheme(isDark ? 'light' : 'dark')}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="w-14 h-8 rounded-full flex items-center justify-center group-hover:bg-gray-800 hover:bg-gray-800 transition-colors"
-          >
-            {isDark
-              ? <Sun size={16} className="text-gray-400 hover:text-gray-100 transition-colors" />
-              : <Moon size={16} className="text-gray-400 hover:text-gray-100 transition-colors" />
-            }
-          </button>
-        </div>
+        {/* New class */}
+        <button
+          onClick={() => setAddOpen(true)}
+          title="New Class"
+          aria-label="New Class"
+          className="w-14 h-14 rounded-2xl flex items-center justify-center bg-orange-500/15 border border-orange-500/30 text-orange-300 hover:bg-orange-500/25 transition-colors shadow-[0_0_24px_rgba(139,92,246,0.2)]"
+        >
+          <Plus size={22} />
+        </button>
 
-        {/* FAB — New Class */}
-        <div className="pb-6 flex justify-center">
-          <button
-            onClick={() => setAddOpen(true)}
-            title="New Class"
-            className="w-14 h-14 rounded-2xl bg-indigo-950/80 border border-indigo-900/40 flex items-center justify-center hover:bg-indigo-900/60 transition-colors shadow-xl shadow-black/50"
-          >
-            <Plus size={22} className="text-indigo-300" />
-          </button>
+        {/* Current class */}
+        <div className="mt-5 mb-5 w-16 pt-4 border-t border-gray-700/60 text-center text-[11px] leading-snug text-gray-400 break-words">
+          {currentClass ? (
+            <>
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_#a78bfa] mr-1 align-middle" />
+              {currentClass.name}
+            </>
+          ) : <span className="text-gray-400/50">No class open</span>}
         </div>
       </aside>
 

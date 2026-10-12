@@ -8,7 +8,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button = forwardRef<HTMLButtonElement, Props>(
   ({ variant = 'secondary', size = 'md', className, children, ...props }, ref) => {
-    const base = 'inline-flex items-center gap-1.5 font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400/30 disabled:opacity-40 disabled:cursor-not-allowed'
+    const base = 'inline-flex items-center gap-1.5 font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400/30 disabled:opacity-40 disabled:cursor-not-allowed'
     const sizes = {
       sm: 'px-2.5 py-1 text-xs',
       md: 'px-3.5 py-2 text-sm',
