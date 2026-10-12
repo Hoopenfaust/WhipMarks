@@ -6,6 +6,7 @@ import { db } from '../../db/db'
 import type { Class, Student, Project, RubricCriterion, Mark } from '../../types'
 import { calcProjectPercentage, calcStudentSemesterMark } from '../../utils/marks'
 import { cn } from '../../utils/cn'
+import { MaceArt } from './MaceArt'
 
 const NUM_WEEKS = 13
 const DAY = 86_400_000
@@ -220,7 +221,8 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
           </div>
         </Panel>
 
-        <div className="relative flex flex-col items-center justify-center text-center min-h-[340px]">
+        <div className="relative flex flex-col items-center text-center min-h-[530px] pt-2">
+          <div className="relative z-10 flex flex-col items-center">
           {needCheckIn > 0
             ? <ShieldAlert size={36} strokeWidth={1.6} className="text-amber-400" />
             : <ShieldCheck size={36} strokeWidth={1.6} className="text-orange-400 accent-glow" />}
@@ -230,8 +232,11 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
           <p className="mt-2 text-[13px] text-gray-400 leading-relaxed">
             {classAvg !== null ? <>Class average {classAvg.toFixed(0)}% · {standing.track + standing.high} of {students.length} students<br />on track or above.</> : 'No marks yet this semester.'}
           </p>
+          </div>
+          {/* The WhipMarks mace, standing on the platform like the car in a vehicle dashboard */}
+          <MaceArt className="relative w-[290px] max-w-full -mt-3 -mb-3 pointer-events-none" />
           {/* One block per project: lit once everyone is marked */}
-          <div className="relative z-10 flex gap-2.5 mt-9">
+          <div className="relative z-10 flex gap-2.5">
             {markable.slice(0, 8).map(p => {
               const done = students.length > 0 && markedCount(p) === students.length
               return (
