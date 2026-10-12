@@ -9,6 +9,16 @@
   font-style: normal;
 }
 
+/* C33handwriting's full stops and commas are barely visible and it has no & % ( ) ' or dashes,
+   so punctuation and symbols are drawn from the hand-lettered Architex instead. */
+@font-face {
+  font-family: 'C33handwriting';
+  src: url('/fonts/Architex-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  unicode-range: U+0021-002F, U+003A-0040, U+2013-2014, U+2018-201D, U+2026;
+}
+
 /* ── Warm MD3 palette overrides ───────────────────────────────────────
    Written outside @layer so these unconditionally beat the stale
    PostCSS/Tailwind cache that may hold old cool-gray values.
