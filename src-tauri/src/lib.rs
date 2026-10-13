@@ -14,6 +14,14 @@ fn write_temp_file(filename: String, data: Vec<u8>) -> Result<String, String> {
     Ok(path.to_string_lossy().to_string())
 }
 
+/// Write a backup file straight to the desktop. Returns the saved path.
+#[command]
+fn save_backup(app: AppHandle, filename: String, json: String) -> Result<String, String> {
+    let path = app.path().desktop_dir().map_err(|e| e.to_string())?.join(filename);
+    fs::write(&path, json).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().to_string())
+}
+
 /// Show a native save dialog and write the PDF bytes to the chosen path.
 /// Returns the path if saved, or None if the user cancelled.
 #[command]
@@ -240,7 +248,7 @@ async fn transcribe(app: AppHandle, wav: Vec<u8>) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![write_temp_file, open_outlook, save_pdf, save_page_pdf, page_pdf_to_temp, transcribe])
+        .invoke_handler(tauri::generate_handler![write_temp_file, save_backup, open_outlook, save_pdf, save_page_pdf, page_pdf_to_temp, transcribe])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { db } from '../db/db'
 import type { Class, Student, Project, RubricCriterion, Mark, RubricDescriptor, RubricTemplate, ScheduleWeek } from '../types'
 
@@ -95,11 +96,22 @@ export async function downloadBackup() {
     rubricTemplates,
     scheduleWeeks,
   }
+  const filename = `whipmarks-${new Date().toISOString().slice(0, 10)}.json`
+  // The desktop webview ignores download links, so write the file natively
+  if (typeof (window as any).__TAURI_INTERNALS__ !== 'undefined') {
+    try {
+      const path = await invoke<string>('save_backup', { filename, json: JSON.stringify(payload) })
+      alert(`Backup saved to ${path}`)
+    } catch (err) {
+      alert(`Couldn't save the backup: ${err}`)
+    }
+    return
+  }
   const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `whipmarks-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = filename
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
