@@ -266,6 +266,8 @@ export default defineConfig({
     anthropicProxyPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Registered from main.tsx, and only outside the desktop app
+      injectRegister: false,
       workbox: {
         // Don't cache API routes — they must always hit the server
         navigateFallbackDenylist: [/^\/api\//],

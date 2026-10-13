@@ -249,6 +249,14 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            // Older builds registered a service worker that kept serving the UI cached when it was
+            // installed, so new installs showed old screens. Remove it before the webview starts.
+            #[cfg(windows)]
+            if let Ok(dir) = app.path().app_local_data_dir() {
+                let _ = fs::remove_dir_all(dir.join("EBWebView").join("Default").join("Service Worker"));
+            }
+            let window = app.config().app.windows[0].clone();
+            tauri::WebviewWindowBuilder::from_config(app, &window)?.build()?;
             Ok(())
         })
         .run(tauri::generate_context!())
