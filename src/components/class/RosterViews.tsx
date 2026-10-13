@@ -70,9 +70,9 @@ export function CompactCards({ students, semesterMark, projectMarks, avatar, car
                 <p className="text-base font-semibold text-gray-100 leading-tight truncate">{s.firstName ?? s.name}</p>
                 {s.firstName && <p className="text-sm text-gray-400 truncate">{s.name}</p>}
               </div>
-              <span className={cn('ml-auto text-2xl font-light', markClass(sem))}>{pctText(sem)}</span>
+              <span className={cn('ml-auto text-2xl font-light wm-private', markClass(sem))}>{pctText(sem)}</span>
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 wm-private">
               {projectMarks(s.id).map(({ name, pct }) => (
                 <div key={name} className="grid grid-cols-[6rem_1fr_2.5rem] items-center gap-2 text-[11px] text-gray-400">
                   <span className="truncate" title={name}>{name}</span>
@@ -122,12 +122,12 @@ export function RosterList({ students, semesterMark, projectMarks, avatar, onSel
                 <td className="px-4 py-2 text-xs whitespace-nowrap">
                   {s.email ? <span className="text-gray-400">{s.email}</span> : <span className="text-red-400">No email</span>}
                 </td>
-                <td className={cn('px-4 py-2 font-semibold tabular-nums', markClass(sem))}>{pctText(sem)}</td>
+                <td className={cn('px-4 py-2 font-semibold tabular-nums wm-private', markClass(sem))}>{pctText(sem)}</td>
                 {projectMarks(s.id).map(({ name, pct }) => (
-                  <td key={name} className={cn('px-4 py-2 font-semibold tabular-nums', markClass(pct))}>{pctText(pct)}</td>
+                  <td key={name} className={cn('px-4 py-2 font-semibold tabular-nums wm-private', markClass(pct))}>{pctText(pct)}</td>
                 ))}
                 <td className="px-4 py-2">
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ color: `rgb(${standing.rgb})`, background: `rgba(${standing.rgb},0.15)` }}>{standing.label}</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap wm-private" style={{ color: `rgb(${standing.rgb})`, background: `rgba(${standing.rgb},0.15)` }}>{standing.label}</span>
                 </td>
                 <td className="px-2 py-2 text-right"><DeleteButton onClick={() => onDelete(s.id)} /></td>
               </tr>
@@ -149,7 +149,7 @@ export function FaceWall({ students, semesterMark, avatar, onSelect }: ViewProps
             <div className="relative">
               <Photo>{avatar(s, 112)}</Photo>
               {sem !== null && (
-                <span className={cn('absolute -bottom-1 -right-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-850 border border-gray-700 shadow-sm', gradeColor(sem))}>
+                <span className={cn('absolute -bottom-1 -right-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-850 border border-gray-700 shadow-sm wm-private', gradeColor(sem))}>
                   {pctText(sem)}
                 </span>
               )}
@@ -165,7 +165,7 @@ export function FaceWall({ students, semesterMark, avatar, onSelect }: ViewProps
 
 export function StandingBoard({ students, semesterMark, avatar, onSelect }: ViewProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-3 items-start wm-private">
       {BOARD_ORDER.map(col => {
         const list = students.filter(s => standingOf(semesterMark(s.id)).id === col.id)
         return (

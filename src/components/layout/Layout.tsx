@@ -8,6 +8,8 @@ import { Sidebar } from './Sidebar'
 import { GlobalSearch } from './GlobalSearch'
 import { SyncStatus } from '../auth/SyncStatus'
 import { SyncLoginModal } from '../auth/SyncLoginModal'
+import { EyeOff } from 'lucide-react'
+import { usePresenting, setPresenting } from '../../utils/presentation'
 
 function AutoBackup() {
   // Watch row counts across all key tables — any change triggers a debounced save
@@ -36,6 +38,7 @@ function AutoBackup() {
 
 export function Layout() {
   const [loginOpen, setLoginOpen] = useState(false)
+  const presenting = usePresenting()
 
   return (
     <div className="flex h-screen app-bg overflow-hidden">
@@ -46,6 +49,15 @@ export function Layout() {
         <header className="h-16 flex items-center px-8 gap-4 shrink-0">
           <h1 className="text-lg font-light text-gray-100 tracking-wide">WhipMarks</h1>
           <span className="text-xs text-gray-500 font-mono">v{__APP_VERSION__}</span>
+          {presenting && (
+            <button
+              onClick={() => setPresenting(false)}
+              title="Click to show marks again"
+              className="ml-4 flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/15 px-3 py-1 text-xs font-medium text-orange-300 shadow-[0_0_16px_rgba(139,92,246,0.25)]"
+            >
+              <EyeOff size={13} /> Presentation mode · marks hidden
+            </button>
+          )}
           <div className="ml-auto flex items-center gap-3">
             <SyncStatus onLoginClick={() => setLoginOpen(true)} />
             <GlobalSearch />

@@ -7,6 +7,7 @@ import type { Class, Student, Project, RubricCriterion, Mark } from '../../types
 import { calcProjectPercentage, calcStudentSemesterMark } from '../../utils/marks'
 import { cn } from '../../utils/cn'
 import { MaceArt } from './MaceArt'
+import { usePresenting } from '../../utils/presentation'
 import { STANDINGS, standingOf, type StandingId } from '../../utils/standing'
 
 const NUM_WEEKS = 13
@@ -65,6 +66,7 @@ function Ring({ pct, size, stroke = 7, children }: { pct: number; size: number; 
 
 export function ClassDashboard({ classObj, students, projects, allMarks, allCriteria }: Props) {
   const navigate = useNavigate()
+  const presenting = usePresenting()
   const projectIds = projects.map(p => p.id)
   const emailLogs = useLiveQuery(() => projectIds.length ? db.emailLogs.where('projectId').anyOf(projectIds).toArray() : [], [projectIds.join(',')]) ?? []
   const submissionCounts = useLiveQuery(async () => {
@@ -151,7 +153,8 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
           </div>
           <h2 className="text-4xl font-light leading-tight text-gray-100">
             {greeting}<br />
-            {students.length === 0 ? `${classObj.name} is ready to set up.`
+            {presenting ? `welcome to ${classObj.name}.`
+              : students.length === 0 ? `${classObj.name} is ready to set up.`
               : needCheckIn > 0 ? `${needCheckIn} ${needCheckIn === 1 ? 'student needs' : 'students need'} a check-in.`
               : `${classObj.name} is on track.`}
           </h2>
@@ -219,7 +222,7 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
         </Panel>
 
         <div className="relative flex flex-col items-center text-center min-h-[530px] pt-2">
-          <div className="relative z-10 flex flex-col items-center">
+          <div className="relative z-10 flex flex-col items-center wm-private">
           {needCheckIn > 0
             ? <ShieldAlert size={36} strokeWidth={1.6} className="text-amber-400" />
             : <ShieldCheck size={36} strokeWidth={1.6} className="text-orange-400 accent-glow" />}
@@ -282,7 +285,7 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
 
       {/* Trend + standing */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.35fr] gap-6 mt-6">
-        <Panel className="grid grid-cols-[170px_1fr] gap-4 items-center">
+        <Panel className="grid grid-cols-[170px_1fr] gap-4 items-center wm-private">
           <div>
             <Label>Class average<br />trend</Label>
             <p className="mt-4 text-4xl font-light text-orange-400">{lastAvg !== null ? `${lastAvg.toFixed(0)}%` : '—'}</p>
@@ -304,7 +307,7 @@ export function ClassDashboard({ classObj, students, projects, allMarks, allCrit
 
         <Panel>
           <Label>Class standing summary</Label>
-          <div className="grid grid-cols-5 gap-3 mt-6 text-center text-[13px] text-gray-300">
+          <div className="grid grid-cols-5 gap-3 mt-6 text-center text-[13px] text-gray-300 wm-private">
             {STANDINGS.filter(st => st.id !== 'none').map(st => ({ ...st, n: countOf(st.id) })).map(({ id, n, label, range, icon: Icon, rgb }) => (
               <div key={id} className={cn('flex flex-col items-center', n === 0 && 'opacity-40')}>
                 <div

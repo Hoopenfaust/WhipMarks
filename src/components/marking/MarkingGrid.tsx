@@ -391,7 +391,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
       </button>
     </div>
 
-    <div className="overflow-auto flex-1 mx-4 mb-4 mt-3 rounded-xl border border-gray-700 shadow-md shadow-black/30">
+    <div className="overflow-auto flex-1 mx-4 mb-4 mt-3 rounded-xl border border-gray-700 shadow-md shadow-black/30 wm-private">
       <table className="marking-table border-collapse min-w-full text-sm">
         <thead>
           <tr>

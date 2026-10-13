@@ -301,7 +301,7 @@ export function ProjectView() {
 
       {/* ANALYTICS TAB */}
       {tab === 'analytics' && (
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden wm-private">
           <AnalyticsTab students={students} criteria={criteria} marks={marks} />
         </div>
       )}
@@ -315,7 +315,7 @@ export function ProjectView() {
 
       {/* MODERATION TAB */}
       {tab === 'moderation' && (
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto wm-private">
           <TaModerationView
             key={taRefresh}
             students={students} criteria={criteria}

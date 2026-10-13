@@ -264,7 +264,7 @@ export function QuickMarkModal({
                   {studentIdx + 1} of {students.length}
                 </span>
                 {isComplete ? (
-                  <span className={cn('font-semibold flex items-center gap-1', gradeColor(pct!), isTouch ? 'text-sm' : 'text-xs')}>
+                  <span className={cn('font-semibold flex items-center gap-1 wm-private', gradeColor(pct!), isTouch ? 'text-sm' : 'text-xs')}>
                     <CheckCircle2 size={isTouch ? 14 : 11} />
                     {pct!.toFixed(1)}%
                   </span>
@@ -357,7 +357,7 @@ export function QuickMarkModal({
         )}
 
         {/* Criteria cards */}
-        <div ref={scrollContainerRef} className={cn('overflow-y-auto flex flex-col', isTouch ? 'p-3 gap-3' : 'p-4 gap-3')}>
+        <div ref={scrollContainerRef} className={cn('overflow-y-auto flex flex-col wm-private', isTouch ? 'p-3 gap-3' : 'p-4 gap-3')}>
           {criteria.map((c) => {
             const mark = marks.find(m => m.studentId === student.id && m.criterionId === c.id)
             const isSaving = saving === c.id

@@ -23,6 +23,7 @@ import { CalendarView } from '../components/schedule/CalendarView'
 import { CategoryDrawPanel } from '../components/categories/CategoryDrawPanel'
 import { CompetencyTab } from '../components/class/CompetencyTab'
 import { ClassDashboard } from '../components/class/ClassDashboard'
+import { usePresenting } from '../utils/presentation'
 import { CompactCards, RosterList, FaceWall, StandingBoard, ROSTER_VIEWS, type RosterView } from '../components/class/RosterViews'
 import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../types'
 import { newId } from '../utils/id'
@@ -223,7 +224,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       {semesterMark !== null && semesterMark < 65 && (
         <div
           className={cn(
-            'absolute top-3 left-3 z-10 p-2 rounded-lg',
+            'absolute top-3 left-3 z-10 p-2 rounded-lg wm-private',
             semesterMark < 50
               ? 'text-red-400 bg-gray-900/80 backdrop-blur-sm'
               : 'text-amber-400 bg-gray-900/80 backdrop-blur-sm'
@@ -237,7 +238,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       {/* Top student star */}
       {semesterMark !== null && semesterMark >= 85 && (
         <div
-          className="absolute top-3 left-3 z-10 p-2 rounded-lg text-indigo-300 bg-gray-900/80 backdrop-blur-sm"
+          className="absolute top-3 left-3 z-10 p-2 rounded-lg text-indigo-300 bg-gray-900/80 backdrop-blur-sm wm-private"
           title="High achiever"
         >
           <Star size={18} className="fill-indigo-300" />
@@ -266,7 +267,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       </div>
 
       {/* Stats grid — wraps to multiple rows when projects overflow */}
-      <div className="w-full border-t border-gray-700 pt-4 flex flex-wrap gap-3 justify-center">
+      <div className="w-full border-t border-gray-700 pt-4 flex flex-wrap gap-3 justify-center wm-private">
         {/* Semester tile */}
         <div className="flex flex-col items-center gap-0.5 px-4 py-2 min-w-[72px]">
           {semesterMark !== null ? (
@@ -522,7 +523,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
             </div>
           )}
           {semesterMark !== null && (
-            <p className={`text-sm font-medium mt-0.5 ${gradeColor(semesterMark)}`}>
+            <p className={`text-sm font-medium mt-0.5 wm-private ${gradeColor(semesterMark)}`}>
               Semester: {semesterMark.toFixed(1)}%
             </p>
           )}
@@ -538,6 +539,8 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
         </div>
       </div>
 
+      {/* Marks, notes and checklist — hidden in presentation mode */}
+      <div className="flex flex-col gap-6 wm-private">
       {/* Progress Chart */}
       {projects.length > 0 && (
         <ProgressChart projects={projects} allMarks={allMarks} allCriteria={allCriteria} />
@@ -777,6 +780,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
@@ -858,6 +862,9 @@ export function ClassDetailView() {
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState(searchParams.get('tab') ?? 'dashboard')
   const [sortMode, setSortMode] = useState<SortMode>('default')
+  // Sorting by mark would give away the ranking, so presentation mode falls back to the default order.
+  const presenting = usePresenting()
+  const activeSort: SortMode = presenting && sortMode.startsWith('mark') ? 'default' : sortMode
   // Remembered per device, so the roster reopens in the view last used.
   const [rosterView, setRosterViewState] = useState<RosterView>(() => {
     try {
@@ -1054,9 +1061,11 @@ export function ClassDetailView() {
                     <button
                       key={opt.id}
                       onClick={() => setSortMode(opt.id)}
+                      disabled={presenting && opt.id.startsWith('mark')}
+                      title={presenting && opt.id.startsWith('mark') ? 'Sorting by mark is off in presentation mode' : undefined}
                       className={cn(
-                        'px-3 py-1 rounded-full text-xs font-medium transition-all',
-                        sortMode === opt.id
+                        'px-3 py-1 rounded-full text-xs font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed',
+                        activeSort === opt.id
                           ? 'btn-accent'
                           : 'bg-gray-800 text-gray-400 hover:text-gray-100 hover:bg-gray-750'
                       )}
@@ -1095,7 +1104,7 @@ export function ClassDetailView() {
                         s.firstName ? s.name : (s.name.trim().split(/\s+/).pop() ?? s.name)
                       return [...students].sort((a, b) => lastNameOf(a).localeCompare(lastNameOf(b)))
                     }
-                    if (sortMode === 'mark-high' || sortMode === 'mark-low') {
+                    if (activeSort === 'mark-high' || activeSort === 'mark-low') {
                       return [...students].sort((a, b) => {
                         const ma = getSemesterMark(a.id)
                         const mb = getSemesterMark(b.id)

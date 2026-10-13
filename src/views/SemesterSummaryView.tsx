@@ -101,7 +101,7 @@ export function SemesterSummaryView() {
         {activeProjects.length === 0 ? (
           <p className="p-8 text-sm text-gray-400/70">No weighted projects yet. Add projects with a semester weight &gt; 0.</p>
         ) : (
-          <table className="min-w-full text-sm border-collapse">
+          <table className="min-w-full text-sm border-collapse wm-private">
             <thead>
               <tr>
                 <th className="sticky top-0 left-0 z-30 bg-gray-850 border-b border-r border-gray-700 px-5 py-3 text-left text-xs font-semibold text-gray-400 min-w-40 whitespace-nowrap">

@@ -275,7 +275,7 @@ export function StudentReportModal({ onClose, ...reportProps }: StudentReportMod
           </div>
         </div>
 
-        <div className="rounded-xl overflow-hidden shadow-2xl">
+        <div className="rounded-xl overflow-hidden shadow-2xl wm-private">
           <StudentReport {...reportProps} />
         </div>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate, useMatch } from 'react-router-dom'
-import { Plus, GraduationCap, BarChart2, HelpCircle, Briefcase, Layers } from 'lucide-react'
+import { Plus, GraduationCap, BarChart2, HelpCircle, Briefcase, Layers, Eye, EyeOff } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { createClass, useClass } from '../../db/hooks/useClasses'
 import { useActiveTaAssignment, saveTaAssignment } from '../../db/hooks/useTaMarks'
@@ -10,6 +10,7 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { TaMarkingView } from '../marking/TaMarkingView'
+import { usePresenting, setPresenting } from '../../utils/presentation'
 
 // Icon-only rail tile; the name shows as a tooltip.
 const tileClass = (active: boolean, disabled = false) => cn(
@@ -39,6 +40,7 @@ export function Sidebar() {
   const [taOpen, setTaOpen]     = useState(false)
   const [taError, setTaError]   = useState<string | null>(null)
   const activeAssignment        = useActiveTaAssignment()
+  const presenting              = usePresenting()
 
   async function handleAdd() {
     if (!newName.trim()) return
@@ -97,6 +99,17 @@ export function Sidebar() {
             className={tileClass(false)}
           >
             <HelpCircle size={22} strokeWidth={1.6} />
+          </button>
+
+          {/* Presentation mode: blurs every mark so WhipMarks can go on a projector */}
+          <button
+            onClick={() => setPresenting(!presenting)}
+            title={presenting ? 'Presentation mode is on — marks are hidden. Click to show marks.' : 'Presentation mode — hide all marks for showing on a projector'}
+            aria-label="Presentation mode"
+            aria-pressed={presenting}
+            className={tileClass(presenting)}
+          >
+            {presenting ? <EyeOff size={22} strokeWidth={1.6} /> : <Eye size={22} strokeWidth={1.6} />}
           </button>
         </nav>
 

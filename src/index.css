@@ -298,3 +298,12 @@ body {
 .category-draw-spinning {
   animation: category-draw-glow 0.9s ease-in-out infinite;
 }
+
+/* ── Presentation mode: blur anything that reveals marks (see utils/presentation.ts) ── */
+html.presenting .wm-private {
+  filter: blur(12px) grayscale(1);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+.wm-private { transition: filter 0.2s, opacity 0.2s; }
