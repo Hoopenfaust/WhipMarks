@@ -32,7 +32,7 @@ This is a **Tauri v2 desktop app**, not a browser app. Data lives in the OS WebV
 - Desktop shortcut at `C:\Users\brett\Desktop\WhipMarks.lnk` → runs `whipmarks-launch.cmd`
 - `whipmarks-launch.cmd` starts Vite silently then opens `src-tauri\target\debug\app.exe`
 
-Dictation needs whisper.cpp in `src-tauri/whisper/` (`whisper-cli.exe`, `whisper.dll`, `ggml*.dll`, `ggml-base.en.bin`). It's gitignored (148 MB model) and bundled as a Tauri resource, so builds fail without it. Don't move it back to AppData: the Claude desktop app's MSIX sandbox redirects AppData writes, so files put there by Claude are invisible to WhipMarks when it's launched from the desktop.
+Dictation needs whisper.cpp in `src-tauri/whisper/` (`whisper-cli.exe`, `whisper.dll`, `ggml*.dll`, `ggml-base.en.bin`). It's gitignored (148 MB model) and bundled as a Tauri resource via `src-tauri/tauri.windows.conf.json`, so Windows builds fail without it (macOS CI builds skip it; dictation is Windows-only). Don't move it back to AppData: the Claude desktop app's MSIX sandbox redirects AppData writes, so files put there by Claude are invisible to WhipMarks when it's launched from the desktop.
 
 When distributing: `npm run tauri:build` → installer at `src-tauri\target\release\bundle\`
 
