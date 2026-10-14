@@ -10,6 +10,7 @@ import { cn } from '../../utils/cn'
 import { QuickMarkModal } from './QuickMarkModal'
 import { StudentAvatar } from './StudentAvatar'
 import { SnippetPicker } from './SnippetPicker'
+import { ReadAloudButton } from './ReadAloudButton'
 import { LevelButton } from './LevelButton'
 import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
@@ -175,6 +176,7 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
               snippets={snippets}
               onInsert={text => setFeedback(prev => prev ? prev + ' ' + text : text)}
             />
+          <ReadAloudButton text={feedback} />
           <button
             onClick={toggleRecording}
             title={recording ? 'Stop recording' : 'Dictate feedback'}

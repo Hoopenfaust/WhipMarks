@@ -254,6 +254,46 @@ Rules:
         }
       })
 
+      // ── /api/speak (ElevenLabs text-to-speech) ─────────────────────────────
+      server.middlewares.use('/api/speak', async (req: IncomingMessage, res: ServerResponse) => {
+        if (req.method !== 'POST') { res.statusCode = 405; res.end('Method Not Allowed'); return }
+
+        const envLocal = loadEnvLocal()
+        const apiKey = envLocal.ELEVENLABS_API_KEY || process.env.ELEVENLABS_API_KEY
+        const voiceId = envLocal.ELEVENLABS_VOICE_ID || process.env.ELEVENLABS_VOICE_ID
+        if (!apiKey || !voiceId) {
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: 'ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID must be set in .env.local' }))
+          return
+        }
+
+        const chunks: Buffer[] = []
+        for await (const chunk of req) chunks.push(chunk as Buffer)
+        const { text } = JSON.parse(Buffer.concat(chunks).toString()) as { text: string }
+
+        try {
+          const upstream = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
+            body: JSON.stringify({ text, model_id: 'eleven_flash_v2_5' }),
+          })
+          if (!upstream.ok) {
+            res.statusCode = upstream.status
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ error: `ElevenLabs error ${upstream.status}: ${await upstream.text()}` }))
+            return
+          }
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'audio/mpeg')
+          res.end(Buffer.from(await upstream.arrayBuffer()))
+        } catch (err) {
+          res.statusCode = 502
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: String(err) }))
+        }
+      })
+
     },
   }
 }

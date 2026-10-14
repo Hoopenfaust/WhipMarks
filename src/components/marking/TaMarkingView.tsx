@@ -7,6 +7,7 @@ import { calcProjectPercentage } from '../../utils/marks'
 import { LEVELS } from '../../utils/levels'
 import { LevelButton } from './LevelButton'
 import { cn } from '../../utils/cn'
+import { ReadAloudButton } from './ReadAloudButton'
 import { downloadTaResults } from '../../utils/taExport'
 import { useDictation } from '../../utils/useDictation'
 
@@ -78,11 +79,14 @@ function CellPopover({ studentName, criterion, initialScore, initialFeedback, de
       <div className="mb-4">
         <div className="flex items-center justify-between mb-1.5">
           <label className="text-xs font-medium text-gray-400">Feedback</label>
-          <button onClick={toggleRecording} className={cn('flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors',
-            recording ? 'bg-red-500/20 border border-red-500/50 text-red-400 animate-pulse' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100')}>
-            {recording ? <Square size={12} /> : <Mic size={12} />}
-            {recording ? 'Stop' : 'Dictate'}
-          </button>
+          <div className="flex items-center gap-2">
+            <ReadAloudButton text={feedback} />
+            <button onClick={toggleRecording} className={cn('flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors',
+              recording ? 'bg-red-500/20 border border-red-500/50 text-red-400 animate-pulse' : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-100')}>
+              {recording ? <Square size={12} /> : <Mic size={12} />}
+              {recording ? 'Stop' : 'Dictate'}
+            </button>
+          </div>
         </div>
         <textarea value={feedback} onChange={e => setFeedback(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') onClose() }}
           placeholder={recording ? 'Listening…' : 'Feedback (optional)'} rows={5}

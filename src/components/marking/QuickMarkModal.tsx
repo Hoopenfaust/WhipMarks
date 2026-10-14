@@ -10,6 +10,7 @@ import { LEVELS } from '../../utils/levels'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
 import { cn } from '../../utils/cn'
 import { SnippetPicker } from './SnippetPicker'
+import { ReadAloudButton } from './ReadAloudButton'
 import { LevelButton } from './LevelButton'
 import { StudentAvatar } from './StudentAvatar'
 import { addSnippet } from '../../db/hooks/useSnippets'
@@ -542,6 +543,7 @@ export function QuickMarkModal({
                               + Save as snippet
                             </button>
                           )}
+                          <ReadAloudButton text={feedbackText} isTouch={isTouch} />
                           <button
                             onClick={toggleFeedbackRecording}
                             className={cn(
@@ -585,6 +587,7 @@ export function QuickMarkModal({
                   snippets={snippets}
                   onInsert={text => setImprovementText(prev => prev ? prev + ' ' + text : text)}
                 />
+                <ReadAloudButton text={improvementText} isTouch={isTouch} />
                 <button
                   onClick={toggleRecording}
                   title={recording ? 'Stop recording' : 'Dictate'}
