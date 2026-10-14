@@ -16,6 +16,8 @@ npm run lint          # ESLint
 
 **Always run `npm run build` to verify TypeScript before considering a change complete.** There are no tests.
 
+**After every change, commit and push:** `git add -A && git commit && git push` to https://github.com/Hoopenfaust/WhipMarks. Do this automatically, without being asked, once the build passes.
+
 ### Starting the dev server for preview_start
 
 The preview_start MCP tool can't find node directly. Use the wrapper script:
