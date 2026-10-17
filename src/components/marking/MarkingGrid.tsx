@@ -1,4 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Mic, Square, FileDown, Mail, MailCheck, MailWarning, Zap, X, Minus, Plus, Users } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet, Group } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
@@ -30,9 +31,11 @@ interface CellPopoverProps {
   onClear: () => Promise<void>
   onClose: () => void
   onNavigate: (dir: 'next' | 'prev') => void
+  /** Show as a centred window the size of Quick Mark instead of a popover under the cell. */
+  modal?: boolean
 }
 
-function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, snippets, onSave, onClear, onClose, onNavigate }: CellPopoverProps) {
+function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, snippets, onSave, onClear, onClose, onNavigate, modal }: CellPopoverProps) {
   const [score, setScore] = useState(mark?.score?.toString() ?? '')
   const [feedback, setFeedback] = useState(mark?.feedback ?? '')
   const { recording, toggle: toggleRecording, stop: stopRecording } = useDictation(t => setFeedback(prev => prev ? prev + ' ' + t : t))
@@ -104,8 +107,14 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
     scoreRef.current?.focus()
   }
 
-  return (
-    <div className="absolute z-50 bg-gray-900/95 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(139,92,246,0.08)] p-5 w-[36rem] top-full left-0 mt-1" onClick={e => e.stopPropagation()}>
+  const panel = (
+    <div
+      className={cn(
+        'bg-gray-900/95 backdrop-blur-xl border border-gray-700/70 shadow-[0_24px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(139,92,246,0.08)]',
+        modal ? 'relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-6' : 'absolute z-50 rounded-2xl p-5 w-[36rem] top-full left-0 mt-1'
+      )}
+      onClick={e => e.stopPropagation()}
+    >
       {/* Header */}
       <div className="mb-4">
         <p className="text-sm font-semibold text-gray-100">{title}</p>
@@ -197,7 +206,7 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
           onChange={e => setFeedback(e.target.value)}
           onKeyDown={e => { if (e.key === 'Escape') onClose() }}
           placeholder={recording ? 'Listening…' : 'Feedback (optional)'}
-          rows={5}
+          rows={modal ? 10 : 5}
           className={cn(
             'w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-chiffon-muted/50 resize-none focus:outline-none focus:border-gray-200-muted',
             recording ? 'border-red-500/50' : 'border-gray-700'
@@ -231,6 +240,17 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
       </div>
       <p className="text-center text-[10px] text-gray-400/70 mt-2">Tab → next · Shift+Tab ← prev · Esc close</p>
     </div>
+  )
+
+  if (!modal) return panel
+  // Portalled to <body> so the table's scroll container can't clip it. Clicks still bubble through
+  // React to the cell underneath, hence stopPropagation on the backdrop.
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => { e.stopPropagation(); onClose() }}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      {panel}
+    </div>,
+    document.body
   )
 }
 
@@ -497,6 +517,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                         {isActive && (
                           <CellPopover
                             title={`${g.name} — whole group`}
+                            modal
                             criterion={c}
                             mark={gm}
                             criterionDescriptors={getCriterionDescriptors(c.id)}
