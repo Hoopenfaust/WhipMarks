@@ -20,6 +20,13 @@ npm run lint          # ESLint
 
 **Bump the version for every big update** (a new feature or a noticeable change in behaviour), without being asked: raise the minor number (1.2.0 → 1.3.0) in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and the `name = "app"` entry in `src-tauri/Cargo.lock`, in the same commit as the change. Small fixes and tweaks don't get a bump. The sidebar shows the version (`__APP_VERSION__`, read from tauri.conf.json).
 
+**After every bump, restart the user's running copy so it shows the new version** (also needed whenever Rust code changes). Do this without being asked:
+1. Close the app gracefully: `CloseMainWindow()` on the `app` process whose path contains `student-marker`. Never kill it.
+2. Run `cargo build` in `src-tauri`.
+3. Stop only the `node` process that is *listening* on :5173 (`Get-NetTCPConnection -LocalPort 5173 -State Listen`). Vite reads `__APP_VERSION__` once at startup. Never kill all node processes.
+4. Relaunch `whipmarks-launch.vbs` through a one-off `schtasks` task, never directly. A direct launch from Claude runs inside its MSIX sandbox and opens with empty data.
+5. Check the result: `http://localhost:5173/@vite/env` should contain the new version.
+
 ### Starting the dev server for preview_start
 
 The preview_start MCP tool can't find node directly. Use the wrapper script:
