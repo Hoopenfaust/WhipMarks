@@ -18,6 +18,8 @@ npm run lint          # ESLint
 
 **After every change, commit and push:** `git add -A && git commit && git push` to https://github.com/Hoopenfaust/WhipMarks. Do this automatically, without being asked, once the build passes.
 
+**Bump the version for every big update** (a new feature or a noticeable change in behaviour), without being asked: raise the minor number (1.2.0 → 1.3.0) in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and the `name = "app"` entry in `src-tauri/Cargo.lock`, in the same commit as the change. Small fixes and tweaks don't get a bump. The sidebar shows the version (`__APP_VERSION__`, read from tauri.conf.json).
+
 ### Starting the dev server for preview_start
 
 The preview_start MCP tool can't find node directly. Use the wrapper script:
