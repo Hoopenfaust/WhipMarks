@@ -68,7 +68,7 @@ function stripWhisperTags(text: string) {
 
 const SAMPLE_RATE = 16000
 const SPEECH_RMS = 0.01          // buffer loudness that counts as speech
-const PAUSE_MS = 700             // silence after speech that ends a phrase
+const PAUSE_MS = 2000            // silence after speech that ends a phrase (long, so slow speech isn't split into sentences)
 const MAX_PHRASE_MS = 25000      // Whisper handles up to 30s per call
 
 function toWav(chunks: Float32Array[]) {
