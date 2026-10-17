@@ -119,11 +119,13 @@ fn print_to_pdf(
 #[command]
 fn open_outlook(
     to: String,
+    cc: Option<String>,
     subject: String,
     body: String,
     attachment_paths: Vec<String>,
 ) -> Result<(), String> {
     let boundary = "WhipMarksMIMEBoundary20250101";
+    let cc_header = cc.filter(|c| !c.is_empty()).map(|c| format!("Cc: {c}\r\n")).unwrap_or_default();
 
     // HTML body ending in an empty id="Signature" div: Outlook fills that with the user's
     // automatic signature, so it lands after the message instead of above it.
@@ -167,6 +169,7 @@ fn open_outlook(
         format!(
             "X-Unsent: 1\r\n\
              To: {to}\r\n\
+             {cc_header}\
              Subject: {subject}\r\n\
              MIME-Version: 1.0\r\n\
              Content-Type: multipart/mixed; boundary=\"{boundary}\"\r\n\
@@ -189,6 +192,7 @@ fn open_outlook(
         format!(
             "X-Unsent: 1\r\n\
              To: {to}\r\n\
+             {cc_header}\
              Subject: {subject}\r\n\
              MIME-Version: 1.0\r\n\
              Content-Type: text/html; charset=utf-8\r\n\

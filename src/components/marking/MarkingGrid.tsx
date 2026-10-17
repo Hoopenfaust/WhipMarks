@@ -14,7 +14,7 @@ import { ReadAloudButton } from './ReadAloudButton'
 import { LevelButton } from './LevelButton'
 import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
-import { emailStudentMark } from '../../utils/emailStudent'
+import { emailStudentMark, emailGroupMark } from '../../utils/emailStudent'
 import { useProjectEmailLogs, emailStatus, formatEmailedAt } from '../../db/hooks/useEmailLogs'
 import { useProjectImprovementNotes } from '../../db/hooks/useImprovementNotes'
 
@@ -425,6 +425,13 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
               const gMarks = groupMarks.filter(m => m.groupId === g.id)
               const gMarkedCount = criteria.filter(c => gMarks.some(m => m.criterionId === c.id)).length
               const gPct = calcProjectPercentage(gMarks, criteria)
+              // Every member, even ones hidden by "Unmarked only", so the whole group gets the email.
+              const gStudents = students.filter(s => groupOf(s.id)?.id === g.id)
+              const gEmailable = gStudents.filter(s => s.email)
+              const gMissing = gStudents.length - gEmailable.length
+              const gStates = gEmailable.map(s => statusFor(s.id).state)
+              const gEmail = gStates.length > 0 && gStates.every(st => st === 'sent') ? 'sent'
+                : gStates.some(st => st === 'changed') ? 'changed' : 'none'
               return (
                 <tr key={row.key} className="bg-gray-800/60">
                   <td
@@ -435,6 +442,26 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                       <Users size={isTouch ? 18 : 16} style={{ color: g.color }} />
                       <span className="font-semibold text-gray-100">{g.name}</span>
                       <span className="text-xs text-gray-400">{row.size} {row.size === 1 ? 'student' : 'students'}</span>
+                      <button
+                        onClick={async () => {
+                          setEmailingId(g.id)
+                          try { await emailGroupMark(g, gStudents, projectId, criteria, marks) } finally { setEmailingId(null) }
+                        }}
+                        disabled={gEmailable.length === 0 || emailingId !== null}
+                        title={gEmailable.length === 0 ? 'Add email addresses for these students on the class page to email the group'
+                          : `${gEmail === 'sent' ? 'Group emailed — click to email again: ' : gEmail === 'changed' ? 'Marks changed since emailed — click to email again: ' : ''}`
+                            + `one email to ${gEmailable[0].email}${gEmailable.length > 1 ? `, CC ${gEmailable.length - 1} more` : ''}, with every member's marking sheet`
+                            + (gMissing > 0 ? ` (${gMissing} without an email address left out)` : '')}
+                        className={cn(
+                          'p-1.5 rounded-lg hover:text-indigo-300 hover:bg-indigo-950/50 transition-all hover:scale-110 disabled:hover:scale-100 disabled:hover:bg-transparent disabled:cursor-not-allowed',
+                          gEmail === 'sent' ? 'text-emerald-600 dark:text-emerald-400'
+                            : gEmail === 'changed' ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-gray-500 disabled:hover:text-gray-500',
+                          emailingId === g.id ? 'animate-pulse' : gEmailable.length === 0 && 'opacity-40'
+                        )}
+                      >
+                        {gEmail === 'sent' ? <MailCheck size={16} /> : gEmail === 'changed' ? <MailWarning size={16} /> : <Mail size={16} />}
+                      </button>
                     </div>
                   </td>
                   {criteria.map((c, ci) => {
