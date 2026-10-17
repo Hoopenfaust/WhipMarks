@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail, MailCheck, MailWarning, Minus, Plus } from 'lucide-react'
-import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet } from '../../types'
+import { ChevronLeft, ChevronRight, X, CheckCircle2, Mic, Square, FileText, Upload, Mail, MailCheck, MailWarning, Minus, Plus, Users } from 'lucide-react'
+import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet, Group, GroupMark } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
+import { upsertGroupMark, deleteGroupMark } from '../../db/hooks/useGroups'
 import { upsertImprovementNote } from '../../db/hooks/useImprovementNotes'
 import { useSubmission, useSubmissionAnnotation, saveSubmission, parseAnnotations } from '../../db/hooks/useSubmissions'
 import { useProject } from '../../db/hooks/useProjects'
@@ -17,7 +18,7 @@ import { addSnippet } from '../../db/hooks/useSnippets'
 import { useIsTouch } from '../../utils/useIsTouch'
 import { useDictation } from '../../utils/useDictation'
 import { AnnotatorView } from '../annotator/AnnotatorView'
-import { emailStudentMark } from '../../utils/emailStudent'
+import { emailStudentMark, emailGroupMark } from '../../utils/emailStudent'
 import { useProjectEmailLogs, emailStatus, formatEmailedAt } from '../../db/hooks/useEmailLogs'
 import { useProjectImprovementNotes } from '../../db/hooks/useImprovementNotes'
 
@@ -31,6 +32,10 @@ interface Props {
   initialStudentIdx?: number
   initialCriterionIdx?: number
   onClose: () => void
+  /** Mark whole groups instead of `students`. Marks go through the group (copied to every member), and
+   *  Room for Improvement and email go to every member. initialStudentIdx then indexes `groups`. */
+  groups?: { group: Group; members: Student[] }[]
+  groupMarks?: GroupMark[]
 }
 
 export function QuickMarkModal({
@@ -43,9 +48,12 @@ export function QuickMarkModal({
   initialStudentIdx = 0,
   initialCriterionIdx,
   onClose,
+  groups,
+  groupMarks = [],
 }: Props) {
   const isTouch = useIsTouch()
-  const [studentIdx, setStudentIdx] = useState(Math.max(0, Math.min(initialStudentIdx, students.length - 1)))
+  const count = groups ? groups.length : students.length
+  const [studentIdx, setStudentIdx] = useState(Math.max(0, Math.min(initialStudentIdx, count - 1)))
   const [annotating, setAnnotating] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
   const [feedbackOpen, setFeedbackOpen] = useState<string | null>(null)
@@ -66,23 +74,49 @@ export function QuickMarkModal({
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
 
-  const student = students[studentIdx]
+  // In group mode the "student" is undefined and everything goes through the current group.
+  const group = groups?.[studentIdx]
+  const student: Student | undefined = groups ? undefined : students[studentIdx]
+  const itemId = group ? group.group.id : student!.id
+  const itemName = group ? group.group.name
+    : student!.firstName ? `${student!.firstName} ${student!.name}` : student!.name
+  const marksOf = (i: number) => groups
+    ? groupMarks.filter(m => m.groupId === groups[i].group.id)
+    : marks.filter(m => m.studentId === students[i].id)
+  const itemMarks = marksOf(studentIdx)
+  const markFor = (criterionId: string) => itemMarks.find(m => m.criterionId === criterionId)
+  const saveMark = (criterionId: string, score: number, feedback: string) => group
+    ? upsertGroupMark(group.group.id, projectId, criterionId, score, feedback)
+    : upsertMark(student!.id, projectId, criterionId, score, feedback)
+  const removeMark = (criterionId: string) => group
+    ? deleteGroupMark(group.group.id, projectId, criterionId)
+    : deleteMark(student!.id, projectId, criterionId)
+
   const [emailing, setEmailing] = useState(false)
   const emailLogs = useProjectEmailLogs(projectId)
   const improvementNotes = useProjectImprovementNotes(projectId)
-  const email = emailStatus(
-    emailLogs.find(l => l.studentId === student.id),
-    marks.filter(m => m.studentId === student.id),
-    improvementNotes.find(n => n.studentId === student.id)?.text,
+  const statusOf = (s: Student) => emailStatus(
+    emailLogs.find(l => l.studentId === s.id),
+    marks.filter(m => m.studentId === s.id),
+    improvementNotes.find(n => n.studentId === s.id)?.text,
   )
-  const submission = useSubmission(student.id, projectId)
-  const submissionAnnotation = useSubmissionAnnotation(student.id, projectId)
+  // A group counts as emailed once every member with an address has been, and as changed if any member's marks changed.
+  const emailRecipients = group ? group.members.filter(s => s.email) : student!.email ? [student!] : []
+  const memberStatuses = emailRecipients.map(statusOf)
+  const email = memberStatuses.some(st => st.state === 'changed') ? memberStatuses.find(st => st.state === 'changed')!
+    : memberStatuses.length > 0 && memberStatuses.every(st => st.state === 'sent') ? memberStatuses[0]
+    : { state: 'none' as const }
+  const emailTo = group
+    ? `${emailRecipients[0]?.email}${emailRecipients.length > 1 ? `, CC ${emailRecipients.length - 1} more` : ''}`
+    : student!.email
+  const submission = useSubmission(student?.id, projectId)
+  const submissionAnnotation = useSubmissionAnnotation(student?.id, projectId)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const project = useProject(projectId)
 
   async function handleUploadSubmission(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || file.type !== 'application/pdf') return
+    if (!student || !file || file.type !== 'application/pdf') return
     const data = await file.arrayBuffer()
     const base = file.name.replace(/\.pdf$/i, '')
     const fullName = student.firstName ? `${student.firstName} ${student.name}` : student.name
@@ -93,7 +127,7 @@ export function QuickMarkModal({
   }
 
   const prev = useCallback(() => setStudentIdx(i => Math.max(0, i - 1)), [])
-  const next = useCallback(() => setStudentIdx(i => Math.min(students.length - 1, i + 1)), [students.length])
+  const next = useCallback(() => setStudentIdx(i => Math.min(count - 1, i + 1)), [count])
 
   // Keyboard navigation (desktop)
   useEffect(() => {
@@ -108,13 +142,16 @@ export function QuickMarkModal({
     return () => window.removeEventListener('keydown', handler)
   }, [prev, next, onClose, feedbackOpen, isTouch])
 
-  // Load improvement note when student changes
+  // Students whose Room for Improvement note this window edits: the student, or every group member.
+  const noteStudentIds = group ? group.members.map(s => s.id) : [student!.id]
+
+  // Load improvement note when student/group changes. A group shows its first member's note.
   useEffect(() => {
     stopRecording()
-    db.improvementNotes.where('[studentId+projectId]').equals([student.id, projectId]).first()
+    db.improvementNotes.where('[studentId+projectId]').equals([noteStudentIds[0] ?? '', projectId]).first()
       .then(note => { setImprovementText(note?.text ?? ''); setSavedImprovementText(note?.text ?? '') })
       .catch(() => { setImprovementText(''); setSavedImprovementText('') })
-  }, [student.id, projectId, stopRecording])
+  }, [itemId, projectId, stopRecording]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Scroll to initial criterion on first open
   useEffect(() => {
@@ -142,7 +179,11 @@ export function QuickMarkModal({
 
   async function saveImprovement() {
     if (improvementText === savedImprovementText) return
-    await upsertImprovementNote(student.id, projectId, improvementText)
+    // Like group marks, a member whose note was edited individually (it no longer matches) keeps it.
+    for (const id of noteStudentIds) {
+      const current = improvementNotes.find(n => n.studentId === id)?.text ?? ''
+      if (!group || current === '' || current === savedImprovementText) await upsertImprovementNote(id, projectId, improvementText)
+    }
     setSavedImprovementText(improvementText)
   }
 
@@ -152,10 +193,10 @@ export function QuickMarkModal({
     const descriptor = descriptors.find(d => d.criterionId === criterion.id && d.level === levelId)
     const fraction = descriptor?.score ?? level.defaultScore
     const score = Math.round(criterion.maxMarks * fraction)
-    const existingMark = marks.find(m => m.studentId === student.id && m.criterionId === criterion.id)
+    const existingMark = markFor(criterion.id)
     setSaving(criterion.id)
     try {
-      await upsertMark(student.id, projectId, criterion.id, score, existingMark?.feedback ?? '')
+      await saveMark(criterion.id, score, existingMark?.feedback ?? '')
       setMarkError(null)
     } catch {
       setMarkError('Failed to save mark — please try again.')
@@ -165,11 +206,11 @@ export function QuickMarkModal({
   }
 
   async function adjustMark(criterion: RubricCriterion, delta: number) {
-    const existingMark = marks.find(m => m.studentId === student.id && m.criterionId === criterion.id)
+    const existingMark = markFor(criterion.id)
     const score = Math.min(criterion.maxMarks, Math.max(0, (existingMark?.score ?? 0) + delta))
     setSaving(criterion.id)
     try {
-      await upsertMark(student.id, projectId, criterion.id, score, existingMark?.feedback ?? '')
+      await saveMark(criterion.id, score, existingMark?.feedback ?? '')
       setMarkError(null)
     } catch {
       setMarkError('Failed to save mark — please try again.')
@@ -181,7 +222,7 @@ export function QuickMarkModal({
   async function clearMark(criterion: RubricCriterion) {
     setSaving(criterion.id)
     try {
-      await deleteMark(student.id, projectId, criterion.id)
+      await removeMark(criterion.id)
       setMarkError(null)
     } catch {
       setMarkError('Failed to clear mark — please try again.')
@@ -191,10 +232,9 @@ export function QuickMarkModal({
   }
 
   async function saveFeedback(criterion: RubricCriterion) {
-    const mark = marks.find(m => m.studentId === student.id && m.criterionId === criterion.id)
-    const score = mark?.score ?? 0
+    const score = markFor(criterion.id)?.score ?? 0
     try {
-      await upsertMark(student.id, projectId, criterion.id, score, feedbackText)
+      await saveMark(criterion.id, score, feedbackText)
       setMarkError(null)
     } catch {
       setMarkError('Failed to save feedback — please try again.')
@@ -203,22 +243,21 @@ export function QuickMarkModal({
   }
 
   function openFeedback(criterion: RubricCriterion) {
-    const mark = marks.find(m => m.studentId === student.id && m.criterionId === criterion.id)
-    setFeedbackText(mark?.feedback ?? '')
+    setFeedbackText(markFor(criterion.id)?.feedback ?? '')
     setFeedbackOpen(criterion.id)
   }
 
-  const studentMarks = marks.filter(m => m.studentId === student.id)
-  const pct = criteria.length > 0 ? calcProjectPercentage(studentMarks, criteria) : null
-  const isComplete = criteria.every(c => studentMarks.some(m => m.criterionId === c.id))
-  const completedCount = criteria.filter(c => studentMarks.some(m => m.criterionId === c.id)).length
-  const showDots = students.length <= 24
+  const pct = criteria.length > 0 ? calcProjectPercentage(itemMarks, criteria) : null
+  const isComplete = criteria.every(c => itemMarks.some(m => m.criterionId === c.id))
+  const completedCount = criteria.filter(c => itemMarks.some(m => m.criterionId === c.id)).length
+  const showDots = count <= 24
 
   // ─── Email to Outlook ──────────────────────────────────────────────────────
   async function sendEmail() {
     setEmailing(true)
     try {
-      await emailStudentMark(student, projectId, criteria, marks)
+      if (group) await emailGroupMark(group.group, group.members, projectId, criteria, marks)
+      else await emailStudentMark(student!, projectId, criteria, marks)
     } finally {
       setEmailing(false)
     }
@@ -255,14 +294,28 @@ export function QuickMarkModal({
           </button>
 
           <div className="flex-1 flex items-center justify-center gap-3 min-w-0">
-            <StudentAvatar student={student} className={cn('ring-2 ring-orange-500/40 shadow-[0_0_16px_rgba(139,92,246,0.25)]', isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base')} />
+            {group ? (
+              <div
+                className={cn('shrink-0 rounded-full flex items-center justify-center ring-2 ring-orange-500/40', isTouch ? 'w-14 h-14' : 'w-12 h-12')}
+                style={{ background: group.group.color + '33', color: group.group.color }}
+              >
+                <Users size={isTouch ? 24 : 20} />
+              </div>
+            ) : (
+              <StudentAvatar student={student!} className={cn('ring-2 ring-orange-500/40 shadow-[0_0_16px_rgba(139,92,246,0.25)]', isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base')} />
+            )}
             <div className="min-w-0">
               <p className={cn('font-semibold text-gray-100 truncate', isTouch ? 'text-lg' : 'text-base')}>
-                {student.firstName ? `${student.firstName} ${student.name}` : student.name}
+                {itemName}
               </p>
+              {group && (
+                <p className={cn('text-gray-400 truncate', isTouch ? 'text-sm' : 'text-xs')}>
+                  {group.members.map(s => s.firstName || s.name).join(', ')}
+                </p>
+              )}
               <div className="flex items-center gap-2 mt-0.5">
                 <span className={cn('text-gray-400/70', isTouch ? 'text-sm' : 'text-xs')}>
-                  {studentIdx + 1} of {students.length}
+                  {studentIdx + 1} of {count}
                 </span>
                 {isComplete ? (
                   <span className={cn('font-semibold flex items-center gap-1 wm-private', gradeColor(pct!), isTouch ? 'text-sm' : 'text-xs')}>
@@ -278,18 +331,18 @@ export function QuickMarkModal({
             </div>
           </div>
 
-          <button onClick={next} disabled={studentIdx === students.length - 1} className={navBtnClass}>
+          <button onClick={next} disabled={studentIdx === count - 1} className={navBtnClass}>
             <ChevronRight size={isTouch ? 24 : 20} />
           </button>
 
-          {/* Email student */}
-          {student.email && (
+          {/* Email student, or the whole group in one email */}
+          {emailRecipients.length > 0 && (
             <button
               onClick={sendEmail}
               disabled={emailing}
-              title={email.state === 'sent' ? `Emailed ${formatEmailedAt(email.emailedAt)} — click to email ${student.email} again`
-                : email.state === 'changed' ? `Marks changed since emailed ${formatEmailedAt(email.emailedAt)} — click to email ${student.email} again`
-                : `Email ${student.email}`}
+              title={email.state === 'sent' ? `Emailed ${formatEmailedAt(email.emailedAt)} — click to email ${emailTo} again`
+                : email.state === 'changed' ? `Marks changed since emailed ${formatEmailedAt(email.emailedAt)} — click to email ${emailTo} again`
+                : `Email ${emailTo}`}
               className={cn('rounded-full flex items-center gap-1.5 font-medium transition-colors disabled:opacity-50',
                 isTouch ? 'px-3 py-2.5 text-sm' : 'px-2.5 py-1.5 text-xs',
                 email.state === 'changed'
@@ -305,9 +358,9 @@ export function QuickMarkModal({
             </button>
           )}
 
-          {/* Annotate / upload submission */}
+          {/* Annotate / upload submission (submissions belong to each student, so not in group mode) */}
           <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={handleUploadSubmission} />
-          {submission ? (
+          {group ? null : submission ? (
             <button
               onClick={() => setAnnotating(true)}
               title="Open annotated submission"
@@ -360,7 +413,7 @@ export function QuickMarkModal({
         {/* Criteria cards */}
         <div ref={scrollContainerRef} className={cn('overflow-y-auto flex flex-col wm-private', isTouch ? 'p-3 gap-3' : 'p-4 gap-3')}>
           {criteria.map((c) => {
-            const mark = marks.find(m => m.studentId === student.id && m.criterionId === c.id)
+            const mark = markFor(c.id)
             const isSaving = saving === c.id
             const isEditingFeedback = feedbackOpen === c.id
             const hasFeedback = !!(mark?.feedback)
@@ -639,13 +692,14 @@ export function QuickMarkModal({
         )}>
           {!isTouch && <p className="text-[11px] text-gray-400/50">← → navigate · Esc close</p>}
           {isTouch && (
-            <p className="text-xs text-gray-400/50">Swipe left/right to change student</p>
+            <p className="text-xs text-gray-400/50">Swipe left/right to change {group ? 'group' : 'student'}</p>
           )}
           {showDots ? (
             <div className="flex items-center gap-1.5 flex-wrap justify-center">
-              {students.map((_, i) => {
-                const sm = marks.filter(m => m.studentId === students[i].id)
+              {Array.from({ length: count }, (_, i) => {
+                const sm = marksOf(i)
                 const done = criteria.every(c => sm.some(m => m.criterionId === c.id))
+                const s = groups ? undefined : students[i]
                 return (
                   <button
                     key={i}
@@ -656,7 +710,7 @@ export function QuickMarkModal({
                         ? i === studentIdx ? 'w-6 h-2.5 bg-orange-400 shadow-[0_0_8px_rgba(167,139,250,0.7)]' : done ? 'w-2.5 h-2.5 bg-emerald-500' : 'w-2.5 h-2.5 bg-gray-700'
                         : i === studentIdx ? 'w-4 h-1.5 bg-orange-400 shadow-[0_0_8px_rgba(167,139,250,0.7)]' : done ? 'w-1.5 h-1.5 bg-emerald-600' : 'w-1.5 h-1.5 bg-gray-700'
                     )}
-                    title={students[i].firstName ? `${students[i].firstName} ${students[i].name}` : students[i].name}
+                    title={groups ? groups[i].group.name : s!.firstName ? `${s!.firstName} ${s!.name}` : s!.name}
                   />
                 )
               })}
@@ -666,11 +720,11 @@ export function QuickMarkModal({
               <div className="w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-orange-400 rounded-full transition-all"
-                  style={{ width: `${students.length > 0 ? ((studentIdx + 1) / students.length) * 100 : 0}%` }}
+                  style={{ width: `${count > 0 ? ((studentIdx + 1) / count) * 100 : 0}%` }}
                 />
               </div>
               <span className={cn('tabular-nums text-gray-400/70', isTouch ? 'text-sm' : 'text-[11px]')}>
-                {studentIdx + 1}/{students.length}
+                {studentIdx + 1}/{count}
               </span>
             </div>
           )}
@@ -679,7 +733,7 @@ export function QuickMarkModal({
     </div>
 
     {/* Full-screen annotator — shown when submission exists and annotate is clicked */}
-    {annotating && submission && (
+    {annotating && submission && student && (
       <AnnotatorView
         student={student}
         projectId={projectId}

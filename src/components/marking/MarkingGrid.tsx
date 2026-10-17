@@ -1,10 +1,9 @@
 ﻿import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { Mic, Square, FileDown, Mail, MailCheck, MailWarning, Zap, X, Minus, Plus, Users } from 'lucide-react'
 import type { Student, RubricCriterion, Mark, RubricDescriptor, Snippet, Group } from '../../types'
 import { upsertMark, deleteMark } from '../../db/hooks/useMarks'
 import { useProject } from '../../db/hooks/useProjects'
-import { useGroups, useGroupMembers, useGroupMarks, upsertGroupMark, deleteGroupMark } from '../../db/hooks/useGroups'
+import { useGroups, useGroupMembers, useGroupMarks } from '../../db/hooks/useGroups'
 import { calcProjectPercentage, gradeColor } from '../../utils/marks'
 import { LEVELS } from '../../utils/levels'
 import { cn } from '../../utils/cn'
@@ -31,11 +30,9 @@ interface CellPopoverProps {
   onClear: () => Promise<void>
   onClose: () => void
   onNavigate: (dir: 'next' | 'prev') => void
-  /** Show as a centred window the size of Quick Mark instead of a popover under the cell. */
-  modal?: boolean
 }
 
-function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, snippets, onSave, onClear, onClose, onNavigate, modal }: CellPopoverProps) {
+function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, snippets, onSave, onClear, onClose, onNavigate }: CellPopoverProps) {
   const [score, setScore] = useState(mark?.score?.toString() ?? '')
   const [feedback, setFeedback] = useState(mark?.feedback ?? '')
   const { recording, toggle: toggleRecording, stop: stopRecording } = useDictation(t => setFeedback(prev => prev ? prev + ' ' + t : t))
@@ -107,14 +104,8 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
     scoreRef.current?.focus()
   }
 
-  const panel = (
-    <div
-      className={cn(
-        'bg-gray-900/95 backdrop-blur-xl border border-gray-700/70 shadow-[0_24px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(139,92,246,0.08)]',
-        modal ? 'relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-6' : 'absolute z-50 rounded-2xl p-5 w-[36rem] top-full left-0 mt-1'
-      )}
-      onClick={e => e.stopPropagation()}
-    >
+  return (
+    <div className="absolute z-50 bg-gray-900/95 backdrop-blur-xl border border-gray-700/70 rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(139,92,246,0.08)] p-5 w-[36rem] top-full left-0 mt-1" onClick={e => e.stopPropagation()}>
       {/* Header */}
       <div className="mb-4">
         <p className="text-sm font-semibold text-gray-100">{title}</p>
@@ -206,7 +197,7 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
           onChange={e => setFeedback(e.target.value)}
           onKeyDown={e => { if (e.key === 'Escape') onClose() }}
           placeholder={recording ? 'Listening…' : 'Feedback (optional)'}
-          rows={modal ? 10 : 5}
+          rows={5}
           className={cn(
             'w-full bg-gray-800 border rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-chiffon-muted/50 resize-none focus:outline-none focus:border-gray-200-muted',
             recording ? 'border-red-500/50' : 'border-gray-700'
@@ -240,17 +231,6 @@ function CellPopover({ title, criterion, mark, criterionDescriptors, projectId, 
       </div>
       <p className="text-center text-[10px] text-gray-400/70 mt-2">Tab → next · Shift+Tab ← prev · Esc close</p>
     </div>
-  )
-
-  if (!modal) return panel
-  // Portalled to <body> so the table's scroll container can't clip it. Clicks still bubble through
-  // React to the cell underneath, hence stopPropagation on the backdrop.
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => { e.stopPropagation(); onClose() }}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      {panel}
-    </div>,
-    document.body
   )
 }
 
@@ -324,6 +304,17 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
         ...rows.filter(s => !groupOf(s.id)).map(s => studentRow(s)),
       ]
     : rows.map(s => studentRow(s))
+
+  // Group Quick Mark steps through every group that has members, each with all its members
+  // (including ones hidden by "Unmarked only").
+  const [groupQuickMark, setGroupQuickMark] = useState<{ idx: number; criterionIdx?: number } | null>(null)
+  const quickMarkGroups = groups
+    .map(g => ({ group: g, members: students.filter(s => groupOf(s.id)?.id === g.id) }))
+    .filter(x => x.members.length > 0)
+  function openGroupQuickMark(groupId: string, criterionIdx?: number) {
+    setActiveCell(null)
+    setGroupQuickMark({ idx: Math.max(0, quickMarkGroups.findIndex(x => x.group.id === groupId)), criterionIdx })
+  }
 
   function getGroupMark(groupId: string, criterionId: string) {
     return groupMarks.find(m => m.groupId === groupId && m.criterionId === criterionId)
@@ -460,7 +451,13 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                   >
                     <div className="flex items-center gap-2">
                       <Users size={isTouch ? 18 : 16} style={{ color: g.color }} />
-                      <span className="font-semibold text-gray-100">{g.name}</span>
+                      <button
+                        onClick={() => openGroupQuickMark(g.id)}
+                        title="Quick Mark this group"
+                        className="font-semibold text-gray-100 hover:underline underline-offset-2 text-left"
+                      >
+                        {g.name}
+                      </button>
                       <span className="text-xs text-gray-400">{row.size} {row.size === 1 ? 'student' : 'students'}</span>
                       <button
                         onClick={async () => {
@@ -486,18 +483,16 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                   </td>
                   {criteria.map((c, ci) => {
                     const gm = getGroupMark(g.id, c.id)
-                    const isActive = activeCell?.rowKey === row.key && activeCell?.criterionIdx === ci
                     const pctCell = gm ? (gm.score / c.maxMarks) * 100 : null
                     return (
                       <td
                         key={c.id}
                         title="Mark the whole group"
                         className={cn(
-                          'relative border-b border-r border-gray-700 cursor-pointer transition-colors',
-                          isTouch ? 'px-4 py-5' : 'px-4 py-2.5',
-                          isActive ? 'bg-gray-800/30' : 'hover:bg-gray-800'
+                          'relative border-b border-r border-gray-700 cursor-pointer transition-colors hover:bg-gray-800',
+                          isTouch ? 'px-4 py-5' : 'px-4 py-2.5'
                         )}
-                        onClick={() => setActiveCell(isActive ? null : { rowKey: row.key, criterionIdx: ci })}
+                        onClick={() => openGroupQuickMark(g.id, ci)}
                       >
                         {gm ? (
                           <span className={cn(
@@ -512,22 +507,6 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                         )}
                         {gm?.feedback && (
                           <span className="ml-1 text-gray-100 text-xs">✦</span>
-                        )}
-
-                        {isActive && (
-                          <CellPopover
-                            title={`${g.name} — whole group`}
-                            modal
-                            criterion={c}
-                            mark={gm}
-                            criterionDescriptors={getCriterionDescriptors(c.id)}
-                            projectId={projectId}
-                            snippets={snippets}
-                            onSave={(score, feedback) => upsertGroupMark(g.id, projectId, c.id, score, feedback)}
-                            onClear={() => deleteGroupMark(g.id, projectId, c.id)}
-                            onClose={() => setActiveCell(null)}
-                            onNavigate={navigate}
-                          />
                         )}
                       </td>
                     )
@@ -724,6 +703,21 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
         initialStudentIdx={quickMarkIdx}
         initialCriterionIdx={quickMarkCriterionIdx}
         onClose={() => { setQuickMarkIdx(null); setQuickMarkCriterionIdx(undefined) }}
+      />
+    )}
+    {groupQuickMark && quickMarkGroups.length > 0 && (
+      <QuickMarkModal
+        students={rows}
+        groups={quickMarkGroups}
+        groupMarks={groupMarks}
+        criteria={criteria}
+        marks={marks}
+        projectId={projectId}
+        descriptors={descriptors}
+        snippets={snippets}
+        initialStudentIdx={groupQuickMark.idx}
+        initialCriterionIdx={groupQuickMark.criterionIdx}
+        onClose={() => setGroupQuickMark(null)}
       />
     )}
     </div>
