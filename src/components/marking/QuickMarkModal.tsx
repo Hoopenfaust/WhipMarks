@@ -21,6 +21,7 @@ import { AnnotatorView } from '../annotator/AnnotatorView'
 import { emailStudentMark, emailGroupMark } from '../../utils/emailStudent'
 import { useProjectEmailLogs, emailStatus, formatEmailedAt } from '../../db/hooks/useEmailLogs'
 import { useProjectImprovementNotes } from '../../db/hooks/useImprovementNotes'
+import { RevealButton } from './RevealButton'
 
 interface Props {
   students: Student[]
@@ -305,9 +306,12 @@ export function QuickMarkModal({
               <StudentAvatar student={student!} className={cn('ring-2 ring-orange-500/40 shadow-[0_0_16px_rgba(139,92,246,0.25)]', isTouch ? 'w-14 h-14 text-lg' : 'w-12 h-12 text-base')} />
             )}
             <div className="min-w-0">
-              <p className={cn('font-semibold text-gray-100 truncate', isTouch ? 'text-lg' : 'text-base')}>
-                {itemName}
-              </p>
+              <div className="flex items-center gap-1 min-w-0">
+                <p className={cn('font-semibold text-gray-100 truncate', isTouch ? 'text-lg' : 'text-base')}>
+                  {itemName}
+                </p>
+                {student && <RevealButton student={student} />}
+              </div>
               {group && (
                 <p className={cn('text-gray-400 truncate', isTouch ? 'text-sm' : 'text-xs')}>
                   {group.members.map(s => s.firstName || s.name).join(', ')}
@@ -318,7 +322,7 @@ export function QuickMarkModal({
                   {studentIdx + 1} of {count}
                 </span>
                 {isComplete ? (
-                  <span className={cn('font-semibold flex items-center gap-1 wm-private', gradeColor(pct!), isTouch ? 'text-sm' : 'text-xs')}>
+                  <span className={cn('font-semibold flex items-center gap-1 wm-private', gradeColor(pct!), isTouch ? 'text-sm' : 'text-xs')} data-wm-student={student?.id}>
                     <CheckCircle2 size={isTouch ? 14 : 11} />
                     {pct!.toFixed(1)}%
                   </span>
@@ -411,7 +415,7 @@ export function QuickMarkModal({
         )}
 
         {/* Criteria cards */}
-        <div ref={scrollContainerRef} className={cn('overflow-y-auto flex flex-col wm-private', isTouch ? 'p-3 gap-3' : 'p-4 gap-3')}>
+        <div ref={scrollContainerRef} className={cn('overflow-y-auto flex flex-col wm-private', isTouch ? 'p-3 gap-3' : 'p-4 gap-3')} data-wm-student={student?.id}>
           {criteria.map((c) => {
             const mark = markFor(c.id)
             const isSaving = saving === c.id

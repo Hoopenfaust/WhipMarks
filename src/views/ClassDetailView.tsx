@@ -24,6 +24,7 @@ import { CategoryDrawPanel } from '../components/categories/CategoryDrawPanel'
 import { CompetencyTab } from '../components/class/CompetencyTab'
 import { ClassDashboard } from '../components/class/ClassDashboard'
 import { usePresenting } from '../utils/presentation'
+import { RevealButton } from '../components/marking/RevealButton'
 import { CompactCards, RosterList, FaceWall, StandingBoard, ROSTER_VIEWS, type RosterView } from '../components/class/RosterViews'
 import type { Student, Project, RubricCriterion, Mark, ChecklistItem } from '../types'
 import { newId } from '../utils/id'
@@ -229,6 +230,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
               ? 'text-red-400 bg-gray-900/80 backdrop-blur-sm'
               : 'text-amber-400 bg-gray-900/80 backdrop-blur-sm'
           )}
+          data-wm-student={student.id}
           title={semesterMark < 50 ? 'Failing' : 'Borderline'}
         >
           <Flag size={18} />
@@ -239,6 +241,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       {semesterMark !== null && semesterMark >= 85 && (
         <div
           className="absolute top-3 left-3 z-10 p-2 rounded-lg text-indigo-300 bg-gray-900/80 backdrop-blur-sm wm-private"
+          data-wm-student={student.id}
           title="High achiever"
         >
           <Star size={18} className="fill-indigo-300" />
@@ -267,7 +270,7 @@ function StudentCard({ student, semesterMark, projectMarks, onEdit, onDelete, on
       </div>
 
       {/* Stats grid — wraps to multiple rows when projects overflow */}
-      <div className="w-full border-t border-gray-700 pt-4 flex flex-wrap gap-3 justify-center wm-private">
+      <div className="w-full border-t border-gray-700 pt-4 flex flex-wrap gap-3 justify-center wm-private" data-wm-student={student.id}>
         {/* Semester tile */}
         <div className="flex flex-col items-center gap-0.5 px-4 py-2 min-w-[72px]">
           {semesterMark !== null ? (
@@ -520,10 +523,11 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
               >
                 <Pencil size={13} />
               </button>
+              <RevealButton student={student} />
             </div>
           )}
           {semesterMark !== null && (
-            <p className={`text-sm font-medium mt-0.5 wm-private ${gradeColor(semesterMark)}`}>
+            <p className={`text-sm font-medium mt-0.5 wm-private ${gradeColor(semesterMark)}`} data-wm-student={student.id}>
               Semester: {semesterMark.toFixed(1)}%
             </p>
           )}
@@ -540,7 +544,7 @@ function StudentDetail({ student, projects, allMarks, allCriteria, classId }: St
       </div>
 
       {/* Marks, notes and checklist — hidden in presentation mode */}
-      <div className="flex flex-col gap-6 wm-private">
+      <div className="flex flex-col gap-6 wm-private" data-wm-student={student.id}>
       {/* Progress Chart */}
       {projects.length > 0 && (
         <ProgressChart projects={projects} allMarks={allMarks} allCriteria={allCriteria} />

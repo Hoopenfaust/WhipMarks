@@ -101,7 +101,7 @@ export function SemesterSummaryView() {
         {activeProjects.length === 0 ? (
           <p className="p-8 text-sm text-gray-400/70">No weighted projects yet. Add projects with a semester weight &gt; 0.</p>
         ) : (
-          <table className="min-w-full text-sm border-collapse wm-private">
+          <table className="min-w-full text-sm border-collapse">
             <thead>
               <tr>
                 <th className="sticky top-0 left-0 z-30 bg-gray-850 border-b border-r border-gray-700 px-5 py-3 text-left text-xs font-semibold text-gray-400 min-w-40 whitespace-nowrap">
@@ -137,7 +137,7 @@ export function SemesterSummaryView() {
                       const studentMarks = marks.filter(m => m.studentId === s.id && m.projectId === p.id)
                       const complete = projectCriteria.length > 0 && projectCriteria.every(c => studentMarks.some(m => m.criterionId === c.id))
                       return (
-                        <td key={p.id} className="border-b border-r border-gray-700 px-4 py-3">
+                        <td key={p.id} className="border-b border-r border-gray-700 px-4 py-3 wm-private" data-wm-student={s.id}>
                           {complete ? (
                             <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${gradeBg(pct)}`}>
                               {pct.toFixed(1)}%
@@ -148,7 +148,7 @@ export function SemesterSummaryView() {
                         </td>
                       )
                     })}
-                    <td className="border-b border-gray-700 px-5 py-3">
+                    <td className="border-b border-gray-700 px-5 py-3 wm-private" data-wm-student={s.id}>
                       {hasAnyMark(s.id) ? (
                         <span className={`inline-flex px-2.5 py-1 rounded-lg text-sm font-bold ${gradeBg(semester)}`}>
                           {semester.toFixed(1)}%
@@ -173,12 +173,12 @@ export function SemesterSummaryView() {
                   }).filter(x => x.complete)
                   const avg = pcts.length > 0 ? pcts.reduce((s, x) => s + x.pct, 0) / pcts.length : null
                   return (
-                    <td key={p.id} className="border-t border-r border-gray-700 px-4 py-2.5 text-xs text-gray-400">
+                    <td key={p.id} className="border-t border-r border-gray-700 px-4 py-2.5 text-xs text-gray-400 wm-private">
                       {avg !== null ? avg.toFixed(1) + '%' : '—'}
                     </td>
                   )
                 })}
-                <td className="border-t border-gray-700 px-5 py-2.5 text-xs text-gray-400">
+                <td className="border-t border-gray-700 px-5 py-2.5 text-xs text-gray-400 wm-private">
                   {(() => {
                     const avgs = students.filter(s => hasAnyMark(s.id)).map(s => getSemesterMark(s.id))
                     return avgs.length > 0 ? (avgs.reduce((a, b) => a + b, 0) / avgs.length).toFixed(1) + '%' : '—'

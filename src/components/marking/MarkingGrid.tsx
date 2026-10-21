@@ -17,6 +17,7 @@ import { useDictation } from '../../utils/useDictation'
 import { emailStudentMark, emailGroupMark } from '../../utils/emailStudent'
 import { useProjectEmailLogs, emailStatus, formatEmailedAt } from '../../db/hooks/useEmailLogs'
 import { useProjectImprovementNotes } from '../../db/hooks/useImprovementNotes'
+import { RevealButton } from './RevealButton'
 
 
 interface CellPopoverProps {
@@ -404,7 +405,8 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
       </button>
     </div>
 
-    <div className="overflow-auto flex-1 mx-4 mb-4 mt-3 rounded-xl border border-gray-700 shadow-md shadow-black/30 wm-private">
+    <div className="overflow-auto flex-1 mx-4 mb-4 mt-3 rounded-xl border border-gray-700 shadow-md shadow-black/30">
+      {/* Mark cells are blurred one by one (not the whole table) so presentation mode can reveal a single student */}
       <table className="marking-table border-collapse min-w-full text-sm">
         <thead>
           <tr>
@@ -489,7 +491,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                         key={c.id}
                         title="Mark the whole group"
                         className={cn(
-                          'relative border-b border-r border-gray-700 cursor-pointer transition-colors hover:bg-gray-800',
+                          'relative border-b border-r border-gray-700 cursor-pointer transition-colors hover:bg-gray-800 wm-private',
                           isTouch ? 'px-4 py-5' : 'px-4 py-2.5'
                         )}
                         onClick={() => openGroupQuickMark(g.id, ci)}
@@ -511,7 +513,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                       </td>
                     )
                   })}
-                  <td className="border-b border-gray-700 px-4 py-2.5 whitespace-nowrap">
+                  <td className="border-b border-gray-700 px-4 py-2.5 whitespace-nowrap wm-private">
                     {gMarkedCount === criteria.length ? (
                       <span className={cn('font-bold', gradeColor(gPct))}>{gPct.toFixed(1)}%</span>
                     ) : gMarkedCount > 0 ? (
@@ -549,6 +551,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                     >
                       {s.firstName ? `${s.firstName} ${s.name}` : s.name}
                     </button>
+                    <RevealButton student={s} />
                     {onExportStudent && (
                       <button
                         onClick={() => onExportStudent(s)}
@@ -597,8 +600,9 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                     <td
                       key={c.id}
                       title={adjusted ? `Adjusted from the group mark of ${gm.score} — changing the group mark won't overwrite it` : undefined}
+                      data-wm-student={s.id}
                       className={cn(
-                        'relative border-b border-r border-gray-700 cursor-pointer transition-colors',
+                        'relative border-b border-r border-gray-700 cursor-pointer transition-colors wm-private',
                         isTouch ? 'px-4 py-5' : 'px-4 py-2.5',
                         isActive ? 'bg-gray-800/30' : 'hover:bg-gray-800'
                       )}
@@ -646,7 +650,7 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                     </td>
                   )
                 })}
-                <td className="border-b border-gray-700 px-4 py-2.5 whitespace-nowrap">
+                <td className="border-b border-gray-700 px-4 py-2.5 whitespace-nowrap wm-private" data-wm-student={s.id}>
                   {isComplete ? (
                     <span className={cn('font-bold', gradeColor(pct))}>{pct.toFixed(1)}%</span>
                   ) : hasAnyMark ? (
@@ -669,12 +673,12 @@ export function MarkingGrid({ students, criteria, marks, projectId, descriptors 
                 ? cellMarks.reduce((s, m) => s + m.score, 0) / cellMarks.length
                 : null
               return (
-                <td key={c.id} className="border-t border-r border-gray-700 px-4 py-2.5 text-xs text-gray-400">
+                <td key={c.id} className="border-t border-r border-gray-700 px-4 py-2.5 text-xs text-gray-400 wm-private">
                   {avg !== null ? avg.toFixed(1) : '—'}
                 </td>
               )
             })}
-            <td className="border-t border-gray-700 px-4 py-2.5 text-xs text-gray-400">
+            <td className="border-t border-gray-700 px-4 py-2.5 text-xs text-gray-400 wm-private">
               {(() => {
                 const completeStudents = students.filter(s =>
                   criteria.every(c => marks.some(m => m.studentId === s.id && m.criterionId === c.id))

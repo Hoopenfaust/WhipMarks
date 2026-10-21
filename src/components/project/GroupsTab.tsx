@@ -177,7 +177,7 @@ function GroupCard({ group, memberIds, students, allGroups, semesterMarkFor }: G
                 </div>
               )}
               <span className="text-sm text-gray-100 truncate flex-1 min-w-0">{studentName(s)}</span>
-              <span className={`text-xs font-medium shrink-0 wm-private ${mark !== null ? gradeColor(mark) : 'text-gray-400/50'}`}>
+              <span className={`text-xs font-medium shrink-0 wm-private ${mark !== null ? gradeColor(mark) : 'text-gray-400/50'}`} data-wm-student={s.id}>
                 {mark !== null ? `${mark.toFixed(0)}%` : '—'}
               </span>
               {allGroups.length > 1 && (

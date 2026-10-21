@@ -8,8 +8,8 @@ import { Sidebar } from './Sidebar'
 import { GlobalSearch } from './GlobalSearch'
 import { SyncStatus } from '../auth/SyncStatus'
 import { SyncLoginModal } from '../auth/SyncLoginModal'
-import { EyeOff } from 'lucide-react'
-import { usePresenting, setPresenting } from '../../utils/presentation'
+import { Eye, EyeOff, X } from 'lucide-react'
+import { usePresenting, setPresenting, useRevealed, setRevealed } from '../../utils/presentation'
 
 function AutoBackup() {
   // Watch row counts across all key tables — any change triggers a debounced save
@@ -39,6 +39,7 @@ function AutoBackup() {
 export function Layout() {
   const [loginOpen, setLoginOpen] = useState(false)
   const presenting = usePresenting()
+  const revealed = useRevealed()
 
   return (
     <div className="flex h-screen app-bg overflow-hidden">
@@ -56,6 +57,15 @@ export function Layout() {
               className="ml-4 flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/15 px-3 py-1 text-xs font-medium text-orange-300 shadow-[0_0_16px_rgba(139,92,246,0.25)]"
             >
               <EyeOff size={13} /> Presentation mode · marks hidden
+            </button>
+          )}
+          {presenting && revealed && (
+            <button
+              onClick={() => setRevealed(null)}
+              title={`Hide ${revealed.name}'s marks again`}
+              className="flex items-center gap-2 rounded-full border border-orange-500/40 px-3 py-1 text-xs font-medium text-orange-300 hover:bg-orange-500/10"
+            >
+              <Eye size={13} /> Showing {revealed.name} <X size={12} />
             </button>
           )}
           <div className="ml-auto flex items-center gap-3">
